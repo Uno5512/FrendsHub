@@ -655,6 +655,7 @@
         function hideForms() {
             document.querySelector('.overlay').style.display = 'none';
             document.querySelector('.create-form')?.classList.remove('active');
+            document.querySelector('.report-form')?.classList.remove('active');
             const reportText = document.getElementById('report-text');
             if (reportText) reportText.value = '';
         }
