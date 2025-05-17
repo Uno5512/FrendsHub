@@ -413,20 +413,28 @@
             const sort = currentSort;
 
             // Фильтрация
-            let filteredAds = ads.filter(ad =>
-                (
-                    ad.title.toLowerCase().includes(search) ||
-                    ad.description.toLowerCase().includes(search) ||
-                    ad.city.toLowerCase().includes(search) ||
-                    ad.type.toLowerCase().includes(search) ||
-                    ad.date.toLowerCase().includes(search) ||
-                    ad.gender.toLowerCase().includes(search)
-                ) &&
-                (city === '' || ad.city === city) &&
-                (type === '' || ad.type === type) &&
-                (date === '' || ad.date === date) &&
-                (gender === '' || ad.gender === gender)
-            );
+            let filteredAds = ads.filter(ad => {
+                        const searchWords = search.trim().split(/\s+/).filter(word => word.length > 0);
+                        if (searchWords.length === 0) return true;
+                        console.log('Search words:', searchWords);
+                        console.log('Checking ad:', ad);
+                        const matchesSearch = searchWords.every(word => {
+                                    const lowerWord = word.toLowerCase();
+                                    return (
+                                                ad.title.toLowerCase().includes(lowerWord) ||
+                                                ad.description.toLowerCase().includes(lowerWord) ||
+                                                ad.city.toLowerCase().includes(lowerWord) ||
+                                                ad.type.toLowerCase().includes(lowerWord) ||
+                                                ad.date.toLowerCase().includes(lowerWord) ||
+                                                ad.gender.toLowerCase().includes(lowerWord)
+                                    );
+                        });
+                        return matchesSearch &&
+                               (city === '' || ad.city === city) &&
+                               (type === '' || ad.type === type) &&
+                               (date === '' || ad.date === date) &&
+                               (gender === '' || ad.gender === gender);
+            });
 
             // Сортировка (свои объявления сверху)
             filteredAds.sort((a, b) => {
