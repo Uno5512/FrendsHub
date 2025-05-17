@@ -64,6 +64,11 @@
             max-width: 600px;
             margin: 0 auto;
         }
+
+        .search-container {
+            margin-bottom: 8px; /* Отступ между поиском и фильтрами */
+        }
+
         .filters {
             display: flex;
             flex-wrap: wrap;
@@ -240,7 +245,7 @@
 </head>
 <body>
     <div class="container">
-        <div class="filters">
+        <div class="search-container">
             <input type="text" id="search" placeholder="Поиск">
             <select id="city">
                 <option value="">Город</option>
