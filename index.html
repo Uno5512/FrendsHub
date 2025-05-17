@@ -922,9 +922,40 @@
             openMenus.forEach(menu => {
               menu.style.display = 'none';
             });
-          }
+
+        // Открытие модального окна
+        function openModal() {
+                document.getElementById('modal').classList.add('open');
+                document.getElementById('modalBackdrop').classList.add('open');
+        }
+
+        // Закрытие модального окна
+        function closeModal() {
+                document.getElementById('modal').classList.remove('open');
+                document.getElementById('modalBackdrop').classList.remove('open');
+        }
+
+        // Закрытие модального окна при клике на фон
+        document.getElementById('modalBackdrop').addEventListener('click', closeModal);
+          }        
         });
 
     </script>
+        <!-- Плавающая кнопка -->
+    <div class="floating-btn" onclick="openModal()"></div>
+
+        <!-- Модальное окно -->
+    <div class="modal" id="modal">
+        <button class="close-btn" onclick="closeModal()">Закрыть</button>
+        <div class="modal-content">
+                <h2>Модальное окно</h2>
+                <p>Здесь можно добавить любой контент для модального окна.</p>
+        </div>
+    </div>
+
+        <!-- Фон затемнения -->
+    <div class="modal-backdrop" id="modalBackdrop"></div> 
+     }        
+    });
 </body>
 </html>
