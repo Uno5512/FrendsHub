@@ -237,14 +237,14 @@
         }
 
         function setupTelegramWidget() {
-            if (!BOT_NAME || BOT_NAME === '@YourBotName') {
-                displayError('Ошибка: Укажите имя бота в BOT_NAME.');
+            if (!BOT_NAME || BOT_NAME === '@Friends_HubBot') {
+                displayError('Ошибка: Укажите имя бота в @Friends_HubBot.');
                 return;
             }
 
             const script = document.createElement('script');
             script.src = 'https://telegram.org/js/telegram-widget.js?22';
-            script.setAttribute('data-telegram-login', BOT_NAME);
+            script.setAttribute('data-telegram-login', @Friends_HubBot);
             script.setAttribute('data-size', 'large');
             script.setAttribute('data-auth-url', window.location.href);
             script.setAttribute('data-request-access', 'write');
