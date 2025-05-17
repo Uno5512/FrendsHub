@@ -400,7 +400,14 @@
         // Загрузка объявлений
         let ads = JSON.parse(localStorage.getItem('ads')) || [];
         let currentSort = 'newest'; // По умолчанию новые
+        let hiddenAds = JSON.parse(localStorage.getItem('hiddenAds')) || [];
         let editAdId = null;
+
+        function hideAd(adId) {
+          hiddenAds.push(adId);
+          localStorage.setItem('hiddenAds', JSON.stringify(hiddenAds));
+          renderAds();
+        }
 
         // Отрисовка объявлений
         function renderAds() {
@@ -414,6 +421,7 @@
 
             // Фильтрация
             let filteredAds = ads.filter(ad => {
+              if (hiddenAds.includes(ad.id)) return false; // Пропускаем скрытые объявления
                         const searchWords = search.trim().split(/\s+/).filter(word => word.length > 0);
                         if (searchWords.length === 0) return true;
                         console.log('Search words:', searchWords);
@@ -463,8 +471,10 @@
                         ${ad.userId === userId ? `
                             <button onclick="editAd('${ad.id}')">Редактировать</button>
                             <button onclick="deleteAd('${ad.id}')">Удалить</button>
-                        ` : ''}
-                        <button onclick="openComplaintDialog()">Пожаловаться</button>
+        ` : `
+                            <button onclick="hideAd('${ad.id}')">Не показывать</button>
+                            <button onclick="openComplaintDialog()">Пожаловаться</button>
+                  `      }
                     </div>
                 `;
                 adList.appendChild(adDiv);
