@@ -597,6 +597,7 @@
 
         // Открытие окна создания/редактирования
         function openCreateDialog(adId = null) {
+            console.log('Opening create dialog, adId:', adId);
             const dialog = document.getElementById('createDialog');
             const title = document.getElementById('dialogTitle');
             editAdId = adId;
@@ -739,12 +740,12 @@
         // Закрытие меню при клике вне
         document.addEventListener('click', function(event) {
           const openMenus = document.querySelectorAll('.menu-options[style="display: block;"]');
-          if (!event.target.closest('.menu') && !event.target.closest('.menu-options')) {
+          if (!event.target.closest('.menu') && !event.target.closest('.menu-options') && !event.target.closest('.create-btn')) {
             openMenus.forEach(menu => {
               menu.style.display = 'none';
-             });
-           }
-         });
+            });
+          }
+        });
 
     </script>
 </body>
