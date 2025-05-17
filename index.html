@@ -1,43 +1,4 @@
-<script type="text/javascript">
-        var gk_isXlsx = false;
-        var gk_xlsxFileLookup = {};
-        var gk_fileData = {};
-        function filledCell(cell) {
-          return cell !== '' && cell != null;
-        }
-        function loadFileData(filename) {
-        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
-            try {
-                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
-                var firstSheetName = workbook.SheetNames[0];
-                var worksheet = workbook.Sheets[firstSheetName];
-
-                // Convert sheet to JSON to filter blank rows
-                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
-                // Filter out blank rows (rows where all cells are empty, null, or undefined)
-                var filteredData = jsonData.filter(row => row.some(filledCell));
-
-                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
-                var headerRowIndex = filteredData.findIndex((row, index) =>
-                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
-                );
-                // Fallback
-                if (headerRowIndex === -1 || headerRowIndex > 25) {
-                  headerRowIndex = 0;
-                }
-
-                // Convert filtered JSON back to CSV
-                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
-                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
-                return csv;
-            } catch (e) {
-                console.error(e);
-                return "";
-            }
-        }
-        return gk_fileData[filename] || "";
-        }
-        </script><!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
@@ -305,6 +266,10 @@
             cursor: pointer;
         }
 
+        .menu-options button:hover {
+            background: #f1d299;
+        }
+
         .floating-btn {
             position: fixed;
             bottom: 20px;
@@ -385,33 +350,33 @@
 
         <section class="search-filter-container">
             <form id="filter-form">
-                <input type="text" id="search" placeholder="Поиск">
+                <input type="text" id="search" placeholder="Поиск" aria-label="Поиск объявлений">
                 <div class="filters">
-                    <select id="city" name="city">
+                    <select id="city" name="city" aria-label="Выберите город">
                         <option value="">Город</option>
                         <option value="Москва">Москва</option>
                         <option value="Санкт-Петербург">Санкт-Петербург</option>
                         <option value="Казань">Казань</option>
                     </select>
-                    <select id="type" name="type">
+                    <select id="type" name="type" aria-label="Выберите вид активности">
                         <option value="">Вид</option>
                         <option value="Встреча">Встреча</option>
                         <option value="Чат">Чат</option>
                         <option value="Событие">Событие</option>
                     </select>
-                    <select id="date" name="date">
+                    <select id="date" name="date" aria-label="Выберите дату">
                         <option value="">Дата</option>
                         <option value="Сегодня">Сегодня</option>
                         <option value="Завтра">Завтра</option>
                         <option value="На неделе">На неделе</option>
                     </select>
-                    <select id="gender" name="gender">
+                    <select id="gender" name="gender" aria-label="Выберите пол">
                         <option value="">Пол</option>
                         <option value="Мужской">Мужской</option>
                         <option value="Женский">Женский</option>
                         <option value="Любой">Любой</option>
                     </select>
-                    <select id="sort" name="sort">
+                    <select id="sort" name="sort" aria-label="Сортировка">
                         <option value="" disabled selected>•••</option>
                         <option value="rating">По рейтингу</option>
                         <option value="newest">Новые</option>
@@ -421,21 +386,21 @@
             </form>
         </section>
 
-        <section class="ad-list" id="adList"></section>
+        <section class="ad-list" id="adList" aria-label="Список объявлений"></section>
 
-        <button type="button" data-modal-open="createDialog">+ Создать</button>
+        <button type="button" data-modal-open="createDialog" aria-label="Создать объявление">+ Создать</button>
 
-        <button class="floating-btn"></button>
+        <button class="floating-btn" onclick="openModal()" aria-label="Открыть боковое меню"></button>
     </main>
 
-    <dialog id="createDialog">
+    <dialog id="createDialog" aria-labelledby="dialogTitle">
         <form method="dialog" id="create-ad-form">
-            <h2>Создать объявление</h2>
-            <input type="text" id="adTitle" placeholder="Заголовок">
-            <textarea id="adDescription" placeholder="Описание"></textarea>
+            <h2 id="dialogTitle">Создать объявление</h2>
+            <input type="text" id="adTitle" placeholder="Заголовок" aria-label="Заголовок объявления">
+            <textarea id="adDescription" placeholder="Описание" aria-label="Описание объявления"></textarea>
             <fieldset>
                 <legend>Город</legend>
-                <select id="adCity" name="city">
+                <select id="adCity" name="city" aria-label="Выберите город">
                     <option value="Москва">Москва</option>
                     <option value="Санкт-Петербург">Санкт-Петербург</option>
                     <option value="Казань">Казань</option>
@@ -443,7 +408,7 @@
             </fieldset>
             <fieldset>
                 <legend>Вид</legend>
-                <select id="adType" name="type">
+                <select id="adType" name="type" aria-label="Выберите вид активности">
                     <option value="Встреча">Встреча</option>
                     <option value="Чат">Чат</option>
                     <option value="Событие">Событие</option>
@@ -451,7 +416,7 @@
             </fieldset>
             <fieldset>
                 <legend>Дата</legend>
-                <select id="adDate" name="date">
+                <select id="adDate" name="date" aria-label="Выберите дату">
                     <option value="Сегодня">Сегодня</option>
                     <option value="Завтра">Завтра</option>
                     <option value="На неделе">На неделе</option>
@@ -459,7 +424,7 @@
             </fieldset>
             <fieldset>
                 <legend>Пол</legend>
-                <select id="adGender" name="gender">
+                <select id="adGender" name="gender" aria-label="Выберите пол">
                     <option value="Мужской">Мужской</option>
                     <option value="Женский">Женский</option>
                     <option value="Любой">Любой</option>
@@ -470,18 +435,18 @@
         </form>
     </dialog>
 
-    <dialog id="complaintDialog">
+    <dialog id="complaintDialog" aria-labelledby="complaintTitle">
         <form method="dialog" id="complaint-form">
-            <h2>Пожаловаться</h2>
-            <textarea id="complaintText" placeholder="Опишите причину жалобы"></textarea>
+            <h2 id="complaintTitle">Пожаловаться</h2>
+            <textarea id="complaintText" placeholder="Опишите причину жалобы" aria-label="Причина жалобы"></textarea>
             <button type="button" formmethod="dialog">Отменить</button>
             <button type="submit">Отправить</button>
         </form>
     </dialog>
 
-    <dialog id="cityDialog">
-        <form method="dialog">
-            <h2>Выберите город</h2>
+    <dialog id="cityDialog" aria-labelledby="cityTitle">
+        <form method="dialog" id="city-form">
+            <h2 id="cityTitle">Выберите город</h2>
             <div class="select-options">
                 <label><input type="radio" name="cityOption" value="Москва"> Москва</label>
                 <label><input type="radio" name="cityOption" value="Санкт-Петербург"> Санкт-Петербург</label>
@@ -492,9 +457,9 @@
         </form>
     </dialog>
 
-    <dialog id="typeDialog">
-        <form method="dialog">
-            <h2>Выберите вид</h2>
+    <dialog id="typeDialog" aria-labelledby="typeTitle">
+        <form method="dialog" id="type-form">
+            <h2 id="typeTitle">Выберите вид</h2>
             <div class="select-options">
                 <label><input type="radio" name="typeOption" value="Встреча"> Встреча</label>
                 <label><input type="radio" name="typeOption" value="Чат"> Чат</label>
@@ -508,14 +473,15 @@
     <div class="modal" id="modal">
         <button class="close-btn" onclick="closeModal()">Закрыть</button>
         <div class="modal-content">
-            <h2>Модальное окно</h2>
-            <p>Здесь можно добавить любой контент для модального окна.</p>
+            <h2>Настройки</h2>
+            <p>Здесь можно добавить настройки или информацию.</p>
         </div>
     </div>
 
     <div class="modal-backdrop" id="modalBackdrop"></div>
 
     <script>
+        // Проверка доступности Telegram
         function isTelegramAvailable() {
             try {
                 return window.Telegram?.WebApp && typeof Telegram.WebApp.ready === 'function';
@@ -525,8 +491,9 @@
             }
         }
 
-        let userId = 'guest';
-        let userName = 'Гость';
+        // Инициализация пользователя
+        let userId = 'user-1'; // Тестовый пользователь
+        let userName = 'Вы';
         let isTelegramMode = isTelegramAvailable();
         if (isTelegramMode) {
             try {
@@ -534,7 +501,9 @@
                 const user = Telegram.WebApp.initDataUnsafe?.user;
                 if (user?.id) {
                     userId = user.id;
-                    userName = user.username || user.first_name || 'Гость';
+                    userName = user.username || user.first_name || 'Вы';
+                } else {
+                    isTelegramMode = false;
                 }
             } catch (e) {
                 console.error('Telegram initialization failed:', e);
@@ -542,17 +511,45 @@
             }
         }
 
-        let ads = [];
+        // Глобальные данные
+        let ads = [
+            {
+                id: 'ad-1',
+                userId: 'user-1',
+                userName: 'Вы',
+                title: 'Встреча в Москве',
+                description: 'Присоединяйтесь к нашей встрече в центре города!',
+                city: 'Москва',
+                type: 'Встреча',
+                date: 'Сегодня',
+                gender: 'Любой',
+                createdAt: '2025-05-17T00:00:00Z'
+            },
+            {
+                id: 'ad-2',
+                userId: 'user-2',
+                userName: 'Алексей',
+                title: 'Чат по интересам',
+                description: 'Обсудим книги и фильмы в Telegram!',
+                city: 'Санкт-Петербург',
+                type: 'Чат',
+                date: 'Завтра',
+                gender: 'Любой',
+                createdAt: '2025-05-16T00:00:00Z'
+            }
+        ];
         let hiddenAds = [];
-        let likesDislikes = {};
+        let likesDislikes = { 'ad-1': { likes: [], dislikes: [] }, 'ad-2': { likes: [], dislikes: [] } };
+        let editAdId = null;
 
+        // Загрузка данных
         function loadCloudData() {
             if (isTelegramMode) {
                 try {
                     return Promise.all([
                         new Promise((resolve) => {
                             Telegram.WebApp.CloudStorage.getItems(['ads'], (error, result) => {
-                                resolve(error || !result.ads ? JSON.parse(localStorage.getItem('ads')) || [] : JSON.parse(result.ads));
+                                resolve(error || !result.ads ? JSON.parse(localStorage.getItem('ads')) || ads : JSON.parse(result.ads));
                             });
                         }),
                         new Promise((resolve) => {
@@ -562,52 +559,59 @@
                         }),
                         new Promise((resolve) => {
                             Telegram.WebApp.CloudStorage.getItems(['likesDislikes'], (error, result) => {
-                                resolve(error || !result.likesDislikes ? JSON.parse(localStorage.getItem('likesDislikes')) || {} : JSON.parse(result.likesDislikes));
+                                resolve(error || !result.likesDislikes ? JSON.parse(localStorage.getItem('likesDislikes')) || likesDislikes : JSON.parse(result.likesDislikes));
                             });
                         })
                     ]).then(([loadedAds, loadedHiddenAds, loadedLikesDislikes]) => {
                         ads = loadedAds;
                         hiddenAds = loadedHiddenAds;
                         likesDislikes = loadedLikesDislikes;
+                    }).catch((e) => {
+                        console.error('Cloud storage failed:', e);
+                        ads = JSON.parse(localStorage.getItem('ads')) || ads;
+                        hiddenAds = JSON.parse(localStorage.getItem('hiddenAds')) || [];
+                        likesDislikes = JSON.parse(localStorage.getItem('likesDislikes')) || likesDislikes;
                     });
                 } catch (e) {
-                    console.error('Cloud storage failed:', e);
+                    console.error('Cloud storage initialization failed:', e);
                 }
             }
-            ads = JSON.parse(localStorage.getItem('ads')) || [];
+            ads = JSON.parse(localStorage.getItem('ads')) || ads;
             hiddenAds = JSON.parse(localStorage.getItem('hiddenAds')) || [];
-            likesDislikes = JSON.parse(localStorage.getItem('likesDislikes')) || {};
+            likesDislikes = JSON.parse(localStorage.getItem('likesDislikes')) || likesDislikes;
             return Promise.resolve();
         }
 
+        // Рендеринг объявлений
         function renderAds() {
             const adList = document.getElementById('adList');
             adList.innerHTML = '';
-            ads.forEach(ad => {
+            ads.filter(ad => !hiddenAds.includes(ad.id)).forEach(ad => {
                 const adItem = document.createElement('article');
                 adItem.className = `ad-item ${ad.userId === userId ? 'own' : ''}`;
+                adItem.setAttribute('aria-label', `Объявление от ${ad.userName}`);
                 adItem.innerHTML = `
                     <div class="user">
-                        <span>${ad.userName}</span>
+                        <span onclick="openTelegramProfile('${ad.userId}')">${ad.userName}</span>
                     </div>
                     <h3>${ad.title}</h3>
                     <p>${ad.description}</p>
                     <p><small>Город: ${ad.city} | Вид: ${ad.type} | Дата: ${ad.date} | Пол: ${ad.gender} | ${new Date(ad.createdAt).toLocaleDateString()}</small></p>
                     <div class="ad-actions">
                         <span class="counter">• ${((likesDislikes[ad.id]?.likes?.length || 0) - (likesDislikes[ad.id]?.dislikes?.length || 0))}</span>
-                        <span class="action">🔗</span>
-                        <span class="action">❤️</span>
-                        <span class="action">👍</span>
-                        <span class="action">👎</span>
+                        <span class="action share" onclick="shareAd('${ad.id}')" title="Поделиться">🔗</span>
+                        <span class="action favorite" onclick="toggleFavorite('${ad.id}')" title="В избранное">❤️</span>
+                        <span class="action like" onclick="toggleLike('${ad.id}')" title="Лайк">👍</span>
+                        <span class="action dislike" onclick="toggleDislike('${ad.id}')" title="Дизлайк">👎</span>
                         <span class="menu" onclick="toggleMenu('${ad.id}')">•••</span>
                     </div>
                     <div class="menu-options" id="menu-${ad.id}">
                         ${ad.userId === userId ? `
-                            <button>Редактировать</button>
-                            <button>Удалить</button>
+                            <button onclick="editAd('${ad.id}')">Редактировать</button>
+                            <button onclick="deleteAd('${ad.id}')">Удалить</button>
                         ` : `
-                            <button>Не показывать</button>
-                            <button onclick="document.getElementById('complaintDialog').showModal()">Пожаловаться</button>
+                            <button onclick="hideAd('${ad.id}')">Не показывать</button>
+                            <button onclick="openComplaintDialog('${ad.id}')">Пожаловаться</button>
                         `}
                     </div>
                 `;
@@ -615,35 +619,183 @@
             });
         }
 
+        // Переключение меню
         function toggleMenu(adId) {
             const menu = document.getElementById(`menu-${adId}`);
-            menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+            const isVisible = menu.style.display === 'block';
+            document.querySelectorAll('.menu-options').forEach(m => m.style.display = 'none');
+            menu.style.display = isVisible ? 'none' : 'block';
         }
 
+        // Открытие модального окна для создания/редактирования
+        function openCreateDialog(adId = null) {
+            editAdId = adId;
+            const dialog = document.getElementById('createDialog');
+            const title = document.getElementById('dialogTitle');
+            if (adId) {
+                const ad = ads.find(a => a.id === adId);
+                if (!ad) {
+                    console.error('Ad not found:', adId);
+                    return;
+                }
+                document.getElementById('adTitle').value = ad.title;
+                document.getElementById('adDescription').value = ad.description;
+                document.getElementById('adCity').value = ad.city;
+                document.getElementById('adType').value = ad.type;
+                document.getElementById('adDate').value = ad.date;
+                document.getElementById('adGender').value = ad.gender;
+                title.textContent = 'Редактировать объявление';
+            } else {
+                document.getElementById('adTitle').value = '';
+                document.getElementById('adDescription').value = '';
+                document.getElementById('adCity').value = 'Москва';
+                document.getElementById('adType').value = 'Встреча';
+                document.getElementById('adDate').value = 'Сегодня';
+                document.getElementById('adGender').value = 'Любой';
+                title.textContent = 'Создать объявление';
+            }
+            dialog.showModal();
+        }
+
+        // Редактирование объявления
+        function editAd(adId) {
+            openCreateDialog(adId);
+        }
+
+        // Удаление объявления
+        function deleteAd(adId) {
+            ads = ads.filter(ad => ad.id !== adId);
+            delete likesDislikes[adId];
+            localStorage.setItem('ads', JSON.stringify(ads));
+            localStorage.setItem('likesDislikes', JSON.stringify(likesDislikes));
+            if (isTelegramMode) {
+                Telegram.WebApp.CloudStorage.setItem('ads', JSON.stringify(ads));
+                Telegram.WebApp.CloudStorage.setItem('likesDislikes', JSON.stringify(likesDislikes));
+            }
+            renderAds();
+        }
+
+        // Скрытие объявления
+        function hideAd(adId) {
+            hiddenAds.push(adId);
+            localStorage.setItem('hiddenAds', JSON.stringify(hiddenAds));
+            if (isTelegramMode) {
+                Telegram.WebApp.CloudStorage.setItem('hiddenAds', JSON.stringify(hiddenAds));
+            }
+            renderAds();
+        }
+
+        // Открытие модального окна для жалобы
+        function openComplaintDialog(adId) {
+            document.getElementById('complaint-form').dataset.adId = adId;
+            document.getElementById('complaintDialog').showModal();
+        }
+
+        // Отправка жалобы
+        function submitComplaint() {
+            const adId = document.getElementById('complaint-form').dataset.adId;
+            const complaintText = document.getElementById('complaintText').value;
+            if (!complaintText) {
+                alert('Пожалуйста, опишите причину жалобы');
+                return;
+            }
+            console.log(`Жалоба на объявление ${adId}: ${complaintText}`);
+            document.getElementById('complaintText').value = '';
+            document.getElementById('complaintDialog').close();
+        }
+
+        // Сохранение объявления
+        function saveAd() {
+            const title = document.getElementById('adTitle').value;
+            const description = document.getElementById('adDescription').value;
+            const city = document.getElementById('adCity').value;
+            const type = document.getElementById('adType').value;
+            const date = document.getElementById('adDate').value;
+            const gender = document.getElementById('adGender').value;
+
+            if (!title || !description) {
+                alert('Заполните заголовок и описание');
+                return;
+            }
+
+            if (editAdId) {
+                const adIndex = ads.findIndex(ad => ad.id === editAdId);
+                ads[adIndex] = { ...ads[adIndex], title, description, city, type, date, gender };
+            } else {
+                const newAdId = Date.now().toString();
+                ads.push({
+                    id: newAdId,
+                    userId,
+                    userName,
+                    title,
+                    description,
+                    city,
+                    type,
+                    date,
+                    gender,
+                    createdAt: new Date().toISOString()
+                });
+                likesDislikes[newAdId] = { likes: [], dislikes: [] };
+            }
+
+            localStorage.setItem('ads', JSON.stringify(ads));
+            localStorage.setItem('likesDislikes', JSON.stringify(likesDislikes));
+            if (isTelegramMode) {
+                Telegram.WebApp.CloudStorage.setItem('ads', JSON.stringify(ads));
+                Telegram.WebApp.CloudStorage.setItem('likesDislikes', JSON.stringify(likesDislikes));
+            }
+            document.getElementById('createDialog').close();
+            renderAds();
+        }
+
+        // Заглушки для остальных функций
+        function openTelegramProfile(userId) {
+            console.log(`Открыть профиль: ${userId}`);
+        }
+
+        function shareAd(adId) {
+            console.log(`Поделиться объявлением: ${adId}`);
+        }
+
+        function toggleFavorite(adId) {
+            console.log(`Добавить в избранное: ${adId}`);
+        }
+
+        function toggleLike(adId) {
+            console.log(`Лайк: ${adId}`);
+        }
+
+        function toggleDislike(adId) {
+            console.log(`Дизлайк: ${adId}`);
+        }
+
+        // Открытие/закрытие бокового меню
+        function openModal() {
+            document.getElementById('modal').classList.add('open');
+            document.getElementById('modalBackdrop').classList.add('open');
+        }
+
+        function closeModal() {
+            document.getElementById('modal').classList.remove('open');
+            document.getElementById('modalBackdrop').classList.remove('open');
+        }
+
+        // Обработчики событий
         document.querySelector('button[data-modal-open="createDialog"]').addEventListener('click', () => {
-            document.getElementById('createDialog').showModal();
+            openCreateDialog();
         });
 
         document.getElementById('create-ad-form').addEventListener('submit', (e) => {
             e.preventDefault();
-            const newAd = {
-                id: Date.now().toString(),
-                userId,
-                userName,
-                title: document.getElementById('adTitle').value,
-                description: document.getElementById('adDescription').value,
-                city: document.getElementById('adCity').value,
-                type: document.getElementById('adType').value,
-                date: document.getElementById('adDate').value,
-                gender: document.getElementById('adGender').value,
-                createdAt: new Date()
-            };
-            ads.push(newAd);
-            localStorage.setItem('ads', JSON.stringify(ads));
-            renderAds();
-            document.getElementById('createDialog').close();
+            saveAd();
         });
 
+        document.getElementById('complaint-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            submitComplaint();
+        });
+
+        // Инициализация
         loadCloudData().then(() => renderAds());
     </script>
 </body>
