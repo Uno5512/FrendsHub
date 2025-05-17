@@ -538,6 +538,15 @@
 
         // Начальная отрисовка
         renderAds();
+
+        // Очистка поиска при клике вне поля
+        document.addEventListener('click', function(event) {
+            const searchInput = document.getElementById('search');
+            if (event.target !== searchInput) {
+                searchInput.value = '';
+                renderAds();
+            }
+        });
     </script>
 </body>
 </html>
