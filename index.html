@@ -65,9 +65,20 @@
             margin: 0 auto;
         }
         .filters {
-            display: grid;
+            display: flex;
+            flex-wrap: wrap;
             gap: 8px;
             margin-bottom: 16px;
+        }
+
+        .filters select,
+        .filters input {
+            padding: 6px;
+            font-size: 14px;
+            width: auto;
+            min-width: 100px;
+            flex: 1;
+        }
         }
         select, input, button, textarea {
             padding: 8px;
