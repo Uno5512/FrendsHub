@@ -65,6 +65,18 @@
             margin: 0 auto;
         }
 
+        .image-container {
+            display: flex;
+            justify-content: center; /* Центрирование по горизонтали */
+            margin-bottom: 16px; /* Отступ от поиска */
+        }
+
+        .header-image {
+            width: 100px; /* Настраиваемый размер */
+            height: 100px; /* Пропорции 1:1 */
+            object-fit: contain; /* Сохраняет пропорции, не обрезая */
+        }
+
         .search-filter-container {
              background: #f1d299; /* Цветовая область, как у поиска */
              border-radius: 22px; /* Скругленные углы */
@@ -263,6 +275,9 @@
 </head>
 <body>
     <div class="container">
+        <div class="image-container">
+            <img src="https://uno5512.github.io/FrendsHub/3.png" alt="Logo" class="header-image">
+        </div>
         <div class="search-filter-container">
             <input type="text" id="search" placeholder="Поиск">
         <div class="filters">
@@ -377,6 +392,7 @@
 
         // Загрузка объявлений
         let ads = JSON.parse(localStorage.getItem('ads')) || [];
+        let currentSort = 'newest'; // По умолчанию новые
         let editAdId = null;
 
         // Отрисовка объявлений
@@ -387,7 +403,7 @@
             const type = document.getElementById('type').value;
             const date = document.getElementById('date').value;
             const gender = document.getElementById('gender').value;
-            const sort = document.getElementById('sort').value;
+            const sort = currentSort;
 
             // Фильтрация
             let filteredAds = ads.filter(ad =>
@@ -572,6 +588,7 @@
         document.getElementById('date').addEventListener('change', renderAds);
         document.getElementById('gender').addEventListener('change', renderAds);
         document.getElementById('sort').addEventListener('change', function() {
+            currentSort = this.value || 'newest';
             renderAds();
             this.value = ''; // Сбрасываем на заглушку •••
         });
@@ -582,7 +599,7 @@
         // Очистка поиска при клике вне поля
         document.addEventListener('click', function(event) {
             const searchInput = document.getElementById('search');
-            if (event.target !== searchInput) {
+            if (event.target !== searchInput && event.target !== document.getElementById('sort')) {
                 searchInput.value = '';
                 renderAds();
             }
