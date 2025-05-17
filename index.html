@@ -499,11 +499,11 @@
                     <p>${ad.description}</p>
                     <p><small>Город: ${ad.city} | Вид: ${ad.type} | Дата: ${ad.date} | Пол: ${ad.gender} | ${new Date(ad.createdAt).toLocaleDateString()}</small></p>
                     <div class="ad-actions">
-                    <span class="action dislike" title="Дизлайк">👎</span>
-                    <span class="action like" title="Лайк">👍</span>
-                    <span class="action favorite" title="В избранное">❤️</span>
+                    <span class="counter">0</span>
                     <span class="action share" onclick="shareAd('${ad.id}')" title="Поделиться">🔗</span>
-                    <span class="counter">• 0</span>
+                    <span class="action favorite" title="В избранное">❤️</span>
+                    <span class="action like" title="Лайк">👍</span>
+                    <span class="action dislike" title="Дизлайк">👎</span>
                     <span class="menu" onclick="toggleMenu('${ad.id}')">•••</span>
                 </div>
                     <div class="menu-options" id="menu lã
