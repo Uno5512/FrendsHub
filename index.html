@@ -65,8 +65,25 @@
             margin: 0 auto;
         }
 
-        .search-container {
-            margin-bottom: 8px; /* Отступ между поиском и фильтрами */
+        .search-filter-container {
+             background: #f1d299; /* Цветовая область, как у поиска */
+             border-radius: 8px; /* Скругленные углы */
+             padding: 8px; /* Внутренний отступ */
+             margin-bottom: 16px;
+             display: flex;
+             flex-direction: column;
+             gap: 8px;
+        }
+       .search-filter-container:hover {
+             border: 1px solid #fff;
+        }
+        .search-filter-container input {
+             padding: 8px;
+             font-size: 16px;
+             border: 1px solid #F5F5F5;
+             border-radius: 8px;
+             background: #f1d299; /* Белый фон для контраста */
+             width: 100%;
         }
 
         .filters {
@@ -122,7 +139,7 @@
             position: relative;
         }
         .ad-item.own {
-            border: 2px solid #ff6200; /* Оранжевая рамка для своих объявлений */
+            border: 1px solid #ff6200; /* Оранжевая рамка для своих объявлений */
         }
         .ad-item h3 {
             font-weight: 400; /* Regular 400 для заголовков */
