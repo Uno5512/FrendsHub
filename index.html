@@ -308,94 +308,99 @@
         input:focus {
             outline: none;
         }
-        /* Плавающая кнопка */
+/* Плавающая кнопка */
         .floating-btn {
-                position: fixed;
-                bottom: 20px;
-                right: 20px;
-                width: 60px;
-                height: 60px;
-                background: #987eeb;
-                color: white;
-                border-radius: 50%;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                cursor: pointer;
-                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-                z-index: 1000;
-                transition: transform 0.3s ease;
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            background: #987eeb;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+            transition: transform 0.3s ease;
         }
 
         .floating-btn:hover {
-                transform: scale(1.1);
+            transform: scale(1.1);
         }
 
         .floating-btn::before {
-                content: '←';
-                font-size: 24px;
+            content: '←';
+            font-size: 24px;
         }
 
         /* Модальное окно */
         .modal {
-                position: fixed;
-                top: 0;
-                right: -100%;
-                width: 300px;
-                height: 100%;
-                background: #fff;
-                box-shadow: -2px 0 8px rgba(0, 0, 0, 0.2);
-                z-index: 1001;
-                transition: right 0.3s ease-in-out;
-                display: flex;
-                flex-direction: column;
-                padding: 20px;
+            position: fixed;
+            top: 0;
+            right: -100%;
+            width: 300px;
+            height: 100%;
+            background: #fff;
+            box-shadow: -2px 0 8px rgba(0, 0, 0, 0.2);
+            z-index: 1001;
+            transition: right 0.3s ease-in-out;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
         }
 
         .modal.open {
-                right: 0;
+            right: 0;
         }
 
         /* Фон затемнения */
         .modal-backdrop {
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                background: rgba(0, 0, 0, 0.5);
-                z-index: 1000;
-                opacity: 0;
-                visibility: hidden;
-                transition: opacity 0.3s ease;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease;
         }
 
         .modal-backdrop.open {
-                opacity: 1;
-                visibility: visible;
+            opacity: 1;
+            visibility: visible;
         }
 
         /* Кнопка закрытия */
         .close-btn {
-                align-self: flex-end;
-                padding: 8px 16px;
-                background: #dc3545;
-                color: white;
-                border: none;
-                border-radius: 4px;
-                cursor: pointer;
-                font-size: 16px;
-                margin-bottom: 20px;
+            align-self: flex-end;
+            padding: 8px 16px;
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-bottom: 20px;
         }
 
         .close-btn:hover {
-                background: #c82333;
+            background: #c82333;
         }
 
         /* Контент модального окна */
         .modal-content {
-                flex: 1;
-                overflow-y: auto;
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        /* Исправление для кнопки Создать */
+        .create-btn {
+            z-index: 1002; /* Выше modal и modal-backdrop */
         }
     </style>
 </head>
@@ -492,7 +497,7 @@
         <button onclick="applyCity()">Применить</button>
     </dialog>
 
-    <!-- Модальное окно для выбора вида -->
+<!-- Модальное окно для выбора вида -->
     <dialog id="typeDialog">
         <h2>Выберите вид</h2>
         <div class="select-options">
@@ -503,6 +508,21 @@
         <button onclick="closeDialog('typeDialog')">Отменить</button>
         <button onclick="applyType()">Применить</button>
     </dialog>
+
+    <!-- Плавающая кнопка -->
+    <div class="floating-btn" onclick="openModal()"></div>
+
+    <!-- Модальное окно -->
+    <div class="modal" id="modal">
+        <button class="close-btn" onclick="closeModal()">Закрыть</button>
+        <div class="modal-content">
+            <h2>Модальное окно</h2>
+            <p>Здесь можно добавить любой контент для модального окна.</p>
+        </div>
+    </div>
+
+    <!-- Фон затемнения -->
+    <div class="modal-backdrop" id="modalBackdrop"></div>
 
     <script>
         // Telegram Mini App инициализация
@@ -908,6 +928,9 @@
         // Начальная отрисовка
         renderAds();
 
+        // Объявляем editAdId глобально
+        let editAdId = null;
+
         // Очистка поиска при клике вне поля
         document.addEventListener('click', function(event) {
             const searchInput = document.getElementById('search');
@@ -919,7 +942,7 @@
         // Закрытие меню при клике вне
         document.addEventListener('click', function(event) {
             const openMenus = document.querySelectorAll('.menu-options[style="display: block;"]');
-            if (!event.target.closest('.menu') && !event.target.closest('.menu-options') && !event.target.closest('.create-btn')) {
+            if (!event.target.closest('.menu') && !event.target.closest('.menu-options') && !event.target.closest('.create-btn') && !event.target.closest('.floating-btn')) {
                 openMenus.forEach(menu => {
                     menu.style.display = 'none';
                 });
@@ -928,18 +951,73 @@
 
         // Открытие модального окна
         function openModal() {
-            document.getElementById('modal').classList.add('open');
-            document.getElementById('modalBackdrop').classList.add('open');
+            console.log('Opening modal'); // Для отладки
+            const modal = document.getElementById('modal');
+            const backdrop = document.getElementById('modalBackdrop');
+            if (modal && backdrop) {
+                modal.classList.add('open');
+                backdrop.classList.add('open');
+            } else {
+                console.error('Modal or backdrop not found');
+            }
         }
 
         // Закрытие модального окна
         function closeModal() {
-            document.getElementById('modal').classList.remove('open');
-            document.getElementById('modalBackdrop').classList.remove('open');
+            console.log('Closing modal'); // Для отладки
+            const modal = document.getElementById('modal');
+            const backdrop = document.getElementById('modalBackdrop');
+            if (modal && backdrop) {
+                modal.classList.remove('open');
+                backdrop.classList.remove('open');
+            }
         }
 
         // Закрытие модального окна при клике на фон
-        document.getElementById('modalBackdrop').addEventListener('click', closeModal);
+        document.addEventListener('DOMContentLoaded', function() {
+            const backdrop = document.getElementById('modalBackdrop');
+            if (backdrop) {
+                backdrop.addEventListener('click', closeModal);
+            } else {
+                console.error('modalBackdrop not found');
+            }
+        });
+
+        // Отладка для кнопки Создать
+        function openCreateDialog(adId = null) {
+            console.log('Opening create dialog, adId:', adId); // Для отладки
+            const dialog = document.getElementById('createDialog');
+            const title = document.getElementById('dialogTitle');
+            editAdId = adId;
+
+            if (dialog && title) {
+                if (adId) {
+                    const ad = ads.find(a => a.id === adId);
+                    if (!ad) {
+                        console.error('Ad not found:', adId);
+                        return;
+                    }
+                    document.getElementById('adTitle').value = ad.title;
+                    document.getElementById('adDescription').value = ad.description;
+                    document.getElementById('adCity').value = ad.city;
+                    document.getElementById('adType').value = ad.type;
+                    document.getElementById('adDate').value = ad.date;
+                    document.getElementById('adGender').value = ad.gender;
+                    title.textContent = 'Редактировать объявление';
+                } else {
+                    document.getElementById('adTitle').value = '';
+                    document.getElementById('adDescription').value = '';
+                    document.getElementById('adCity').value = 'Москва';
+                    document.getElementById('adType').value = 'Встреча';
+                    document.getElementById('adDate').value = 'Сегодня';
+                    document.getElementById('adGender').value = 'Любой';
+                    title.textContent = 'Создать объявление';
+                }
+                dialog.showModal();
+            } else {
+                console.error('Create dialog or title not found');
+            }
+        }
     </script>
 <!-- Плавающая кнопка -->
     <div class="floating-btn" onclick="openModal()"></div>
