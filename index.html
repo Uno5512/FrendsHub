@@ -49,9 +49,14 @@
             flex-direction: column;
             gap: 16px;
             position: sticky;
-            top: 16px;
+            top: 0;
             z-index: 100;
+            transform: translateY(0);
             transition: transform 0.3s ease;
+        }
+
+        .search-filter-container.hidden {
+            transform: translateY(-100%);
         }
 
         .search-filter-container input {
@@ -190,6 +195,16 @@
             border-radius: 22px;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
             position: relative;
+            opacity: 0;
+            transform: translateY(10px);
+            animation: fadeIn 0.3s ease forwards;
+        }
+
+        @keyframes fadeIn {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         .ad-item.own {
@@ -310,49 +325,6 @@
             font-size: 24px;
         }
 
-        .modal-backdrop {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            z-index: 1000;
-            opacity: 0;
-            visibility: hidden;
-            transition: opacity 0.3s ease;
-        }
-
-        .modal-backdrop.open {
-            opacity: 1;
-            visibility: visible;
-        }
-
-        .close-btn {
-            align-self: flex-end;
-            padding: 8px 16px;
-            background: #dc3545;
-            color: #fff;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 16px;
-            margin-bottom: 20px;
-        }
-
-        .favorites-list {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .favorites-list .favorite-item {
-            background: #f1d299;
-            padding: 8px;
-            border-radius: 8px;
-            font-size: 14px;
-        }
-
         .profile {
             display: flex;
             align-items: center;
@@ -361,6 +333,9 @@
             padding: 8px;
             background: #f1d299;
             border-radius: 8px;
+            cursor: pointer;
+            text-decoration: none;
+            color: inherit;
         }
 
         .profile img {
@@ -383,6 +358,39 @@
         .profile .info .age {
             font-size: 14px;
             color: #555;
+        }
+
+        .favorites-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .favorites-list .favorite-item {
+            background: #f1d299;
+            padding: 8px;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-100%);
+            background: #987eeb;
+            color: #fff;
+            padding: 12px 24px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+            z-index: 1004;
+            opacity: 0;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+
+        .notification.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
         }
     </style>
 </head>
@@ -542,17 +550,20 @@
     <dialog id="favoritesDialog" aria-labelledby="favoritesTitle">
         <div class="modal-content">
             <h2 id="favoritesTitle">Избранное</h2>
-            <div class="profile">
+            <a class="profile" onclick="openTelegramProfile('user-1')" aria-label="Профиль TONI">
                 <img src="https://via.placeholder.com/48" alt="Аватар TONI">
                 <div class="info">
                     <span class="name">TONI</span>
                     <span class="age">15 лет</span>
                 </div>
-            </div>
+            </a>
+            <input type="text" id="favoritesSearch" placeholder="Поиск по избранному" aria-label="Поиск по избранным объявлениям">
             <div class="favorites-list" id="favoritesList"></div>
             <button class="close-btn" onclick="document.getElementById('favoritesDialog').close()">Закрыть</button>
         </div>
     </dialog>
+
+    <div class="notification" id="notification"></div>
 
     <script>
         // Проверка доступности Telegram
@@ -566,8 +577,8 @@
         }
 
         // Инициализация пользователя
-        let userId = 'user-1'; // Тестовый пользователь
-        let userName = 'TONI'; // Обновлено для профиля
+        let userId = 'user-1';
+        let userName = 'TONI';
         let isTelegramMode = isTelegramAvailable();
         if (isTelegramMode) {
             try {
@@ -721,18 +732,13 @@
             const filteredAds = filterAds(ads.filter(ad => !hiddenAds.includes(ad.id)));
             renderedAdsCount = 0;
 
-            // Тестирование: Логируем количество отфильтрованных объявлений
             console.log(`[Lazy-Loading Test] Filtered ads count: ${filteredAds.length}`);
-
-            // Рендеринг первой партии объявлений
             renderAdBatch(filteredAds, adList);
 
-            // Настройка IntersectionObserver для lazy-loading
             if (filteredAds.length > lazyLoadBatchSize) {
                 const observer = new IntersectionObserver((entries, observer) => {
                     entries.forEach(entry => {
                         if (entry.isIntersecting) {
-                            // Тестирование: Логируем вызов lazy-loading
                             console.log(`[Lazy-Loading Test] Intersection triggered, rendering next batch. Current count: ${renderedAdsCount}`);
                             renderAdBatch(filteredAds, adList);
                             if (renderedAdsCount >= filteredAds.length) {
@@ -758,7 +764,6 @@
             const end = Math.min(start + lazyLoadBatchSize, filteredAds.length);
             const batch = filteredAds.slice(start, end);
 
-            // Тестирование: Логируем рендеринг партии
             console.log(`[Lazy-Loading Test] Rendering batch from ${start} to ${end}`);
 
             batch.forEach(ad => {
@@ -799,11 +804,23 @@
             renderedAdsCount = end;
         }
 
-        // Рендеринг избранного
+        // Рендеринг избранного с фильтрацией
         function renderFavorites() {
             const favoritesList = document.getElementById('favoritesList');
+            const searchQuery = document.getElementById('favoritesSearch')?.value.toLowerCase().trim() || '';
             favoritesList.innerHTML = '';
-            const favoriteAds = ads.filter(ad => favorites.includes(ad.id));
+
+            let favoriteAds = ads.filter(ad => favorites.includes(ad.id));
+            if (searchQuery) {
+                favoriteAds = favoriteAds.filter(ad => {
+                    const searchableText = [
+                        ad.title.toLowerCase(),
+                        ad.description.toLowerCase()
+                    ].join(' ');
+                    return searchableText.includes(searchQuery);
+                });
+            }
+
             if (favoriteAds.length === 0) {
                 favoritesList.innerHTML = '<p>Нет избранных объявлений</p>';
                 return;
@@ -824,12 +841,31 @@
             menu.style.display = isVisible ? 'none' : 'block';
         }
 
+        // Закрытие меню при клике вне
+        function closeMenus(event) {
+            const menuOptions = document.querySelectorAll('.menu-options');
+            const menuButtons = document.querySelectorAll('.menu');
+            if (!event.target.closest('.menu-options') && !event.target.closest('.menu')) {
+                menuOptions.forEach(menu => menu.style.display = 'none');
+            }
+        }
+
+        // Вибрация при клике на кнопки
+        function triggerVibration(event) {
+            if (navigator.vibrate && (event.target.tagName === 'BUTTON' || event.target.classList.contains('action'))) {
+                navigator.vibrate(50);
+            }
+        }
+
         // Добавление/удаление из избранного
         function toggleFavorite(adId) {
-            if (favorites.includes(adId)) {
+            const wasFavorited = favorites.includes(adId);
+            if (wasFavorited) {
                 favorites = favorites.filter(id => id !== adId);
+                showNotification('Удалено из избранного');
             } else {
                 favorites.push(adId);
+                showNotification('Добавлено в избранное');
             }
             localStorage.setItem('favorites', JSON.stringify(favorites));
             if (isTelegramMode) {
@@ -838,15 +874,21 @@
             renderAds();
         }
 
+        // Показ уведомления
+        function showNotification(message) {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.classList.add('show');
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 2000);
+        }
+
         // Открытие профиля
         function openTelegramProfile(userId) {
             if (isTelegramMode) {
-                const user = ads.find(ad => ad.userId === userId)?.userName;
-                if (user) {
-                    window.open(`https://t.me/${user.startsWith('@') ? user : '@' + user}`, '_blank');
-                } else {
-                    console.log(`Пользователь ${userId} не найден`);
-                }
+                const user = ads.find(ad => ad.userId === userId)?.userName || 'TONI';
+                window.open(`https://t.me/${user.startsWith('@') ? user : '@' + user}`, '_blank');
             } else {
                 console.log(`Открыть профиль: ${userId}`);
                 alert(`Открытие профиля ${userId} (имитация)`);
@@ -1040,6 +1082,7 @@
                 return;
             }
 
+            const previousAdsCount = ads.length;
             if (editAdId) {
                 const adIndex = ads.findIndex(ad => ad.id === editAdId);
                 ads[adIndex] = { ...ads[adIndex], title, description, city, type, date, gender };
@@ -1067,16 +1110,20 @@
                 Telegram.WebApp.CloudStorage.setItem('likesDislikes', JSON.stringify(likesDislikes));
             }
             document.getElementById('createDialog').close();
+
+            if (ads.length > previousAdsCount) {
+                showNotification('Новое объявление!');
+            }
             renderAds();
         }
 
         // Открытие избранного
         function openFavoritesDialog() {
-            // Вибрация: 50ms (короткий импульс)
             if (navigator.vibrate) {
                 navigator.vibrate(50);
             }
             document.getElementById('favoritesDialog').showModal();
+            renderFavorites();
         }
 
         // Применение фильтров для города
@@ -1128,13 +1175,27 @@
                         dialog.close();
                     }
                 });
-                // Закрытие при клике на любую кнопку внутри диалога
                 dialog.querySelectorAll('button').forEach(button => {
                     button.addEventListener('click', () => {
                         dialog.close();
                     });
                 });
             });
+        }
+
+        // Управление видимостью поиска при прокрутке
+        let lastScrollY = window.scrollY;
+        function handleScroll() {
+            const searchContainer = document.querySelector('.search-filter-container');
+            const currentScrollY = window.scrollY;
+
+            if (currentScrollY > lastScrollY && currentScrollY > 100) {
+                searchContainer.classList.add('hidden');
+            } else if (currentScrollY < lastScrollY) {
+                searchContainer.classList.remove('hidden');
+            }
+
+            lastScrollY = currentScrollY;
         }
 
         // Обработчики событий
@@ -1191,6 +1252,14 @@
         document.getElementById('gender').addEventListener('click', () => {
             document.getElementById('genderDialog').showModal();
         });
+
+        document.getElementById('favoritesSearch')?.addEventListener('input', () => {
+            renderFavorites();
+        });
+
+        document.addEventListener('click', closeMenus);
+        document.addEventListener('click', triggerVibration);
+        window.addEventListener('scroll', handleScroll);
 
         // Инициализация
         loadCloudData().then(() => {
