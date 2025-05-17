@@ -458,7 +458,7 @@
                     <h3>${ad.title}</h3>
                     <p>${ad.description}</p>
                     <p><small>Город: ${ad.city} | Вид: ${ad.type} | Дата: ${ad.date} | Пол: ${ad.gender} | ${new Date(ad.createdAt).toLocaleDateString()}</small></p>
-                    <span class="menu" onclick="toggleMenu('${ad.id}')">⋮</span>
+                    <span class="menu" onclick="toggleMenu('${ad.id}')">•••</span>
                     <div class="menu-options" id="menu-${ad.id}">
                         ${ad.userId === userId ? `
                             <button onclick="editAd('${ad.id}')">Редактировать</button>
