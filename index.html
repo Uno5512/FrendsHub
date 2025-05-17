@@ -602,8 +602,7 @@
         document.addEventListener('click', function(event) {
             const searchInput = document.getElementById('search');
             if (event.target !== searchInput && event.target !== document.getElementById('sort')) {
-                searchInput.value = '';
-                renderAds();
+                searchInput.blur();
             }
         });
     </script>
