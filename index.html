@@ -62,8 +62,21 @@
         .account-page .user-details p {
             margin: 5px 0;
         }
+        .connect-btn {
+            background-color: #0088cc;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 0;
+        }
+        .connect-btn:hover {
+            background-color: #006b9e;
+        }
         .back-btn {
-            background-color: #0088ccm;
+            background-color: #0088cc;
             color: #fff;
             border: none;
             padding: 10px 20px;
@@ -99,7 +112,9 @@
 
         <div class="main-page active" id="mainPage">
             <h1>Добро пожаловать!</h1>
-            <p>Это главная страница вашего Telegram Mini App.</p>
+            <p>Войдите через Telegram, чтобы синхронизировать ваш аккаунт.</p>
+            <button class="connect-btn" id="telegramConnect">Telegram Connect</button>
+            <div id="telegramWidget"></div>
             <div class="error-message" id="errorMessage"></div>
             <div class="debug-info" id="debugInfo"></div>
         </div>
@@ -117,10 +132,14 @@
     </div>
 
     <script>
-        // Telegram Mini App инициализация
+        // Конфигурация
+        const BOT_NAME = '@YourBotName'; // Замените на имя вашего бота, например, '@MyTestBot'
+
+        // Переменные состояния
         let userId = null;
         let userName = 'Гость';
         let userAvatar = 'https://via.placeholder.com/60';
+        let isLoggedIn = false;
 
         function displayError(message) {
             const errorElement = document.getElementById('errorMessage');
@@ -138,50 +157,100 @@
             console.log(info);
         }
 
-        function initializeTelegram() {
-            try {
-                // Проверка наличия Telegram WebApp
-                if (!window.Telegram || !window.Telegram.WebApp) {
-                    displayError('Ошибка: Telegram WebApp API недоступен. Запустите приложение через Telegram.');
-                    displayDebugInfo('Telegram object: ' + JSON.stringify(window.Telegram));
-                    userId = 'guest';
-                    updateUI();
-                    return;
-                }
-
-                // Инициализация WebApp
-                Telegram.WebApp.ready();
-                Telegram.WebApp.expand(); // Разворачивает приложение на полный экран
-                const initData = Telegram.WebApp.initDataUnsafe;
-                displayDebugInfo('initDataUnsafe: ' + JSON.stringify(initData));
-
-                // Проверка данных пользователя
-                if (initData && initData.user) {
-                    userId = initData.user.id || 'guest';
-                    userName = initData.user.username || initData.user.first_name || 'Гость';
-                    userAvatar = initData.user.photo_url || 'https://via.placeholder.com/60';
-                    document.body.classList.add('telegram');
-                    displayDebugInfo(`User data - ID: ${userId}, Name: ${userName}, Avatar: ${userAvatar}`);
-                } else {
-                    displayError('Не удалось получить данные пользователя. Проверьте настройки приватности Telegram.');
-                    userId = 'guest';
-                }
-
-                // Обновление UI
-                updateUI();
-            } catch (error) {
-                displayError('Ошибка инициализации Telegram: ' + error.message);
-                userId = 'guest';
-                updateUI();
-            }
-        }
-
         function updateUI() {
             document.getElementById('username').textContent = userName;
             document.getElementById('userAvatar').src = userAvatar;
             document.getElementById('accountUsername').textContent = userName;
             document.getElementById('accountUserId').textContent = userId || 'Неизвестно';
             document.getElementById('accountAvatar').src = userAvatar;
+            document.getElementById('telegramConnect').style.display = isLoggedIn ? 'none' : 'block';
+            document.getElementById('telegramWidget').style.display = isLoggedIn ? 'none' : 'block';
+        }
+
+        function initializeTelegram() {
+            try {
+                if (window.Telegram?.WebApp) {
+                    Telegram.WebApp.ready();
+                    Telegram.WebApp.expand();
+                    const initData = Telegram.WebApp.initDataUnsafe;
+                    displayDebugInfo('initDataUnsafe: ' + JSON.stringify(initData));
+
+                    if (initData?.user) {
+                        userId = initData.user.id || 'guest';
+                        userName = initData.user.username || initData.user.first_name || 'Гость';
+                        userAvatar = initData.user.photo_url || 'https://via.placeholder.com/60';
+                        isLoggedIn = true;
+                        document.body.classList.add('telegram');
+                        displayDebugInfo(`User data - ID: ${userId}, Name: ${userName}, Avatar: ${userAvatar}`);
+                        updateUI();
+                    } else {
+                        displayDebugInfo('No user data in initDataUnsafe. Waiting for widget login.');
+                        setupTelegramWidget();
+                    }
+                } else {
+                    displayDebugInfo('Telegram WebApp API unavailable. Using widget for login.');
+                    setupTelegramWidget();
+                }
+            } catch (error) {
+                displayError('Ошибка инициализации Telegram: ' + error.message);
+                setupTelegramWidget();
+            }
+        }
+
+        function setupTelegramWidget() {
+            if (!BOT_NAME || BOT_NAME === '@YourBotName') {
+                displayError('Ошибка: Укажите имя бота в BOT_NAME.');
+                return;
+            }
+
+            const script = document.createElement('script');
+            script.src = 'https://telegram.org/js/telegram-widget.js?22';
+            script.setAttribute('data-telegram-login', BOT_NAME);
+            script.setAttribute('data-size', 'large');
+            script.setAttribute('data-auth-url', window.location.href); // Redirect back to this page
+            script.setAttribute('data-request-access', 'write');
+            script.setAttribute('data-onsuccess', 'onTelegramAuth');
+            document.getElementById('telegramWidget').appendChild(script);
+        }
+
+        // Callback для обработки успешной авторизации через виджет
+        window.onTelegramAuth = function(user) {
+            try {
+                userId = user.id || ' Improvepress('id') || 'guest';
+                userName = user.username || user.first_name || 'Гость';
+                userAvatar = user.photo_url || 'https://via.placeholder.com/60';
+                isLoggedIn = true;
+                displayDebugInfo(`Widget login - ID: ${userId}, Name: ${userName}, Avatar: ${userAvatar}`);
+                
+                // Сохранение данных в localStorage для сессии
+                localStorage.setItem('telegram_user', JSON.stringify({
+                    id: userId,
+                    username: userName,
+                    avatar: userAvatar
+                }));
+
+                updateUI();
+            } catch (error) {
+                displayError('Ошибка авторизации через виджет: ' + error.message);
+            }
+        };
+
+        // Проверка сохраненных данных при загрузке
+        function checkStoredUser() {
+            const storedUser = localStorage.getItem('telegram_user');
+            if (storedUser) {
+                try {
+                    const user = JSON.parse(storedUser);
+                    userId = user.id || 'guest';
+                    userName = user.username || 'Гость';
+                    userAvatar = user.avatar || 'https://via.placeholder.com/60';
+                    isLoggedIn = true;
+                    displayDebugInfo(`Loaded from storage - ID: ${userId}, Name: ${userName}, Avatar: ${userAvatar}`);
+                    updateUI();
+                } catch (error) {
+                    displayError('Ошибка загрузки сохраненных данных: ' + error.message);
+                }
+            }
         }
 
         // Навигация между страницами
@@ -198,8 +267,19 @@
             }
         }
 
+        // Обработчик кнопки Telegram Connect
+        document.getElementById('telegramConnect').addEventListener('click', () => {
+            if (!isLoggedIn) {
+                // Виджет уже встроен, пользователь нажмет на него
+                displayDebugInfo('User clicked Telegram Connect button.');
+            }
+        });
+
         // Запуск инициализации
-        document.addEventListener('DOMContentLoaded', initializeTelegram);
+        document.addEventListener('DOMContentLoaded', () => {
+            checkStoredUser();
+            initializeTelegram();
+        });
     </script>
 </body>
 </html>
