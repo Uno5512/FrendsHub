@@ -233,8 +233,16 @@
                 content: '•';
                 color: #d7e0aa;
                 margin-right: 4px;
-
         }
+
+       .ad-actions .action.liked {
+                color: #28a745;
+        }
+
+        .ad-actions .action.disliked {
+                color: #dc3545;
+        }
+
         .create-btn {
             position: fixed;
             bottom: 35px;
@@ -337,6 +345,7 @@
             </select>
             <select id="sort">
                  <option value="" disabled selected>•••</option>
+                 <option value="rating">По рейтингу</option>
                  <option value="newest">Новые</option>
                  <option value="oldest">Старые</option>
             </select>
@@ -510,15 +519,23 @@
                                (gender === '' || ad.gender === gender);
             });
 
-            // Сортировка (свои объявления сверху)
+// Сортировка (свои объявления сверху, затем по рейтингу или дате)
             filteredAds.sort((a, b) => {
                 const isOwnA = a.userId === userId;
                 const isOwnB = b.userId === userId;
                 if (isOwnA && !isOwnB) return -1;
                 if (!isOwnA && isOwnB) return 1;
+                const aRating = ((likesDislikes[a.id]?.likes?.length || 0) - (likesDislikes[a.id]?.dislikes?.length || 0));
+                const bRating = ((likesDislikes[b.id]?.likes?.length || 0) - (likesDislikes[b.id]?.dislikes?.length || 0));
                 const dateA = new Date(a.createdAt);
                 const dateB = new Date(b.createdAt);
-                return sort === 'newest' ? dateB - dateA : dateA - dateB;
+                if (sort === 'newest') {
+                    return dateB - dateA;
+                } else if (sort === 'oldest') {
+                    return dateA - dateB;
+                } else {
+                    return bRating - aRating; // По рейтингу
+                }
             });
 
             adList.innerHTML = '';
@@ -704,7 +721,7 @@
         document.getElementById('date').addEventListener('change', renderAds);
         document.getElementById('gender').addEventListener('change', renderAds);
         document.getElementById('sort').addEventListener('change', function() {
-            currentSort = this.value || 'newest';
+            currentSort = this.value || 'rating';
             renderAds();
             this.value = ''; // Сбрасываем на заглушку •••
         });
