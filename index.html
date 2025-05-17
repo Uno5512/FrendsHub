@@ -48,6 +48,10 @@
             display: flex;
             flex-direction: column;
             gap: 16px;
+            position: sticky;
+            top: 16px;
+            z-index: 100;
+            transition: transform 0.3s ease;
         }
 
         .search-filter-container input {
@@ -176,6 +180,7 @@
             flex-direction: column;
             gap: 16px;
             margin-bottom: 80px;
+            scroll-behavior: smooth;
         }
 
         .ad-item {
@@ -280,28 +285,6 @@
 
         .menu-options button:hover {
             background: #f1d299;
-        }
-
-        .pagination {
-            display: flex;
-            justify-content: center;
-            gap: 16px;
-            margin-top: 16px;
-        }
-
-        .pagination button {
-            padding: 8px 16px;
-            background: #987eeb;
-            color: #fff;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 14px;
-        }
-
-        .pagination button:disabled {
-            background: #E5E7EB;
-            cursor: not-allowed;
         }
 
         .floating-btn {
@@ -434,8 +417,6 @@
 
         <section class="ad-list" id="adList" aria-label="Список объявлений"></section>
 
-        <div class="pagination" id="pagination"></div>
-
         <button type="button" data-modal-open="createDialog" aria-label="Создать объявление">+ Создать</button>
 
         <button class="floating-btn" onclick="openModal()" aria-label="Открыть боковое меню"></button>
@@ -478,7 +459,7 @@
                     <option value="Любой">Любой</option>
                 </select>
             </fieldset>
-            <button type="button" formmethod="dialog">Закрыть</button>
+            <button type="button" onclick="document.getElementById('createDialog').close()" aria-label="Закрыть диалог">Закрыть</button>
             <button type="submit">Опубликовать</button>
         </form>
     </dialog>
@@ -487,7 +468,7 @@
         <form method="dialog" id="complaint-form">
             <h2 id="complaintTitle">Пожаловаться</h2>
             <textarea id="complaintText" placeholder="Опишите причину жалобы" aria-label="Причина жалобы"></textarea>
-            <button type="button" formmethod="dialog">Отменить</button>
+            <button type="button" onclick="document.getElementById('complaintDialog').close()" aria-label="Отменить жалобу">Отменить</button>
             <button type="submit">Отправить</button>
         </form>
     </dialog>
@@ -500,7 +481,7 @@
                 <label><input type="radio" name="cityOption" value="Санкт-Петербург"> Санкт-Петербург</label>
                 <label><input type="radio" name="cityOption" value="Казань"> Казань</label>
             </div>
-            <button type="button" formmethod="dialog">Отменить</button>
+            <button type="button" onclick="document.getElementById('cityDialog').close()" aria-label="Отменить выбор города">Отменить</button>
             <button type="submit">Применить</button>
         </form>
     </dialog>
@@ -513,7 +494,7 @@
                 <label><input type="radio" name="typeOption" value="Чат"> Чат</label>
                 <label><input type="radio" name="typeOption" value="Событие"> Событие</label>
             </div>
-            <button type="button" formmethod="dialog">Отменить</button>
+            <button type="button" onclick="document.getElementById('typeDialog').close()" aria-label="Отменить выбор вида">Отменить</button>
             <button type="submit">Применить</button>
         </form>
     </dialog>
@@ -590,8 +571,6 @@
         let favorites = [];
         let likesDislikes = { 'ad-1': { likes: [], dislikes: [] }, 'ad-2': { likes: [], dislikes: [] } };
         let editAdId = null;
-        let currentPage = 1;
-        const adsPerPage = 5;
 
         // Загрузка данных
         function loadCloudData() {
@@ -691,47 +670,13 @@
             return filtered;
         }
 
-        // Рендеринг пагинации
-        function renderPagination(totalAds) {
-            const pagination = document.getElementById('pagination');
-            const totalPages = Math.ceil(totalAds / adsPerPage);
-            pagination.innerHTML = '';
-            if (totalPages <= 1) return;
-
-            const prevButton = document.createElement('button');
-            prevButton.textContent = 'Предыдущая';
-            prevButton.disabled = currentPage === 1;
-            prevButton.addEventListener('click', () => {
-                if (currentPage > 1) {
-                    currentPage--;
-                    renderAds();
-                }
-            });
-
-            const nextButton = document.createElement('button');
-            nextButton.textContent = 'Следующая';
-            nextButton.disabled = currentPage === totalPages;
-            nextButton.addEventListener('click', () => {
-                if (currentPage < totalPages) {
-                    currentPage++;
-                    renderAds();
-                }
-            });
-
-            pagination.appendChild(prevButton);
-            pagination.appendChild(nextButton);
-        }
-
         // Рендеринг объявлений
         function renderAds() {
             const adList = document.getElementById('adList');
             adList.innerHTML = '';
             const filteredAds = filterAds(ads.filter(ad => !hiddenAds.includes(ad.id)));
-            const start = (currentPage - 1) * adsPerPage;
-            const end = start + adsPerPage;
-            const paginatedAds = filteredAds.slice(start, end);
 
-            paginatedAds.forEach(ad => {
+            filteredAds.forEach(ad => {
                 const adItem = document.createElement('article');
                 adItem.className = `ad-item ${ad.userId === userId ? 'own' : ''}`;
                 adItem.setAttribute('aria-label', `Объявление от ${ad.userName}`);
@@ -766,7 +711,6 @@
                 adList.appendChild(adItem);
             });
 
-            renderPagination(filteredAds.length);
             renderFavorites();
         }
 
@@ -1110,7 +1054,6 @@
         });
 
         document.getElementById('filter-form').addEventListener('input', () => {
-            currentPage = 1; // Сброс на первую страницу при фильтрации
             renderAds();
         });
 
