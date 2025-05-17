@@ -245,6 +245,10 @@
             color: #dc3545;
         }
 
+        .ad-actions .favorited {
+            color: #ff6200;
+        }
+
         .menu {
             cursor: pointer;
             font-size: 20px;
@@ -276,6 +280,28 @@
 
         .menu-options button:hover {
             background: #f1d299;
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            margin-top: 16px;
+        }
+
+        .pagination button {
+            padding: 8px 16px;
+            background: #987eeb;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .pagination button:disabled {
+            background: #E5E7EB;
+            cursor: not-allowed;
         }
 
         .floating-btn {
@@ -348,6 +374,19 @@
             font-size: 16px;
             margin-bottom: 20px;
         }
+
+        .favorites-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .favorites-list .favorite-item {
+            background: #f1d299;
+            padding: 8px;
+            border-radius: 8px;
+            font-size: 14px;
+        }
     </style>
 </head>
 <body>
@@ -385,7 +424,6 @@
                         <option value="Любой">Любой</option>
                     </select>
                     <select id="sort" name="sort" aria-label="Сортировка">
-                        <option value="" disabled selected>•••</option>
                         <option value="rating">По рейтингу</option>
                         <option value="newest">Новые</option>
                         <option value="oldest">Старые</option>
@@ -395,6 +433,8 @@
         </section>
 
         <section class="ad-list" id="adList" aria-label="Список объявлений"></section>
+
+        <div class="pagination" id="pagination"></div>
 
         <button type="button" data-modal-open="createDialog" aria-label="Создать объявление">+ Создать</button>
 
@@ -434,7 +474,7 @@
                 <legend>Пол</legend>
                 <select id="adGender" name="gender" aria-label="Выберите пол">
                     <option value="Мужской">Мужской</option>
-                    <option value="Женский">Женская</option>
+                    <option value="Женский">Женский</option>
                     <option value="Любой">Любой</option>
                 </select>
             </fieldset>
@@ -481,8 +521,8 @@
     <div class="modal" id="modal">
         <button class="close-btn" onclick="closeModal()">Закрыть</button>
         <div class="modal-content">
-            <h2>Настройки</h2>
-            <p>Здесь можно добавить настройки или информацию.</p>
+            <h2>Избранное</h2>
+            <div class="favorites-list" id="favoritesList"></div>
         </div>
     </div>
 
@@ -547,8 +587,11 @@
             }
         ];
         let hiddenAds = [];
+        let favorites = [];
         let likesDislikes = { 'ad-1': { likes: [], dislikes: [] }, 'ad-2': { likes: [], dislikes: [] } };
         let editAdId = null;
+        let currentPage = 1;
+        const adsPerPage = 5;
 
         // Загрузка данных
         function loadCloudData() {
@@ -566,18 +609,25 @@
                             });
                         }),
                         new Promise((resolve) => {
+                            Telegram.WebApp.CloudStorage.getItems(['favorites'], (error, result) => {
+                                resolve(error || !result.favorites ? JSON.parse(localStorage.getItem('favorites')) || [] : JSON.parse(result.favorites));
+                            });
+                        }),
+                        new Promise((resolve) => {
                             Telegram.WebApp.CloudStorage.getItems(['likesDislikes'], (error, result) => {
                                 resolve(error || !result.likesDislikes ? JSON.parse(localStorage.getItem('likesDislikes')) || likesDislikes : JSON.parse(result.likesDislikes));
                             });
                         })
-                    ]).then(([loadedAds, loadedHiddenAds, loadedLikesDislikes]) => {
+                    ]).then(([loadedAds, loadedHiddenAds, loadedFavorites, loadedLikesDislikes]) => {
                         ads = loadedAds;
                         hiddenAds = loadedHiddenAds;
+                        favorites = loadedFavorites;
                         likesDislikes = loadedLikesDislikes;
                     }).catch((e) => {
                         console.error('Cloud storage failed:', e);
                         ads = JSON.parse(localStorage.getItem('ads')) || ads;
                         hiddenAds = JSON.parse(localStorage.getItem('hiddenAds')) || [];
+                        favorites = JSON.parse(localStorage.getItem('favorites')) || [];
                         likesDislikes = JSON.parse(localStorage.getItem('likesDislikes')) || likesDislikes;
                     });
                 } catch (e) {
@@ -586,6 +636,7 @@
             }
             ads = JSON.parse(localStorage.getItem('ads')) || ads;
             hiddenAds = JSON.parse(localStorage.getItem('hiddenAds')) || [];
+            favorites = JSON.parse(localStorage.getItem('favorites')) || [];
             likesDislikes = JSON.parse(localStorage.getItem('likesDislikes')) || likesDislikes;
             return Promise.resolve();
         }
@@ -597,7 +648,7 @@
             const typeFilter = document.getElementById('type').value;
             const dateFilter = document.getElementById('date').value;
             const genderFilter = document.getElementById('gender').value;
-            const sortOption = document.getElementById('sort').value;
+            const sortOption = document.getElementById('sort').value || 'rating';
 
             // Поиск по словам (включая теги)
             let filtered = adsToFilter.filter(ad => {
@@ -640,17 +691,53 @@
             return filtered;
         }
 
+        // Рендеринг пагинации
+        function renderPagination(totalAds) {
+            const pagination = document.getElementById('pagination');
+            const totalPages = Math.ceil(totalAds / adsPerPage);
+            pagination.innerHTML = '';
+            if (totalPages <= 1) return;
+
+            const prevButton = document.createElement('button');
+            prevButton.textContent = 'Предыдущая';
+            prevButton.disabled = currentPage === 1;
+            prevButton.addEventListener('click', () => {
+                if (currentPage > 1) {
+                    currentPage--;
+                    renderAds();
+                }
+            });
+
+            const nextButton = document.createElement('button');
+            nextButton.textContent = 'Следующая';
+            nextButton.disabled = currentPage === totalPages;
+            nextButton.addEventListener('click', () => {
+                if (currentPage < totalPages) {
+                    currentPage++;
+                    renderAds();
+                }
+            });
+
+            pagination.appendChild(prevButton);
+            pagination.appendChild(nextButton);
+        }
+
         // Рендеринг объявлений
         function renderAds() {
             const adList = document.getElementById('adList');
             adList.innerHTML = '';
             const filteredAds = filterAds(ads.filter(ad => !hiddenAds.includes(ad.id)));
-            filteredAds.forEach(ad => {
+            const start = (currentPage - 1) * adsPerPage;
+            const end = start + adsPerPage;
+            const paginatedAds = filteredAds.slice(start, end);
+
+            paginatedAds.forEach(ad => {
                 const adItem = document.createElement('article');
                 adItem.className = `ad-item ${ad.userId === userId ? 'own' : ''}`;
                 adItem.setAttribute('aria-label', `Объявление от ${ad.userName}`);
                 const isLiked = likesDislikes[ad.id]?.likes.includes(userId);
                 const isDisliked = likesDislikes[ad.id]?.dislikes.includes(userId);
+                const isFavorited = favorites.includes(ad.id);
                 adItem.innerHTML = `
                     <div class="user">
                         <span onclick="openTelegramProfile('${ad.userId}')">${ad.userName}</span>
@@ -661,7 +748,7 @@
                     <div class="ad-actions">
                         <span class="counter">• ${((likesDislikes[ad.id]?.likes?.length || 0) - (likesDislikes[ad.id]?.dislikes?.length || 0))}</span>
                         <span class="action share" onclick="shareAd('${ad.id}')" title="Поделиться">🔗</span>
-                        <span class="action favorite" onclick="toggleFavorite('${ad.id}')" title="В избранное">❤️</span>
+                        <span class="action favorite ${isFavorited ? 'favorited' : ''}" onclick="toggleFavorite('${ad.id}')" title="В избранное">❤️</span>
                         <span class="action like ${isLiked ? 'liked' : ''}" onclick="toggleLike('${ad.id}')" title="Лайк">👍</span>
                         <span class="action dislike ${isDisliked ? 'disliked' : ''}" onclick="toggleDislike('${ad.id}')" title="Дизлайк">👎</span>
                         <span class="menu" onclick="toggleMenu('${ad.id}')">•••</span>
@@ -678,6 +765,26 @@
                 `;
                 adList.appendChild(adItem);
             });
+
+            renderPagination(filteredAds.length);
+            renderFavorites();
+        }
+
+        // Рендеринг избранного
+        function renderFavorites() {
+            const favoritesList = document.getElementById('favoritesList');
+            favoritesList.innerHTML = '';
+            const favoriteAds = ads.filter(ad => favorites.includes(ad.id));
+            if (favoriteAds.length === 0) {
+                favoritesList.innerHTML = '<p>Нет избранных объявлений</p>';
+                return;
+            }
+            favoriteAds.forEach(ad => {
+                const item = document.createElement('div');
+                item.className = 'favorite-item';
+                item.innerHTML = `<strong>${ad.title}</strong> (${ad.city}, ${ad.type})`;
+                favoritesList.appendChild(item);
+            });
         }
 
         // Переключение меню
@@ -686,6 +793,65 @@
             const isVisible = menu.style.display === 'block';
             document.querySelectorAll('.menu-options').forEach(m => m.style.display = 'none');
             menu.style.display = isVisible ? 'none' : 'block';
+        }
+
+        // Добавление/удаление из избранного
+        function toggleFavorite(adId) {
+            if (favorites.includes(adId)) {
+                favorites = favorites.filter(id => id !== adId);
+            } else {
+                favorites.push(adId);
+            }
+            localStorage.setItem('favorites', JSON.stringify(favorites));
+            if (isTelegramMode) {
+                Telegram.WebApp.CloudStorage.setItem('favorites', JSON.stringify(favorites));
+            }
+            renderAds();
+        }
+
+        // Открытие профиля
+        function openTelegramProfile(userId) {
+            if (isTelegramMode) {
+                const user = ads.find(ad => ad.userId === userId)?.userName;
+                if (user) {
+                    window.open(`https://t.me/${user.startsWith('@') ? user : '@' + user}`, '_blank');
+                } else {
+                    console.log(`Пользователь ${userId} не найден`);
+                }
+            } else {
+                console.log(`Открыть профиль: ${userId}`);
+                alert(`Открытие профиля ${userId} (имитация)`);
+            }
+        }
+
+        // Шаринг объявления
+        async function shareAd(adId) {
+            const ad = ads.find(a => a.id === adId);
+            if (!ad) return;
+            const shareText = `${ad.title}\n${ad.description}\nГород: ${ad.city} | Вид: ${ad.type} | Дата: ${ad.date} | Пол: ${ad.gender}`;
+            const shareUrl = `${window.location.origin}/?ad=${adId}`;
+            
+            if (isTelegramMode) {
+                Telegram.WebApp.openLink(`https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(shareText)}`);
+            } else if (navigator.share) {
+                try {
+                    await navigator.share({
+                        title: ad.title,
+                        text: shareText,
+                        url: shareUrl
+                    });
+                } catch (e) {
+                    console.error('Ошибка шаринга:', e);
+                }
+            } else {
+                try {
+                    await navigator.clipboard.writeText(shareUrl);
+                    alert('Ссылка на объявление скопирована в буфер обмена');
+                } catch (e) {
+                    console.error('Ошибка копирования:', e);
+                    alert('Ошибка при копировании ссылки');
+                }
+            }
         }
 
         // Лайк объявления
@@ -766,11 +932,14 @@
         // Удаление объявления
         function deleteAd(adId) {
             ads = ads.filter(ad => ad.id !== adId);
+            favorites = favorites.filter(id => id !== adId);
             delete likesDislikes[adId];
             localStorage.setItem('ads', JSON.stringify(ads));
+            localStorage.setItem('favorites', JSON.stringify(favorites));
             localStorage.setItem('likesDislikes', JSON.stringify(likesDislikes));
             if (isTelegramMode) {
                 Telegram.WebApp.CloudStorage.setItem('ads', JSON.stringify(ads));
+                Telegram.WebApp.CloudStorage.setItem('favorites', JSON.stringify(favorites));
                 Telegram.WebApp.CloudStorage.setItem('likesDislikes', JSON.stringify(likesDislikes));
             }
             renderAds();
@@ -779,9 +948,12 @@
         // Скрытие объявления
         function hideAd(adId) {
             hiddenAds.push(adId);
+            favorites = favorites.filter(id => id !== adId);
             localStorage.setItem('hiddenAds', JSON.stringify(hiddenAds));
+            localStorage.setItem('favorites', JSON.stringify(favorites));
             if (isTelegramMode) {
                 Telegram.WebApp.CloudStorage.setItem('hiddenAds', JSON.stringify(hiddenAds));
+                Telegram.WebApp.CloudStorage.setItem('favorites', JSON.stringify(favorites));
             }
             renderAds();
         }
@@ -801,7 +973,6 @@
                 return;
             }
 
-            // Имитация отправки жалобы через API
             fetch('https://jsonplaceholder.typicode.com/posts', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -870,19 +1041,6 @@
             renderAds();
         }
 
-        // Заглушки для остальных функций
-        function openTelegramProfile(userId) {
-            console.log(`Открыть профиль: ${userId}`);
-        }
-
-        function shareAd(adId) {
-            console.log(`Поделиться объявлением: ${adId}`);
-        }
-
-        function toggleFavorite(adId) {
-            console.log(`Добавить в избранное: ${adId}`);
-        }
-
         // Открытие/закрытие бокового меню
         function openModal() {
             document.getElementById('modal').classList.add('open');
@@ -914,6 +1072,18 @@
             renderAds();
         }
 
+        // Закрытие модалок по клику на backdrop
+        function setupDialogBackdropClose() {
+            ['createDialog', 'complaintDialog', 'cityDialog', 'typeDialog'].forEach(dialogId => {
+                const dialog = document.getElementById(dialogId);
+                dialog.addEventListener('click', (e) => {
+                    if (e.target === dialog) {
+                        dialog.close();
+                    }
+                });
+            });
+        }
+
         // Обработчики событий
         document.querySelector('button[data-modal-open="createDialog"]').addEventListener('click', () => {
             openCreateDialog();
@@ -940,6 +1110,7 @@
         });
 
         document.getElementById('filter-form').addEventListener('input', () => {
+            currentPage = 1; // Сброс на первую страницу при фильтрации
             renderAds();
         });
 
@@ -952,7 +1123,10 @@
         });
 
         // Инициализация
-        loadCloudData().then(() => renderAds());
+        loadCloudData().then(() => {
+            setupDialogBackdropClose();
+            renderAds();
+        });
     </script>
 </body>
 </html>
