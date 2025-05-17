@@ -604,6 +604,10 @@
 
             if (adId) {
                 const ad = ads.find(a => a.id === adId);
+                if (!ad) {
+                    console.error('Ad not found:', adId);
+                    return;
+                }
                 document.getElementById('adTitle').value = ad.title;
                 document.getElementById('adDescription').value = ad.description;
                 document.getElementById('adCity').value = ad.city;
@@ -632,7 +636,10 @@
             const date = document.getElementById('adDate').value;
             const gender = document.getElementById('adGender').value;
 
-            if (!title || !description) return;
+            if (!title || !description) {
+                alert('Заполните заголовок и описание');
+                return;
+            }
 
             const userAds = ads.filter(ad => ad.userId === userId);
             if (!editAdId && userAds.length >= 3) {
@@ -640,12 +647,15 @@
                 return;
             }
 
+            let newAdId;
             if (editAdId) {
                 const adIndex = ads.findIndex(ad => ad.id === editAdId);
                 ads[adIndex] = { ...ads[adIndex], title, description, city, type, date, gender };
+                newAdId = editAdId;
             } else {
+                newAdId = Date.now().toString();
                 ads.push({
-                    id: Date.now().toString(),
+                    id: newAdId,
                     userId,
                     userName,
                     title,
@@ -656,9 +666,12 @@
                     gender,
                     createdAt: new Date().toISOString()
                 });
+                // Инициализация рейтинга
+                likesDislikes[newAdId] = { likes: [], dislikes: [] };
             }
 
             localStorage.setItem('ads', JSON.stringify(ads));
+            localStorage.setItem('likesDislikes', JSON.stringify(likesDislikes));
             closeDialog('createDialog');
             renderAds();
         }
