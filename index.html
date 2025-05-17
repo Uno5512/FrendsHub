@@ -430,64 +430,63 @@
         }
 
         // Загрузка объявлений
-let ads = [];
-let currentSort = 'rating'; // По умолчанию новые     
-let hiddenAds = [];
-let likesDislikes = {};
+        let ads = [];
+        let hiddenAds = [];
+        let likesDislikes = {};
 
-function loadCloudData() {
-    if (window.Telegram?.WebApp) {
-        Telegram.WebApp.ready();
-        return Promise.all([
-            new Promise((resolve) => {
-                Telegram.WebApp.CloudStorage.getItems(['ads'], (error, result) => {
-                    if (error) {
-                        console.error('Error loading ads:', error);
-                        resolve([]);
-                    } else {
-                        ads = result.ads ? JSON.parse(result.ads) : [];
-                        resolve(ads);
-                    }
+        function loadCloudData() {
+            if (window.Telegram?.WebApp) {
+                Telegram.WebApp.ready();
+                return Promise.all([
+                    new Promise((resolve) => {
+                        Telegram.WebApp.CloudStorage.getItems(['ads'], (error, result) => {
+                            if (error) {
+                                console.error('Error loading ads:', error);
+                                resolve([]);
+                            } else {
+                                ads = result.ads ? JSON.parse(result.ads) : [];
+                                resolve(ads);
+                            }
+                        });
+                    }),
+                    new Promise((resolve) => {
+                        Telegram.WebApp.CloudStorage.getItems(['hiddenAds'], (error, result) => {
+                            if (error) {
+                                console.error('Error loading hiddenAds:', error);
+                                resolve([]);
+                            } else {
+                                hiddenAds = result.hiddenAds ? JSON.parse(result.hiddenAds) : [];
+                                resolve(hiddenAds);
+                            }
+                        });
+                    }),
+                    new Promise((resolve) => {
+                        Telegram.WebApp.CloudStorage.getItems(['likesDislikes'], (error, result) => {
+                            if (error) {
+                                console.error('Error loading likesDislikes:', error);
+                                resolve({});
+                            } else {
+                                likesDislikes = result.likesDislikes ? JSON.parse(result.likesDislikes) : {};
+                                resolve(likesDislikes);
+                            }
+                        });
+                    })
+                ]).then(() => {
+                    // Fallback to localStorage if cloud is empty
+                    if (!ads.length) ads = JSON.parse(localStorage.getItem('ads')) || [];
+                    if (!hiddenAds.length) hiddenAds = JSON.parse(localStorage.getItem('hiddenAds')) || [];
+                    if (!Object.keys(likesDislikes).length) likesDislikes = JSON.parse(localStorage.getItem('likesDislikes')) || {};
                 });
-            }),
-            new Promise((resolve) => {
-                Telegram.WebApp.CloudStorage.getItems(['hiddenAds'], (error, result) => {
-                    if (error) {
-                        console.error('Error loading hiddenAds:', error);
-                        resolve([]);
-                    } else {
-                        hiddenAds = result.hiddenAds ? JSON.parse(result.hiddenAds) : [];
-                        resolve(hiddenAds);
-                    }
-                });
-            }),
-            new Promise((resolve) => {
-                Telegram.WebApp.CloudStorage.getItems(['likesDislikes'], (error, result) => {
-                    if (error) {
-                        console.error('Error loading likesDislikes:', error);
-                        resolve({});
-                    } else {
-                        likesDislikes = result.likesDislikes ? JSON.parse(result.likesDislikes) : {};
-                        resolve(likesDislikes);
-                    }
-                });
-            })
-        ]).then(() => {
-            // Fallback to localStorage if cloud is empty
-            if (!ads.length) ads = JSON.parse(localStorage.getItem('ads')) || [];
-            if (!hiddenAds.length) hiddenAds = JSON.parse(localStorage.getItem('hiddenAds')) || [];
-            if (!Object.keys(likesDislikes).length) likesDislikes = JSON.parse(localStorage.getItem('likesDislikes')) || {};
-        });
-    } else {
-        ads = JSON.parse(localStorage.getItem('ads')) || [];
-        hiddenAds = JSON.parse(localStorage.getItem('hiddenAds')) || [];
-        likesDislikes = JSON.parse(localStorage.getItem('likesDislikes')) || [];
-        return Promise.resolve();
-    }
-}
+            } else {
+                ads = JSON.parse(localStorage.getItem('ads')) || [];
+                hiddenAds = JSON.parse(localStorage.getItem('hiddenAds')) || [];
+                likesDislikes = JSON.parse(localStorage.getItem('likesDislikes')) || [];
+                return Promise.resolve();
+            }
+        }
 
-// Загрузка данных при старте
-loadCloudData().then(() => renderAds());
+        // Загрузка данных при старте
+        loadCloudData().then(() => renderAds());
 
         function hideAd(adId) {
           hiddenAds.push(adId);
@@ -719,14 +718,39 @@ loadCloudData().then(() => renderAds());
                     gender,
                     createdAt: new Date().toISOString()
                 });
-                // Инициализация рейтинга
                 likesDislikes[newAdId] = { likes: [], dislikes: [] };
             }
 
-            localStorage.setItem('ads', JSON.stringify(ads));
-            localStorage.setItem('likesDislikes', JSON.stringify(likesDislikes));
-            closeDialog('createDialog');
-            renderAds();
+            // Сохранение в облако и localStorage
+            const savePromises = [
+                new Promise((resolve) => {
+                    localStorage.setItem('ads', JSON.stringify(ads));
+                    if (window.Telegram?.WebApp) {
+                        Telegram.WebApp.CloudStorage.setItem('ads', JSON.stringify(ads), (error) => {
+                            if (error) console.error('Error saving ads:', error);
+                            resolve();
+                        });
+                    } else {
+                        resolve();
+                    }
+                }),
+                new Promise((resolve) => {
+                    localStorage.setItem('likesDislikes', JSON.stringify(likesDislikes));
+                    if (window.Telegram?.WebApp) {
+                        Telegram.WebApp.CloudStorage.setItem('likesDislikes', JSON.stringify(likesDislikes), (error) => {
+                            if (error) console.error('Error saving likesDislikes:', error);
+                            resolve();
+                        });
+                    } else {
+                        resolve();
+                    }
+                })
+            ];
+
+            Promise.all(savePromises).then(() => {
+                closeDialog('createDialog');
+                renderAds();
+            });
         }
 
         // Редактирование объявления
