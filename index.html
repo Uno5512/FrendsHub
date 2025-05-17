@@ -430,11 +430,64 @@
         }
 
         // Загрузка объявлений
-        let ads = JSON.parse(localStorage.getItem('ads')) || [];
-        let currentSort = 'newest'; // По умолчанию новые
-        let hiddenAds = JSON.parse(localStorage.getItem('hiddenAds')) || [];
-        let likesDislikes = JSON.parse(localStorage.getItem('likesDislikes')) || {};
-        let editAdId = null;
+let ads = [];
+let currentSort = 'newest'; // По умолчанию новые     
+let hiddenAds = [];
+let likesDislikes = {};
+
+function loadCloudData() {
+    if (window.Telegram?.WebApp) {
+        Telegram.WebApp.ready();
+        return Promise.all([
+            new Promise((resolve) => {
+                Telegram.WebApp.CloudStorage.getItems(['ads'], (error, result) => {
+                    if (error) {
+                        console.error('Error loading ads:', error);
+                        resolve([]);
+                    } else {
+                        ads = result.ads ? JSON.parse(result.ads) : [];
+                        resolve(ads);
+                    }
+                });
+            }),
+            new Promise((resolve) => {
+                Telegram.WebApp.CloudStorage.getItems(['hiddenAds'], (error, result) => {
+                    if (error) {
+                        console.error('Error loading hiddenAds:', error);
+                        resolve([]);
+                    } else {
+                        hiddenAds = result.hiddenAds ? JSON.parse(result.hiddenAds) : [];
+                        resolve(hiddenAds);
+                    }
+                });
+            }),
+            new Promise((resolve) => {
+                Telegram.WebApp.CloudStorage.getItems(['likesDislikes'], (error, result) => {
+                    if (error) {
+                        console.error('Error loading likesDislikes:', error);
+                        resolve({});
+                    } else {
+                        likesDislikes = result.likesDislikes ? JSON.parse(result.likesDislikes) : {};
+                        resolve(likesDislikes);
+                    }
+                });
+            })
+        ]).then(() => {
+            // Fallback to localStorage if cloud is empty
+            if (!ads.length) ads = JSON.parse(localStorage.getItem('ads')) || [];
+            if (!hiddenAds.length) hiddenAds = JSON.parse(localStorage.getItem('hiddenAds')) || [];
+            if (!Object.keys(likesDislikes).length) likesDislikes = JSON.parse(localStorage.getItem('likesDislikes')) || {};
+        });
+    } else {
+        ads = JSON.parse(localStorage.getItem('ads')) || [];
+        hiddenAds = JSON.parse(localStorage.getItem('hiddenAds')) || [];
+        likesDislikes = JSON.parse(localStorage.getItem('likesDislikes')) || [];
+        return Promise.resolve();
+    }
+}
+
+// Загрузка данных при старте
+loadCloudData().then(() => renderAds());
 
         function hideAd(adId) {
           hiddenAds.push(adId);
