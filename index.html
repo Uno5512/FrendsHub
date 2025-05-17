@@ -290,7 +290,7 @@
             <select id="sort">
                  <option value="" disabled selected>•••</option>
                  <option value="newest">Новые</option>
-          <option value="oldest">Старые</option>
+                 <option value="oldest">Старые</option>
             </select>
         </div>
     </div>
@@ -568,7 +568,10 @@
         document.getElementById('type').addEventListener('click', () => document.getElementById('typeDialog').showModal());
         document.getElementById('date').addEventListener('change', renderAds);
         document.getElementById('gender').addEventListener('change', renderAds);
-        document.getElementById('•••').addEventListener('change', renderAds);
+        document.getElementById('sort').addEventListener('change', function() {
+            renderAds();
+            this.value = ''; // Сбрасываем на заглушку •••
+        });
 
         // Начальная отрисовка
         renderAds();
