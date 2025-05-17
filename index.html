@@ -38,956 +38,146 @@
         return gk_fileData[filename] || "";
         }
         </script><!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mini Ads App</title>
-    <!-- Rubik с поддержкой арабского и других языков -->
-    <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@300;400&family=Rubik+Arabic:wght@300;400&display=swap" rel="stylesheet">
+    <title>Telegram Mini App</title>
     <style>
-        * {
-            box-sizing: border-box;
+        body {
+            font-family: Arial, sans-serif;
             margin: 0;
             padding: 0;
-        }
-        body {
-            font-family: 'Rubik', 'Rubik Arabic', sans-serif;
-            font-weight: 400; /* Light 300 для текста */
-            font-size: 16px;
-            line-height: 1.5;
-            padding: 16px;
-            background: #eedfc8;
-            margin-top: 25px
+            background-color: #f0f2f5;
+            color: #333;
         }
         .container {
             max-width: 600px;
             margin: 0 auto;
-        }
-
-        .image-container {
-            display: flex;
-            justify-content: center; /* Центрирование по горизонтали */
-            margin-bottom: 12px; /* Отступ от поиска */
-        }
-
-        .header-image {
-            width: 100px; /* Настраиваемый размер */
-            height: 100px; /* Пропорции 1:1 */
-            object-fit: contain; /* Сохраняет пропорции, не обрезая */
-        }
-
-        .search-filter-container {
-             background: #f1d299; /* Цветовая область, как у поиска */
-             border-radius: 22px; /* Скругленные углы */
-             border: 2px solid #f6e1bc;
-             padding: 8px; /* Внутренний отступ 8*/
-             margin-bottom: 16px;
-             display: flex;
-             flex-direction: column;
-             gap: 16px; /* 16 */
-        }
-
-        .search-filter-container input {
-             padding: 8px;
-             margin-bottom: 2px;
-             font-size: 22px;
-             border-radius: 8px;
-             background: #f1d299; /* Белый фон для контраста */
-             width: 100%;
-             margin-bottom: 2px;
-        }
-
-        .filters {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 2px;
-            margin-bottom: 4px;
-        }
-
-        .filters select,
-        .filters input {
-            padding: 4px;
-            font-size: 18px;
-            width: auto;
-            min-width: 60px;
-            flex: 1;
-            background: #f1d299;
-            border: 1px solid #f6e1bc;
-            border-radius: 22px; /* Скругленные углы */
-        }
-        
-        select, input, button, textarea {
-            padding: 8px;
-            font-size: 16px;
-            font-weight: 300;
-            border: 1px solid #f1d299;
-            border-radius: 8px;
-            font-family: inherit;
-            width: 100%;
-            box-sizing: border-box;
-        }
-        input[type="text"], textarea {
-            background: #f1d299;
-        }
-        button {
-            background: #987eeb;
-            color: white;
-            border: none;
-            cursor: pointer;
-            border-radius: 8px;
-        }
-        button:hover {
-            background: #0056b3;
-        }
-        .ad-list {
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-            margin-bottom: 80px;
-        }
-        .ad-item {
-            background: #fff;
-            padding: 16px;
-            border-radius: 22px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            position: relative;
-        }
-        .ad-item.own {
-            border: 1px solid #ff6200; /* Оранжевая рамка для своих объявлений */
-        }
-        .ad-item h3 {
-            font-weight: 400; /* Regular 400 для заголовков */
-            font-size: 18px;
-            margin-bottom: 8px;
-        }
-        .ad-item p {
-            font-weight: 300; /* Light 300 для описания */
-            font-size: 14px;
-            color: #555;
-        }
-        .ad-item .user {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-bottom: 8px;
-        }
-        .ad-item .user span {
-            cursor: pointer;
-            color: #007bff;
-            font-weight: 300;
-        }
-        .ad-item .user span:hover {
-            text-decoration: underline;
-        }
-        .ad-item .menu {
-            cursor: pointer;
-            font-size: 20px;
-        }
-        .ad-item .menu-options {
-            display: none;
-            position: absolute;
-            top: 40px;
-            right: 12;
-            background: #fff;
-            border: 1px solid #E6E6E6;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            z-index: 10;
-        }
-        .ad-item .menu-options button {
-            display: block;
-            width: 100%;
-            padding: 8px 16px;
-            border: none;
-            background: none;
-            color: #000;
-            text-align: left;
-            font-weight: 300;
-            font-size: 14px;
-        }
-        .ad-item .menu-options button:hover {
-            background: #F5F5F5;
-        }
-
-        .ad-actions {
-                position: absolute;
-                top: 16px;
-                right: 16px;
-                display: flex;
-                align-items: center;
-                gap: 12px;
-        }
-
-        .ad-actions .action {
-                cursor: pointer;
-                font-size: 18px;
-        }
-
-        .ad-actions .counter {
-                font-size: 14px;
-                color: #000;
-        }
-
-        .ad-actions .counter::before {
-                content: '•';
-                color: #d7e0aa;
-                margin-right: 4px;
-        }
-
-       .ad-actions .action.liked {
-                color: #28a745;
-        }
-
-        .ad-actions .action.disliked {
-                color: #dc3545;
-        }
-
-        .create-btn {
-            position: fixed;
-            bottom: 35px;
-            left: 50%;
-            transform: translateX(-50%);
-            padding: 12px 24px;
-            font-size: 16px;
-            border-radius: 24px;
-            width: 160px; /* Уменьшаем ширину кнопки */
-            text-align: center;
-        }
-        dialog {
-            border: none;
-            border-radius: 8px;
-            padding: 16px;
-            max-width: 400px;
-            width: 90%;
-            font-family: inherit;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-        }
-        dialog::backdrop {
-            background: rgba(0,0,0,0.5);
-            backdrop-filter: blur(2px);
-        }
-        dialog h2 {
-            font-weight: 400;
-            font-size: 18px;
-            margin-bottom: 16px;
-        }
-        dialog select, dialog input, dialog textarea {
-            margin-bottom: 8px;
-        }
-        dialog button {
-            margin-top: 8px;
-        }
-        .select-options {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-        .select-options label {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 8px;
-            background: #F5F5F5;
-            border-radius: 8px;
-        }
-        /* Telegram Mini App стили */
-        body.telegram {
-            background: var(--tg-theme-bg-color, #fff);
-            color: var(--tg-theme-text-color, #000);
-        }
-        button.telegram {
-            background: var(--tg-theme-button-color, #007bff);
-            color: var(--tg-theme-button-text-color, #fff);
-        }
-
-        input:focus {
-            outline: none;
-        }
-/* Плавающая кнопка */
-        .floating-btn {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            width: 60px;
-            height: 60px;
-            background: #987eeb;
-            color: white;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-            z-index: 1000;
-            transition: transform 0.3s ease;
-        }
-
-        .floating-btn:hover {
-            transform: scale(1.1);
-        }
-
-        .floating-btn::before {
-            content: '←';
-            font-size: 24px;
-        }
-
-        /* Модальное окно */
-        .modal {
-            position: fixed;
-            top: 0;
-            right: -100%;
-            width: 300px;
-            height: 100%;
-            background: #fff;
-            box-shadow: -2px 0 8px rgba(0, 0, 0, 0.2);
-            z-index: 1001;
-            transition: right 0.3s ease-in-out;
-            display: flex;
-            flex-direction: column;
             padding: 20px;
         }
-
-        .modal.open {
-            right: 0;
+        .header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 10px;
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
-
-        /* Фон затемнения */
-        .modal-backdrop {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            z-index: 1000;
-            opacity: 0;
-            visibility: hidden;
-            transition: opacity 0.3s ease;
-        }
-
-        .modal-backdrop.open {
-            opacity: 1;
-            visibility: visible;
-        }
-
-        /* Кнопка закрытия */
-        .close-btn {
-            align-self: flex-end;
-            padding: 8px 16px;
-            background: #dc3545;
-            color: white;
-            border: none;
-            border-radius: 4px;
+        .avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            object-fit: cover;
             cursor: pointer;
+        }
+        .username {
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .main-page, .account-page {
+            display: none;
+        }
+        .main-page.active, .account-page.active {
+            display: block;
+        }
+        .account-page .user-info {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            margin-top: 20px;
+        }
+        .account-page .avatar-large {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            margin-bottom: 15px;
+        }
+        .account-page .user-details {
             font-size: 16px;
-            margin-bottom: 20px;
         }
-
-        .close-btn:hover {
-            background: #c82333;
+        .account-page .user-details p {
+            margin: 5px 0;
         }
-
-        /* Контент модального окна */
-        .modal-content {
-            flex: 1;
-            overflow-y: auto;
+        .back-btn {
+            background-color: #0088cc;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 20px;
         }
-
-        /* Исправление для кнопки Создать */
-        .create-btn {
-            z-index: 1002; /* Выше modal и modal-backdrop */
+        .back-btn:hover {
+            background-color: #006b9e;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="image-container">
-            <img src="https://uno5512.github.io/FrendsHub/3.png" alt="Logo" class="header-image">
+        <div class="header">
+            <img class="avatar" id="userAvatar" src="https://via.placeholder.com/60" alt="User Avatar" onclick="navigateTo('account')">
+            <span class="username" id="username">Гость</span>
         </div>
-        <div class="search-filter-container">
-            <input type="text" id="search" placeholder="Поиск">
-        <div class="filters">
-            <select id="city">
-                <option value="">Город</option>
-                <option value="Москва">Москва</option>
-                <option value="Санкт-Петербург">Санкт-Петербург</option>
-                <option value="Казань">Казань</option>
-            </select>
-            <select id="type">
-                <option value="">Вид</option>
-                <option value="Встреча">Встреча</option>
-                <option value="Чат">Чат</option>
-                <option value="Событие">Событие</option>
-            </select>
-            <select id="date">
-                <option value="">Дата</option>
-                <option value="Сегодня">Сегодня</option>
-                <option value="Завтра">Завтра</option>
-                <option value="На неделе">На неделе</option>
-            </select>
-            <select id="gender">
-                <option value="">Пол</option>
-                <option value="Мужской">Мужской</option>
-                <option value="Женский">Женский</option>
-                <option value="Любой">Любой</option>
-            </select>
-            <select id="sort">
-                 <option value="" disabled selected>•••</option>
-                 <option value="rating">По рейтингу</option>
-                 <option value="newest">Новые</option>
-                 <option value="oldest">Старые</option>
-            </select>
+
+        <div class="main-page active" id="mainPage">
+            <h1>Добро пожаловать!</h1>
+            <p>Это главная страница вашего Telegram Mini App. Здесь вы можете добавить свой контент.</p>
+        </div>
+
+        <div class="account-page" id="accountPage">
+            <div class="user-info">
+                <img class="avatar-large" id="accountAvatar" src="https://via.placeholder.com/120" alt="User Avatar">
+                <div class="user-details">
+                    <p><strong>Имя:</strong> <span id="accountUsername">Гость</span></p>
+                    <p><strong>ID:</strong> <span id="accountUserId">Неизвестно</span></p>
+                </div>
+                <button class="back-btn" onclick="navigateTo('main')">Назад</button>
+            </div>
         </div>
     </div>
-        <div class="ad-list" id="adList"></div>
-        <button class="create-btn" onclick="openCreateDialog()">+ Создать</button>
-    </div>
-
-    <!-- Модальное окно для создания/редактирования -->
-    <dialog id="createDialog">
-        <h2 id="dialogTitle">Создать объявление</h2>
-        <input type="text" id="adTitle" placeholder="Заголовок">
-        <textarea id="adDescription" placeholder="Описание"></textarea>
-        <select id="adCity">
-            <option value="Москва">Москва</option>
-            <option value="Санкт-Петербург">Санкт-Петербург</option>
-            <option value="Казань">Казань</option>
-        </select>
-        <select id="adType">
-            <option value="Встреча">Встреча</option>
-            <option value="Чат">Чат</option>
-            <option value="Событие">Событие</option>
-        </select>
-        <select id="adDate">
-            <option value="Сегодня">Сегодня</option>
-            <option value="Завтра">Завтра</option>
-            <option value="На неделе">На неделе</option>
-        </select>
-        <select id="adGender">
-            <option value="Мужской">Мужской</option>
-            <option value="Женский">Женский</option>
-            <option value="Любой">Любой</option>
-        </select>
-        <button onclick="closeDialog('createDialog')">Закрыть</button>
-        <button onclick="saveAd()">Опубликовать</button>
-    </dialog>
-
-    <!-- Модальное окно для жалоб -->
-    <dialog id="complaintDialog">
-        <h2>Пожаловаться</h2>
-        <textarea id="complaintText" placeholder="Опишите причину жалобы"></textarea>
-        <button onclick="closeDialog('complaintDialog')">Отменить</button>
-        <button onclick="submitComplaint()">Отправить</button>
-    </dialog>
-
-    <!-- Модальное окно для выбора города -->
-    <dialog id="cityDialog">
-        <h2>Выберите город</h2>
-        <div class="select-options">
-            <label><input type="radio" name="cityOption" value="Москва"> Москва</label>
-            <label><input type="radio" name="cityOption" value="Санкт-Петербург"> Санкт-Петербург</label>
-            <label><input type="radio" name="cityOption" value="Казань"> Казань</label>
-        </div>
-        <button onclick="closeDialog('cityDialog')">Отменить</button>
-        <button onclick="applyCity()">Применить</button>
-    </dialog>
-
-<!-- Модальное окно для выбора вида -->
-    <dialog id="typeDialog">
-        <h2>Выберите вид</h2>
-        <div class="select-options">
-            <label><input type="radio" name="typeOption" value="Встреча"> Встреча</label>
-            <label><input type="radio" name="typeOption" value="Чат"> Чат</label>
-            <label><input type="radio" name="typeOption" value="Событие"> Событие</label>
-        </div>
-        <button onclick="closeDialog('typeDialog')">Отменить</button>
-        <button onclick="applyType()">Применить</button>
-    </dialog>
-
-    <!-- Плавающая кнопка -->
-    <div class="floating-btn" onclick="openModal()"></div>
-
-    <!-- Модальное окно -->
-    <div class="modal" id="modal">
-        <button class="close-btn" onclick="closeModal()">Закрыть</button>
-        <div class="modal-content">
-            <h2>Модальное окно</h2>
-            <p>Здесь можно добавить любой контент для модального окна.</p>
-        </div>
-    </div>
-
-    <!-- Фон затемнения -->
-    <div class="modal-backdrop" id="modalBackdrop"></div>
 
     <script>
- // Telegram Mini App инициализация
+        // Telegram Mini App инициализация
         let userId = null;
         let userName = 'Гость';
+        let userAvatar = 'https://via.placeholder.com/60';
+
         if (window.Telegram?.WebApp) {
-                Telegram.WebApp.ready();
-                userId = Telegram.WebApp.initDataUnsafe?.user?.id || 'guest';
-                userName = Telegram.WebApp.initDataUnsafe?.user?.username || Telegram.WebApp.initDataUnsafe?.user?.first_name || 'Гость';
-                document.body.classList.add('telegram');
+            Telegram.WebApp.ready();
+            const user = Telegram.WebApp.initDataUnsafe?.user;
+            if (user) {
+                userId = user.id || 'guest';
+                userName = user.username || user.first_name || 'Гость';
+                userAvatar = user.photo_url || 'https://via.placeholder.com/60';
+            }
+            document.body.classList.add('telegram');
         } else {
-                userId = 'guest'; // Для тестирования
+            userId = 'guest'; // Для тестирования
         }
 
-        // Загрузка объявлений
-        let ads = [];
-        let hiddenAds = [];
-        let likesDislikes = {};
-        let currentSort = 'rating'; // Добавлено: начальная сортировка по рейтингу
-        let editAdId = null; // Объявляем editAdId глобально
+        // Обновление UI с данными пользователя
+        document.getElementById('username').textContent = userName;
+        document.getElementById('userAvatar').src = userAvatar;
+        document.getElementById('accountUsername').textContent = userName;
+        document.getElementById('accountUserId').textContent = userId || 'Неизвестно';
+        document.getElementById('accountAvatar').src = userAvatar;
 
-        function loadCloudData() {
-                if (window.Telegram?.WebApp) {
-                        Telegram.WebApp.ready();
-                        return Promise.all([
-                                new Promise((resolve) => {
-                                        Telegram.WebApp.CloudStorage.getItems(['ads'], (error, result) => {
-                                                if (error) {
-                                                        console.error('Error loading ads:', error);
-                                                        resolve([]);
-                                                } else {
-                                                        ads = result.ads ? JSON.parse(result.ads) : [];
-                                                        resolve(ads);
-                                                }
-                                        });
-                                }),
-                                new Promise((resolve) =>IKE
-                                        Telegram.WebApp.CloudStorage.getItems(['hiddenAds'], (error, result) => {
-                                                if (error) {
-                                                        console.error('Error loading hiddenAds:', error);
-                                                        resolve([]);
-                                                } else {
-                                                        hiddenAds = result.hiddenAds ? JSON.parse(result.hiddenAds) : [];
-                                                        resolve(hiddenAds);
-                                                }
-                                        });
-                                }),
-                                new Promise((resolve) => {
-                                        Telegram.WebApp.CloudStorage.getItems(['likesDislikes'], (error, result) => {
-                                                if (error) {
-                                                        console.error('Error loading likesDislikes:', error);
-                                                        resolve({});
-                                                } else {
-                                                        likesDislikes = result.likesDislikes ? JSON.parse(result.likesDislikes) : {};
-                                                        resolve(likesDislikes);
-                                                }
-                                        });
-                                })
-                        ]).then(() => {
-                                // Fallback to localStorage if cloud is empty
-                                if (!ads.length) ads = JSON.parse(localStorage.getItem('ads')) || [];
-                                if (!hiddenAds.length) hiddenAds = JSON.parse(localStorage.getItem('hiddenAds')) || [];
-                                if (!Object.keys(likesDislikes).length) likesDislikes = JSON.parse(localStorage.getItem('likesDislikes')) || {};
-                        });
-                } else {
-                        ads = JSON.parse(localStorage.getItem('ads')) || [];
-                        hiddenAds = JSON.parse(localStorage.getItem('hiddenAds')) || [];
-                        likesDislikes = JSON.parse(localStorage.getItem('likesDislikes')) || [];
-                        return Promise.resolve();
-                }
+        // Навигация между страницами
+        function navigateTo(page) {
+            const mainPage = document.getElementById('mainPage');
+            const accountPage = document.getElementById('accountPage');
+
+            if (page === 'main') {
+                mainPage.classList.add('active');
+                accountPage.classList.remove('active');
+            } else if (page === 'account') {
+                mainPage.classList.remove('active');
+                accountPage.classList.add('active');
+            }
         }
-
-        // Загрузка данных при старте
-        loadCloudData().then(() => renderAds());
-
-        function hideAd(adId) {
-                hiddenAds.push(adId);
-                localStorage.setItem('hiddenAds', JSON.stringify(hiddenAds));
-                renderAds();
-        }
-
-        function shareAd(adId) {
-                const url = `${window.location.origin}/#${adId}`;
-                navigator.clipboard.writeText(url).then(() => {
-                        alert('Ссылка на объявление скопирована!');
-                }).catch(() => {
-                        alert('Не удалось скопировать ссылку');
-                });
-        }
-
-        function toggleLike(adId) {
-                if (!userId) return alert('Авторизуйтесь для оценки');
-                likesDislikes[adId] = likesDislikes[adId] || { likes: [], dislikes: [] };
-                const userLiked = likesDislikes[adId].likes.includes(userId);
-                const userDisliked = likesDislikes[adId].dislikes.includes(userId);
-                if (userLiked) {
-                        likesDislikes[adId].likes = likesDislikes[adId].likes.filter(id => id !== userId);
-                } else {
-                        likesDislikes[adId].likes.push(userId);
-                        if (userDisliked) {
-                                likesDislikes[adId].dislikes = likesDislikes[adId].dislikes.filter(id => id !== userId);
-                        }
-                }
-                localStorage.setItem('likesDislikes', JSON.stringify(likesDislikes));
-                renderAds();
-        }
-
-        function toggleDislike(adId) {
-                if (!userId) return alert('Авторизуйтесь для оценки');
-                likesDislikes[adId] = likesDislikes[adId] || { likes: [], dislikes: [] };
-                const userLiked = likesDislikes[adId].likes.includes(userId);
-                const userDisliked = likesDislikes[adId].dislikes.includes(userId);
-                if (userDisliked) {
-                        likesDislikes[adId].dislikes = likesDislikes[adId].dislikes.filter(id => id !== userId);
-                } else {
-                        likesDislikes[adId].dislikes.push(userId);
-                        if (userLiked) {
-                                likesDislikes[adId].likes = likesDislikes[adId].likes.filter(id => id !== userId);
-                        }
-                }
-                localStorage.setItem('likesDislikes', JSON.stringify(likesDislikes));
-                renderAds();
-        }
-
-        // Отрисовка объявлений
-        function renderAds() {
-                const adList = document.getElementById('adList');
-                const search = document.getElementById('search').value.toLowerCase();
-                const city = document.getElementById('city').value;
-                const type = document.getElementById('type').value;
-                const date = document.getElementById('date').value;
-                const gender = document.getElementById('gender').value;
-                const sort = currentSort;
-
-                // Фильтрация
-                let filteredAds = ads.filter(ad => {
-                        if (hiddenAds.includes(ad.id)) return false; // Пропускаем скрытые объявления
-                        const searchWords = search.trim().split(/\s+/).filter(word => word.length > 0);
-                        if (searchWords.length === 0) return true;
-                        console.log('Search words:', searchWords);
-                        console.log('Checking ad:', ad);
-                        const matchesSearch = searchWords.every(word => {
-                                const lowerWord = word.toLowerCase();
-                                return (
-                                        ad.title.toLowerCase().includes(lowerWord) ||
-                                        ad.description.toLowerCase().includes(lowerWord) ||
-                                        ad.city.toLowerCase().includes(lowerWord) ||
-                                        ad.type.toLowerCase().includes(lowerWord) ||
-                                        ad.date.toLowerCase().includes(lowerWord) ||
-                                        ad.gender.toLowerCase().includes(lowerWord)
-                                );
-                        });
-                        return matchesSearch &&
-                               (city === '' || ad.city === city) &&
-                               (type === '' || ad.type === type) &&
-                               (date === '' || ad.date === date) &&
-                               (gender === '' || ad.gender === gender);
-                });
-
-                // Сортировка (свои объявления сверху, затем по рейтингу или дате)
-                filteredAds.sort((a, b) => {
-                        const isOwnA = a.userId === userId;
-                        const isOwnB = b.userId === userId;
-                        if (isOwnA && !isOwnB) return -1;
-                        if (!isOwnA && isOwnB) return 1;
-                        const aRating = ((likesDislikes[a.id]?.likes?.length || 0) - (likesDislikes[a.id]?.dislikes?.length || 0));
-                        const bRating = ((likesDislikes[b.id]?.likes?.length || 0) - (likesDislikes[b.id]?.dislikes?.length || 0));
-                        const dateA = new Date(a.createdAt);
-                        const dateB = new Date(b.createdAt);
-                        if (sort === 'newest') {
-                                return dateB - dateA;
-                        } else if (sort === 'oldest') {
-                                return dateA - dateB;
-                        } else {
-                                return bRating - aRating; // По рейтингу
-                        }
-                });
-
-                adList.innerHTML = '';
-                filteredAds.forEach(ad => {
-                        const adDiv = document.createElement('div');
-                        adDiv.className = `ad-item ${ad.userId === userId ? 'own' : ''}`;
-                        adDiv.innerHTML = `
-                                <div class="user">
-                                        <span onclick="openTelegramProfile('${ad.userId}')">${ad.userName}</span>
-                                </div>
-                                <h3>${ad.title}</h3>
-                                <p>${ad.description}</p>
-                                <p><small>Город: ${ad.city} | Вид: ${ad.type} | Дата: ${ad.date} | Пол: ${ad.gender} | ${new Date(ad.createdAt).toLocaleDateString()}</small></p>
-                                <div class="ad-actions">
-                                        <span class="counter">• ${((likesDislikes[ad.id]?.likes?.length || 0) - (likesDislikes[ad.id]?.dislikes?.length || 0))}</span>
-                                        <span class="action share" onclick="shareAd('${ad.id}')" title="Поделиться">🔗</span>
-                                        <span class="action favorite" title="В избранное">❤️</span>
-                                        <span class="action like ${likesDislikes[ad.id]?.likes?.includes(userId) ? 'liked' : ''}" onclick="toggleLike('${ad.id}')" title="Лайк">👍</span>
-                                        <span class="action dislike ${likesDislikes[ad.id]?.dislikes?.includes(userId) ? 'disliked' : ''}" onclick="toggleDislike('${ad.id}')" title="Дизлайк">👎</span>
-                                        <span class="menu" onclick="toggleMenu('${ad.id}')">•••</span>
-                                </div>
-                                <div class="menu-options" id="menu-${ad.id}">
-                                        ${ad.userId === userId ? `
-                                                <button onclick="editAd('${ad.id}')">Редактировать</button>
-                                                <button onclick="deleteAd('${ad.id}')">Удалить</button>
-                                        ` : `
-                                                <button onclick="hideAd('${ad.id}')">Не показывать</button>
-                                                <button onclick="openComplaintDialog()">Пожаловаться</button>
-                                        `}
-                                </div>
-                        `;
-                        adList.appendChild(adDiv);
-                });
-        }
-
-        // Открытие профиля в Telegram
-        function openTelegramProfile(id) {
-                if (id !== 'guest') {
-                        window.location.href = `tg://user?id=${id}`;
-                }
-        }
-
-        // Переключение меню
-        function toggleMenu(adId) {
-                console.log('Toggling menu for ad:', adId);
-                // Закрываем все открытые меню
-                const openMenus = document.querySelectorAll('.menu-options[style="display: block;"]');
-                openMenus.forEach(menu => {
-                        menu.style.display = 'none';
-                });
-                // Открываем текущее меню
-                const menu = document.getElementById(`menu-${adId}`);
-                if (menu) {
-                        menu.style.display = 'block';
-                } else {
-                        console.error('Menu not found for ad:', adId);
-                }
-        }
-
-        // Открытие окна создания/редактирования
-        function openCreateDialog(adId = null) {
-                console.log('Opening create dialog, adId:', adId); // Для отладки
-                const dialog = document.getElementById('createDialog');
-                const title = document.getElementById('dialogTitle');
-                editAdId = adId;
-
-                if (dialog && title) {
-                        if (adId) {
-                                const ad = ads.find(a => a.id === adId);
-                                if (!ad) {
-                                        console.error('Ad not found:', adId);
-                                        return;
-                                }
-                                document.getElementById('adTitle').value = ad.title;
-                                document.getElementById('adDescription').value = ad.description;
-                                document.getElementById('adCity').value = ad.city;
-                                document.getElementById('adType').value = ad.type;
-                                document.getElementById('adDate').value = ad.date;
-                                document.getElementById('adGender').value = ad.gender;
-                                title.textContent = 'Редактировать объявление';
-                        } else {
-                                document.getElementById('adTitle').value = '';
-                                document.getElementById('adDescription').value = '';
-                                document.getElementById('adCity').value = 'Москва';
-                                document.getElementById('adType').value = 'Встреча';
-                                document.getElementById('adDate').value = 'Сегодня';
-                                document.getElementById('adGender').value = 'Любой';
-                                title.textContent = 'Создать объявление';
-                        }
-                        dialog.showModal();
-                        event?.stopPropagation(); // Останавливаем всплытие события клика
-                } else {
-                        console.error('Create dialog or title not found');
-                }
-        }
-
-        // Сохранение объявления
-        function saveAd() {
-                const title = document.getElementById('adTitle').value;
-                const description = document.getElementById('adDescription').value;
-                const city = document.getElementById('adCity').value;
-                const type = document.getElementById('adType').value;
-                const date = document.getElementById('adDate').value;
-                const gender = document.getElementById('adGender').value;
-
-                if (!title || !description) {
-                        alert('Заполните заголовок и описание');
-                        return;
-                }
-
-                const userAds = ads.filter(ad => ad.userId === userId);
-                if (!editAdId && userAds.length >= 3) {
-                        alert('Вы можете создать не более 3 объявлений.');
-                        return;
-                }
-
-                let newAdId;
-                if (editAdId) {
-                        const adIndex = ads.findIndex(ad => ad.id === editAdId);
-                        ads[adIndex] = { ...ads[adIndex], title, description, city, type, date, gender };
-                        newAdId = editAdId;
-                } else {
-                        newAdId = Date.now().toString();
-                        ads.push({
-                                id: newAdId,
-                                userId,
-                                userName,
-                                title,
-                                description,
-                                city,
-                                type,
-                                date,
-                                gender,
-                                createdAt: new Date().toISOString()
-                        });
-                        likesDislikes[newAdId] = { likes: [], dislikes: [] };
-                }
-
-                // Сохранение в облако и localStorage
-                const savePromises = [
-                        new Promise((resolve) => {
-                                localStorage.setItem('ads', JSON.stringify(ads));
-                                if (window.Telegram?.WebApp) {
-                                        Telegram.WebApp.CloudStorage.setItem('ads', JSON.stringify(ads), (error) => {
-                                                if (error) console.error('Error saving ads:', error);
-                                                resolve();
-                                        });
-                                } else {
-                                        resolve();
-                                }
-                        }),
-                        new Promise((resolve) => {
-                                localStorage.setItem('likesDislikes', JSON.stringify(likesDislikes));
-                                if (window.Telegram?.WebApp) {
-                                        Telegram.WebApp.CloudStorage.setItem('likesDislikes', JSON.stringify(likesDislikes), (error) => {
-                                                if (error) console.error('Error saving likesDislikes:', error);
-                                                resolve();
-                                        });
-                                } else {
-                                        resolve();
-                                }
-                        })
-                ];
-
-                Promise.all(savePromises).then(() => {
-                        closeDialog('createDialog');
-                        renderAds();
-                });
-        }
-
-        // Редактирование объявления
-        function editAd(adId) {
-                openCreateDialog(adId);
-        }
-
-        // Удаление объявления
-        function deleteAd(adId) {
-                ads = ads.filter(ad => ad.id !== adId);
-                localStorage.setItem('ads', JSON.stringify(ads));
-                renderAds();
-        }
-
-        // Открытие окна жалобы
-        function openComplaintDialog() {
-                document.getElementById('complaintText').value = '';
-                document.getElementById('complaintDialog').showModal();
-        }
-
-        // Отправка жалобы (заглушка)
-        function submitComplaint() {
-                const complaint = document.getElementById('complaintText').value;
-                if (complaint) {
-                        console.log('Жалоба:', complaint); // В продакшене отправить на сервер
-                        closeDialog('complaintDialog');
-                }
-        }
-
-        // Закрытие модального окна
-        function closeDialog(dialogId) {
-                document.getElementById(dialogId).close();
-        }
-
-        // Применение выбора города
-        function applyCity() {
-                const selected = document.querySelector('input[name="cityOption"]:checked');
-                if (selected) {
-                        document.getElementById('city').value = selected.value;
-                        renderAds();
-                }
-                closeDialog('cityDialog');
-        }
-
-        // Применение выбора вида
-        function applyType() {
-                const selected = document.querySelector('input[name="typeOption"]:checked');
-                if (selected) {
-                        document.getElementById('type').value = selected.value;
-                        renderAds();
-                }
-                closeDialog('typeDialog');
-        }
-
-        // Обработчики событий
-        document.getElementById('search').addEventListener('input', renderAds);
-        document.getElementById('city').addEventListener('click', () => document.getElementById('cityDialog').showModal());
-        document.getElementById('type').addEventListener('click', () => document.getElementById('typeDialog').showModal());
-        document.getElementById('date').addEventListener('change', renderAds);
-        document.getElementById('gender').addEventListener('change', renderAds);
-        document.getElementById('sort').addEventListener('change', function() {
-                currentSort = this.value || 'rating';
-                renderAds();
-                this.value = ''; // Сбрасываем на заглушку •••
-        });
-
-        // Начальная отрисовка
-        renderAds();
-
-        // Очистка поиска при клике вне поля
-        document.addEventListener('click', function(event) {
-                const searchInput = document.getElementById('search');
-                if (event.target !== searchInput && event.target !== document.getElementById('sort')) {
-                        searchInput.blur();
-                }
-        });
-
-        // Закрытие меню при клике вне
-        document.addEventListener('click', function(event) {
-                const openMenus = document.querySelectorAll('.menu-options[style="display: block;"]');
-                if (!event.target.closest('.menu') && !event.target.closest('.menu-options') && !event.target.closest('.create-btn') && !event.target.closest('.floating-btn')) {
-                        openMenus.forEach(menu => {
-                                menu.style.display = 'none';
-                        });
-                }
-        });
-
-        // Открытие модального окна
-        function openModal() {
-                console.log('Opening modal'); // Для отладки
-                const modal = document.getElementById('modal');
-                const backdrop = document.getElementById('modalBackdrop');
-                if (modal && backdrop) {
-                        modal.classList.add('open');
-                        backdrop.classList.add('open');
-                        event?.stopPropagation(); // Останавливаем всплытие события клика
-                } else {
-                        console.error('Modal or backdrop not found');
-                }
-        }
-
-        // Закрытие модального окна
-        function closeModal() {
-                console.log('Closing modal'); // Для отладки
-                const modal = document.getElementById('modal');
-                const backdrop = document.getElementById('modalBackdrop');
-                if (modal && backdrop) {
-                        modal.classList.remove('open');
-                        backdrop.classList.remove('open');
-                }
-        }
-
-        // Закрытие модального окна при клике на фон
-        document.addEventListener('DOMContentLoaded', function() {
-                const backdrop = document.getElementById('modalBackdrop');
-                if (backdrop) {
-                        backdrop.addEventListener('click', closeModal);
-                } else {
-                        console.error('modalBackdrop not found');
-                }
-        });
     </script>
 </body>
 </html>
