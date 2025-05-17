@@ -1,43 +1,4 @@
-<script type="text/javascript">
-        var gk_isXlsx = false;
-        var gk_xlsxFileLookup = {};
-        var gk_fileData = {};
-        function filledCell(cell) {
-          return cell !== '' && cell != null;
-        }
-        function loadFileData(filename) {
-        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
-            try {
-                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
-                var firstSheetName = workbook.SheetNames[0];
-                var worksheet = workbook.Sheets[firstSheetName];
-
-                // Convert sheet to JSON to filter blank rows
-                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
-                // Filter out blank rows (rows where all cells are empty, null, or undefined)
-                var filteredData = jsonData.filter(row => row.some(filledCell));
-
-                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
-                var headerRowIndex = filteredData.findIndex((row, index) =>
-                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
-                );
-                // Fallback
-                if (headerRowIndex === -1 || headerRowIndex > 25) {
-                  headerRowIndex = 0;
-                }
-
-                // Convert filtered JSON back to CSV
-                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
-                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
-                return csv;
-            } catch (e) {
-                console.error(e);
-                return "";
-            }
-        }
-        return gk_fileData[filename] || "";
-        }
-        </script><!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -113,6 +74,11 @@
         .back-btn:hover {
             background-color: #006b9e;
         }
+        .error-message {
+            color: red;
+            margin-top: 10px;
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -121,6 +87,7 @@
             <img class="avatar" id="userAvatar" src="https://via.placeholder.com/60" alt="User Avatar" onclick="navigateTo('account')">
             <span class="username" id="username">Гость</span>
         </div>
+        <div class="error-message" id="errorMessage"></div>
 
         <div class="main-page active" id="mainPage">
             <h1>Добро пожаловать!</h1>
@@ -145,25 +112,52 @@
         let userName = 'Гость';
         let userAvatar = 'https://via.placeholder.com/60';
 
-        if (window.Telegram?.WebApp) {
-            Telegram.WebApp.ready();
-            const user = Telegram.WebApp.initDataUnsafe?.user;
-            if (user) {
-                userId = user.id || 'guest';
-                userName = user.username || user.first_name || 'Гость';
-                userAvatar = user.photo_url || 'https://via.placeholder.com/60';
-            }
-            document.body.classList.add('telegram');
-        } else {
-            userId = 'guest'; // Для тестирования
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
         }
 
-        // Обновление UI с данными пользователя
-        document.getElementById('username').textContent = userName;
-        document.getElementById('userAvatar').src = userAvatar;
-        document.getElementById('accountUsername').textContent = userName;
-        document.getElementById('accountUserId').textContent = userId || 'Неизвестно';
-        document.getElementById('accountAvatar').src = userAvatar;
+        function hideError() {
+            const errorDiv = document.getElementById('errorMessage');
+            errorDiv.textContent = '';
+            errorDiv.style.display = 'none';
+        }
+
+        function initializeApp() {
+            if (!window.Telegram?.WebApp) {
+                showError('Telegram WebApp API недоступен. Убедитесь, что вы открыли приложение в Telegram.');
+                console.error('Telegram WebApp API is not available.');
+                return;
+            }
+
+            try {
+                Telegram.WebApp.ready();
+                const user = Telegram.WebApp.initDataUnsafe?.user;
+                if (user) {
+                    userId = user.id || 'guest';
+                    userName = user.username || user.first_name || 'Гость';
+                    userAvatar = user.photo_url || 'https://via.placeholder.com/60';
+                    document.body.classList.add('telegram');
+                    hideError();
+                } else {
+                    showError('Не удалось получить данные пользователя. Попробуйте перезагрузить приложение.');
+                    console.warn('No user data found in initDataUnsafe.');
+                }
+
+                // Обновление UI с данными пользователя
+                document.getElementById('username').textContent = userName;
+                document.getElementById('userAvatar').src = userAvatar;
+                document.getElementById('accountUsername').textContent = userName;
+                document.getElementById('accountUserId').textContent = userId || 'Неизвестно';
+                document.getElementById('accountAvatar').src = userAvatar;
+
+                console.log('User data:', { userId, userName, userAvatar });
+            } catch (error) {
+                showError('Ошибка при инициализации приложения. Попробуйте позже.');
+                console.error('Initialization error:', error);
+            }
+        }
 
         // Навигация между страницами
         function navigateTo(page) {
@@ -178,6 +172,9 @@
                 accountPage.classList.add('active');
             }
         }
+
+        // Инициализация при загрузке страницы
+        document.addEventListener('DOMContentLoaded', initializeApp);
     </script>
 </body>
 </html>
