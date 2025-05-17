@@ -108,6 +108,7 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
+            z-index: 1003;
         }
 
         dialog::backdrop {
@@ -309,25 +310,6 @@
             font-size: 24px;
         }
 
-        .modal {
-            position: fixed;
-            top: 0;
-            right: -100%;
-            width: 300px;
-            height: 100%;
-            background: #fff;
-            box-shadow: -2px 0 8px rgba(0, 0, 0, 0.2);
-            z-index: 1001;
-            transition: right 0.3s ease-in-out;
-            display: flex;
-            flex-direction: column;
-            padding: 20px;
-        }
-
-        .modal.open {
-            right: 0;
-        }
-
         .modal-backdrop {
             position: fixed;
             top: 0;
@@ -369,6 +351,38 @@
             padding: 8px;
             border-radius: 8px;
             font-size: 14px;
+        }
+
+        .profile {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+            padding: 8px;
+            background: #f1d299;
+            border-radius: 8px;
+        }
+
+        .profile img {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .profile .info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .profile .info .name {
+            font-size: 16px;
+            font-weight: 500;
+        }
+
+        .profile .info .age {
+            font-size: 14px;
+            color: #555;
         }
     </style>
 </head>
@@ -419,7 +433,7 @@
 
         <button type="button" data-modal-open="createDialog" aria-label="Создать объявление">+ Создать</button>
 
-        <button class="floating-btn" onclick="openModal()" aria-label="Открыть боковое меню"></button>
+        <button class="floating-btn" onclick="openFavoritesDialog()" aria-label="Открыть избранное"></button>
     </main>
 
     <dialog id="createDialog" aria-labelledby="dialogTitle">
@@ -499,15 +513,46 @@
         </form>
     </dialog>
 
-    <div class="modal" id="modal">
-        <button class="close-btn" onclick="closeModal()">Закрыть</button>
-        <div class="modal-content">
-            <h2>Избранное</h2>
-            <div class="favorites-list" id="favoritesList"></div>
-        </div>
-    </div>
+    <dialog id="dateDialog" aria-labelledby="dateTitle">
+        <form method="dialog" id="date-form">
+            <h2 id="dateTitle">Выберите дату</h2>
+            <div class="select-options">
+                <label><input type="radio" name="dateOption" value="Сегодня"> Сегодня</label>
+                <label><input type="radio" name="dateOption" value="Завтра"> Завтра</label>
+                <label><input type="radio" name="dateOption" value="На неделе"> На неделе</label>
+            </div>
+            <button type="button" onclick="document.getElementById('dateDialog').close()" aria-label="Отменить выбор даты">Отменить</button>
+            <button type="submit">Применить</button>
+        </form>
+    </dialog>
 
-    <div class="modal-backdrop" id="modalBackdrop"></div>
+    <dialog id="genderDialog" aria-labelledby="genderTitle">
+        <form method="dialog" id="gender-form">
+            <h2 id="genderTitle">Выберите пол</h2>
+            <div class="select-options">
+                <label><input type="radio" name="genderOption" value="Мужской"> Мужской</label>
+                <label><input type="radio" name="genderOption" value="Женский"> Женский</label>
+                <label><input type="radio" name="genderOption" value="Любой"> Любой</label>
+            </div>
+            <button type="button" onclick="document.getElementById('genderDialog').close()" aria-label="Отменить выбор пола">Отменить</button>
+            <button type="submit">Применить</button>
+        </form>
+    </dialog>
+
+    <dialog id="favoritesDialog" aria-labelledby="favoritesTitle">
+        <div class="modal-content">
+            <h2 id="favoritesTitle">Избранное</h2>
+            <div class="profile">
+                <img src="https://via.placeholder.com/48" alt="Аватар TONI">
+                <div class="info">
+                    <span class="name">TONI</span>
+                    <span class="age">15 лет</span>
+                </div>
+            </div>
+            <div class="favorites-list" id="favoritesList"></div>
+            <button class="close-btn" onclick="document.getElementById('favoritesDialog').close()">Закрыть</button>
+        </div>
+    </dialog>
 
     <script>
         // Проверка доступности Telegram
@@ -522,7 +567,7 @@
 
         // Инициализация пользователя
         let userId = 'user-1'; // Тестовый пользователь
-        let userName = 'Вы';
+        let userName = 'TONI'; // Обновлено для профиля
         let isTelegramMode = isTelegramAvailable();
         if (isTelegramMode) {
             try {
@@ -530,7 +575,7 @@
                 const user = Telegram.WebApp.initDataUnsafe?.user;
                 if (user?.id) {
                     userId = user.id;
-                    userName = user.username || user.first_name || 'Вы';
+                    userName = user.username || user.first_name || 'TONI';
                 } else {
                     isTelegramMode = false;
                 }
@@ -545,7 +590,7 @@
             {
                 id: 'ad-1',
                 userId: 'user-1',
-                userName: 'Вы',
+                userName: 'TONI',
                 title: 'Встреча в Москве',
                 description: 'Присоединяйтесь к нашей встрече в центре города!',
                 city: 'Москва',
@@ -571,6 +616,8 @@
         let favorites = [];
         let likesDislikes = { 'ad-1': { likes: [], dislikes: [] }, 'ad-2': { likes: [], dislikes: [] } };
         let editAdId = null;
+        let renderedAdsCount = 0;
+        const lazyLoadBatchSize = 10;
 
         // Загрузка данных
         function loadCloudData() {
@@ -629,7 +676,6 @@
             const genderFilter = document.getElementById('gender').value;
             const sortOption = document.getElementById('sort').value || 'rating';
 
-            // Поиск по словам (включая теги)
             let filtered = adsToFilter.filter(ad => {
                 if (!searchQuery) return true;
                 const searchTerms = searchQuery.split(/\s+/);
@@ -644,13 +690,11 @@
                 return searchTerms.every(term => searchableText.includes(term));
             });
 
-            // Фильтры
             if (cityFilter) filtered = filtered.filter(ad => ad.city === cityFilter);
             if (typeFilter) filtered = filtered.filter(ad => ad.type === typeFilter);
             if (dateFilter) filtered = filtered.filter(ad => ad.date === dateFilter);
             if (genderFilter) filtered = filtered.filter(ad => ad.gender === genderFilter);
 
-            // Сортировка
             switch (sortOption) {
                 case 'rating':
                     filtered.sort((a, b) => {
@@ -670,13 +714,54 @@
             return filtered;
         }
 
-        // Рендеринг объявлений
+        // Рендеринг объявлений с lazy-loading
         function renderAds() {
             const adList = document.getElementById('adList');
             adList.innerHTML = '';
             const filteredAds = filterAds(ads.filter(ad => !hiddenAds.includes(ad.id)));
+            renderedAdsCount = 0;
 
-            filteredAds.forEach(ad => {
+            // Тестирование: Логируем количество отфильтрованных объявлений
+            console.log(`[Lazy-Loading Test] Filtered ads count: ${filteredAds.length}`);
+
+            // Рендеринг первой партии объявлений
+            renderAdBatch(filteredAds, adList);
+
+            // Настройка IntersectionObserver для lazy-loading
+            if (filteredAds.length > lazyLoadBatchSize) {
+                const observer = new IntersectionObserver((entries, observer) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            // Тестирование: Логируем вызов lazy-loading
+                            console.log(`[Lazy-Loading Test] Intersection triggered, rendering next batch. Current count: ${renderedAdsCount}`);
+                            renderAdBatch(filteredAds, adList);
+                            if (renderedAdsCount >= filteredAds.length) {
+                                observer.disconnect();
+                                console.log('[Lazy-Loading Test] All ads rendered, observer disconnected');
+                            }
+                        }
+                    });
+                }, { root: null, rootMargin: '100px', threshold: 0.1 });
+
+                const sentinel = document.createElement('div');
+                sentinel.id = 'sentinel';
+                adList.appendChild(sentinel);
+                observer.observe(sentinel);
+            }
+
+            renderFavorites();
+        }
+
+        // Рендеринг партии объявлений
+        function renderAdBatch(filteredAds, adList) {
+            const start = renderedAdsCount;
+            const end = Math.min(start + lazyLoadBatchSize, filteredAds.length);
+            const batch = filteredAds.slice(start, end);
+
+            // Тестирование: Логируем рендеринг партии
+            console.log(`[Lazy-Loading Test] Rendering batch from ${start} to ${end}`);
+
+            batch.forEach(ad => {
                 const adItem = document.createElement('article');
                 adItem.className = `ad-item ${ad.userId === userId ? 'own' : ''}`;
                 adItem.setAttribute('aria-label', `Объявление от ${ad.userName}`);
@@ -711,7 +796,7 @@
                 adList.appendChild(adItem);
             });
 
-            renderFavorites();
+            renderedAdsCount = end;
         }
 
         // Рендеринг избранного
@@ -985,15 +1070,13 @@
             renderAds();
         }
 
-        // Открытие/закрытие бокового меню
-        function openModal() {
-            document.getElementById('modal').classList.add('open');
-            document.getElementById('modalBackdrop').classList.add('open');
-        }
-
-        function closeModal() {
-            document.getElementById('modal').classList.remove('open');
-            document.getElementById('modalBackdrop').classList.remove('open');
+        // Открытие избранного
+        function openFavoritesDialog() {
+            // Вибрация: 50ms (короткий импульс)
+            if (navigator.vibrate) {
+                navigator.vibrate(50);
+            }
+            document.getElementById('favoritesDialog').showModal();
         }
 
         // Применение фильтров для города
@@ -1016,14 +1099,40 @@
             renderAds();
         }
 
-        // Закрытие модалок по клику на backdrop
+        // Применение фильтров для даты
+        function applyDate() {
+            const selectedDate = document.querySelector('input[name="dateOption"]:checked')?.value;
+            if (selectedDate) {
+                document.getElementById('date').value = selectedDate;
+            }
+            document.getElementById('dateDialog').close();
+            renderAds();
+        }
+
+        // Применение фильтров для пола
+        function applyGender() {
+            const selectedGender = document.querySelector('input[name="genderOption"]:checked')?.value;
+            if (selectedGender) {
+                document.getElementById('gender').value = selectedGender;
+            }
+            document.getElementById('genderDialog').close();
+            renderAds();
+        }
+
+        // Закрытие модалок по клику на backdrop и кнопки
         function setupDialogBackdropClose() {
-            ['createDialog', 'complaintDialog', 'cityDialog', 'typeDialog'].forEach(dialogId => {
+            ['createDialog', 'complaintDialog', 'cityDialog', 'typeDialog', 'dateDialog', 'genderDialog', 'favoritesDialog'].forEach(dialogId => {
                 const dialog = document.getElementById(dialogId);
                 dialog.addEventListener('click', (e) => {
                     if (e.target === dialog) {
                         dialog.close();
                     }
+                });
+                // Закрытие при клике на любую кнопку внутри диалога
+                dialog.querySelectorAll('button').forEach(button => {
+                    button.addEventListener('click', () => {
+                        dialog.close();
+                    });
                 });
             });
         }
@@ -1053,6 +1162,16 @@
             applyType();
         });
 
+        document.getElementById('date-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            applyDate();
+        });
+
+        document.getElementById('gender-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            applyGender();
+        });
+
         document.getElementById('filter-form').addEventListener('input', () => {
             renderAds();
         });
@@ -1063,6 +1182,14 @@
 
         document.getElementById('type').addEventListener('click', () => {
             document.getElementById('typeDialog').showModal();
+        });
+
+        document.getElementById('date').addEventListener('click', () => {
+            document.getElementById('dateDialog').showModal();
+        });
+
+        document.getElementById('gender').addEventListener('click', () => {
+            document.getElementById('genderDialog').showModal();
         });
 
         // Инициализация
