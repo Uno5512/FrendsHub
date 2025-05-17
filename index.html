@@ -525,90 +525,93 @@
     <div class="modal-backdrop" id="modalBackdrop"></div>
 
     <script>
-        // Telegram Mini App инициализация
+ // Telegram Mini App инициализация
         let userId = null;
         let userName = 'Гость';
         if (window.Telegram?.WebApp) {
-            Telegram.WebApp.ready();
-            userId = Telegram.WebApp.initDataUnsafe?.user?.id || 'guest';
-            userName = Telegram.WebApp.initDataUnsafe?.user?.username || Telegram.WebApp.initDataUnsafe?.user?.first_name || 'Гость';
-            document.body.classList.add('telegram');
+                Telegram.WebApp.ready();
+                userId = Telegram.WebApp.initDataUnsafe?.user?.id || 'guest';
+                userName = Telegram.WebApp.initDataUnsafe?.user?.username || Telegram.WebApp.initDataUnsafe?.user?.first_name || 'Гость';
+                document.body.classList.add('telegram');
         } else {
-            userId = 'guest'; // Для тестирования
+                userId = 'guest'; // Для тестирования
         }
 
         // Загрузка объявлений
         let ads = [];
         let hiddenAds = [];
         let likesDislikes = {};
+        let currentSort = 'rating'; // Добавлено: начальная сортировка по рейтингу
+        let editAdId = null; // Объявляем editAdId глобально
 
         function loadCloudData() {
-            if (window.Telegram?.WebApp) {
-                Telegram.WebApp.ready();
-                return Promise.all([
-                    new Promise((resolve) => {
-                        Telegram.WebApp.CloudStorage.getItems(['ads'], (error, result) => {
-                            if (error) {
-                                console.error('Error loading ads:', error);
-                                resolve([]);
-                            } else {
-                                ads = result.ads ? JSON.parse(result.ads) : [];
-                                resolve(ads);
-                            }
+                if (window.Telegram?.WebApp) {
+                        Telegram.WebApp.ready();
+                        return Promise.all([
+                                new Promise((resolve) => {
+                                        Telegram.WebApp.CloudStorage.getItems(['ads'], (error, result) => {
+                                                if (error) {
+                                                        console.error('Error loading ads:', error);
+                                                        resolve([]);
+                                                } else {
+                                                        ads = result.ads ? JSON.parse(result.ads) : [];
+                                                        resolve(ads);
+                                                }
+                                        });
+                                }),
+                                new Promise((resolve) =>IKE
+                                        Telegram.WebApp.CloudStorage.getItems(['hiddenAds'], (error, result) => {
+                                                if (error) {
+                                                        console.error('Error loading hiddenAds:', error);
+                                                        resolve([]);
+                                                } else {
+                                                        hiddenAds = result.hiddenAds ? JSON.parse(result.hiddenAds) : [];
+                                                        resolve(hiddenAds);
+                                                }
+                                        });
+                                }),
+                                new Promise((resolve) => {
+                                        Telegram.WebApp.CloudStorage.getItems(['likesDislikes'], (error, result) => {
+                                                if (error) {
+                                                        console.error('Error loading likesDislikes:', error);
+                                                        resolve({});
+                                                } else {
+                                                        likesDislikes = result.likesDislikes ? JSON.parse(result.likesDislikes) : {};
+                                                        resolve(likesDislikes);
+                                                }
+                                        });
+                                })
+                        ]).then(() => {
+                                // Fallback to localStorage if cloud is empty
+                                if (!ads.length) ads = JSON.parse(localStorage.getItem('ads')) || [];
+                                if (!hiddenAds.length) hiddenAds = JSON.parse(localStorage.getItem('hiddenAds')) || [];
+                                if (!Object.keys(likesDislikes).length) likesDislikes = JSON.parse(localStorage.getItem('likesDislikes')) || {};
                         });
-                    }),
-                    new Promise((resolve) => {
-                        Telegram.WebApp.CloudStorage.getItems(['hiddenAds'], (error, result) => {
-                            if (error) {
-                                console.error('Error loading hiddenAds:', error);
-                                resolve([]);
-                            } else {
-                                hiddenAds = result.hiddenAds ? JSON.parse(result.hiddenAds) : [];
-                                resolve(hiddenAds);
-                            }
-                        });
-                    }),
-                    new Promise((resolve) => {
-                        Telegram.WebApp.CloudStorage.getItems(['likesDislikes'], (error, result) => {
-                            if (error) {
-                                console.error('Error loading likesDislikes:', error);
-                                resolve({});
-                            } else {
-                                likesDislikes = result.likesDislikes ? JSON.parse(result.likesDislikes) : {};
-                                resolve(likesDislikes);
-                            }
-                        });
-                    })
-                ]).then(() => {
-                    // Fallback to localStorage if cloud is empty
-                    if (!ads.length) ads = JSON.parse(localStorage.getItem('ads')) || [];
-                    if (!hiddenAds.length) hiddenAds = JSON.parse(localStorage.getItem('hiddenAds')) || [];
-                    if (!Object.keys(likesDislikes).length) likesDislikes = JSON.parse(localStorage.getItem('likesDislikes')) || {};
-                });
-            } else {
-                ads = JSON.parse(localStorage.getItem('ads')) || [];
-                hiddenAds = JSON.parse(localStorage.getItem('hiddenAds')) || [];
-                likesDislikes = JSON.parse(localStorage.getItem('likesDislikes')) || [];
-                return Promise.resolve();
-            }
+                } else {
+                        ads = JSON.parse(localStorage.getItem('ads')) || [];
+                        hiddenAds = JSON.parse(localStorage.getItem('hiddenAds')) || [];
+                        likesDislikes = JSON.parse(localStorage.getItem('likesDislikes')) || [];
+                        return Promise.resolve();
+                }
         }
 
         // Загрузка данных при старте
         loadCloudData().then(() => renderAds());
 
         function hideAd(adId) {
-          hiddenAds.push(adId);
-          localStorage.setItem('hiddenAds', JSON.stringify(hiddenAds));
-          renderAds();
+                hiddenAds.push(adId);
+                localStorage.setItem('hiddenAds', JSON.stringify(hiddenAds));
+                renderAds();
         }
 
         function shareAd(adId) {
-          const url = `${window.location.origin}/#${adId}`;
-          navigator.clipboard.writeText(url).then(() => {
-            alert('Ссылка на объявление скопирована!');
-          }).catch(() => {
-            alert('Не удалось скопировать ссылку');
-          });
+                const url = `${window.location.origin}/#${adId}`;
+                navigator.clipboard.writeText(url).then(() => {
+                        alert('Ссылка на объявление скопирована!');
+                }).catch(() => {
+                        alert('Не удалось скопировать ссылку');
+                });
+        }
 
         function toggleLike(adId) {
                 if (!userId) return alert('Авторизуйтесь для оценки');
@@ -646,271 +649,276 @@
 
         // Отрисовка объявлений
         function renderAds() {
-            const adList = document.getElementById('adList');
-            const search = document.getElementById('search').value.toLowerCase();
-            const city = document.getElementById('city').value;
-            const type = document.getElementById('type').value;
-            const date = document.getElementById('date').value;
-            const gender = document.getElementById('gender').value;
-            const sort = currentSort;
+                const adList = document.getElementById('adList');
+                const search = document.getElementById('search').value.toLowerCase();
+                const city = document.getElementById('city').value;
+                const type = document.getElementById('type').value;
+                const date = document.getElementById('date').value;
+                const gender = document.getElementById('gender').value;
+                const sort = currentSort;
 
-            // Фильтрация
-            let filteredAds = ads.filter(ad => {
-              if (hiddenAds.includes(ad.id)) return false; // Пропускаем скрытые объявления
+                // Фильтрация
+                let filteredAds = ads.filter(ad => {
+                        if (hiddenAds.includes(ad.id)) return false; // Пропускаем скрытые объявления
                         const searchWords = search.trim().split(/\s+/).filter(word => word.length > 0);
                         if (searchWords.length === 0) return true;
                         console.log('Search words:', searchWords);
                         console.log('Checking ad:', ad);
                         const matchesSearch = searchWords.every(word => {
-                                    const lowerWord = word.toLowerCase();
-                                    return (
-                                                ad.title.toLowerCase().includes(lowerWord) ||
-                                                ad.description.toLowerCase().includes(lowerWord) ||
-                                                ad.city.toLowerCase().includes(lowerWord) ||
-                                                ad.type.toLowerCase().includes(lowerWord) ||
-                                                ad.date.toLowerCase().includes(lowerWord) ||
-                                                ad.gender.toLowerCase().includes(lowerWord)
-                                    );
+                                const lowerWord = word.toLowerCase();
+                                return (
+                                        ad.title.toLowerCase().includes(lowerWord) ||
+                                        ad.description.toLowerCase().includes(lowerWord) ||
+                                        ad.city.toLowerCase().includes(lowerWord) ||
+                                        ad.type.toLowerCase().includes(lowerWord) ||
+                                        ad.date.toLowerCase().includes(lowerWord) ||
+                                        ad.gender.toLowerCase().includes(lowerWord)
+                                );
                         });
                         return matchesSearch &&
                                (city === '' || ad.city === city) &&
                                (type === '' || ad.type === type) &&
                                (date === '' || ad.date === date) &&
                                (gender === '' || ad.gender === gender);
-            });
+                });
 
-// Сортировка (свои объявления сверху, затем по рейтингу или дате)
-            filteredAds.sort((a, b) => {
-                const isOwnA = a.userId === userId;
-                const isOwnB = b.userId === userId;
-                if (isOwnA && !isOwnB) return -1;
-                if (!isOwnA && isOwnB) return 1;
-                const aRating = ((likesDislikes[a.id]?.likes?.length || 0) - (likesDislikes[a.id]?.dislikes?.length || 0));
-                const bRating = ((likesDislikes[b.id]?.likes?.length || 0) - (likesDislikes[b.id]?.dislikes?.length || 0));
-                const dateA = new Date(a.createdAt);
-                const dateB = new Date(b.createdAt);
-                if (sort === 'newest') {
-                    return dateB - dateA;
-                } else if (sort === 'oldest') {
-                    return dateA - dateB;
-                } else {
-                    return bRating - aRating; // По рейтингу
-                }
-            });
+                // Сортировка (свои объявления сверху, затем по рейтингу или дате)
+                filteredAds.sort((a, b) => {
+                        const isOwnA = a.userId === userId;
+                        const isOwnB = b.userId === userId;
+                        if (isOwnA && !isOwnB) return -1;
+                        if (!isOwnA && isOwnB) return 1;
+                        const aRating = ((likesDislikes[a.id]?.likes?.length || 0) - (likesDislikes[a.id]?.dislikes?.length || 0));
+                        const bRating = ((likesDislikes[b.id]?.likes?.length || 0) - (likesDislikes[b.id]?.dislikes?.length || 0));
+                        const dateA = new Date(a.createdAt);
+                        const dateB = new Date(b.createdAt);
+                        if (sort === 'newest') {
+                                return dateB - dateA;
+                        } else if (sort === 'oldest') {
+                                return dateA - dateB;
+                        } else {
+                                return bRating - aRating; // По рейтингу
+                        }
+                });
 
-            adList.innerHTML = '';
-            filteredAds.forEach(ad => {
-                const adDiv = document.createElement('div');
-                adDiv.className = `ad-item ${ad.userId === userId ? 'own' : ''}`;
-                adDiv.innerHTML = `
-                    <div class="user">
-                        <span onclick="openTelegramProfile('${ad.userId}')">${ad.userName}</span>
-                    </div>
-                    <h3>${ad.title}</h3>
-                    <p>${ad.description}</p>
-                    <p><small>Город: ${ad.city} | Вид: ${ad.type} | Дата: ${ad.date} | Пол: ${ad.gender} | ${new Date(ad.createdAt).toLocaleDateString()}</small></p>
-                    <div class="ad-actions">
-                        <span class="counter">• ${((likesDislikes[ad.id]?.likes?.length || 0) - (likesDislikes[ad.id]?.dislikes?.length || 0))}</span>
-                        <span class="action share" onclick="shareAd('${ad.id}')" title="Поделиться">🔗</span>
-                        <span class="action favorite" title="В избранное">❤️</span>
-                        <span class="action like ${likesDislikes[ad.id]?.likes?.includes(userId) ? 'liked' : ''}" onclick="toggleLike('${ad.id}')" title="Лайк">👍</span>
-                        <span class="action dislike ${likesDislikes[ad.id]?.dislikes?.includes(userId) ? 'disliked' : ''}" onclick="toggleDislike('${ad.id}')" title="Дизлайк">👎</span>
-                        <span class="menu" onclick="toggleMenu('${ad.id}')">•••</span>
-                    </div>
-                    <div class="menu-options" id="menu-${ad.id}">
-                        ${ad.userId === userId ? `
-                            <button onclick="editAd('${ad.id}')">Редактировать</button>
-                            <button onclick="deleteAd('${ad.id}')">Удалить</button>
-                        ` : `
-                            <button onclick="hideAd('${ad.id}')">Не показывать</button>
-                            <button onclick="openComplaintDialog()">Пожаловаться</button>
-                        `}
-                    </div>
-                `;
-                adList.appendChild(adDiv);
-            });
+                adList.innerHTML = '';
+                filteredAds.forEach(ad => {
+                        const adDiv = document.createElement('div');
+                        adDiv.className = `ad-item ${ad.userId === userId ? 'own' : ''}`;
+                        adDiv.innerHTML = `
+                                <div class="user">
+                                        <span onclick="openTelegramProfile('${ad.userId}')">${ad.userName}</span>
+                                </div>
+                                <h3>${ad.title}</h3>
+                                <p>${ad.description}</p>
+                                <p><small>Город: ${ad.city} | Вид: ${ad.type} | Дата: ${ad.date} | Пол: ${ad.gender} | ${new Date(ad.createdAt).toLocaleDateString()}</small></p>
+                                <div class="ad-actions">
+                                        <span class="counter">• ${((likesDislikes[ad.id]?.likes?.length || 0) - (likesDislikes[ad.id]?.dislikes?.length || 0))}</span>
+                                        <span class="action share" onclick="shareAd('${ad.id}')" title="Поделиться">🔗</span>
+                                        <span class="action favorite" title="В избранное">❤️</span>
+                                        <span class="action like ${likesDislikes[ad.id]?.likes?.includes(userId) ? 'liked' : ''}" onclick="toggleLike('${ad.id}')" title="Лайк">👍</span>
+                                        <span class="action dislike ${likesDislikes[ad.id]?.dislikes?.includes(userId) ? 'disliked' : ''}" onclick="toggleDislike('${ad.id}')" title="Дизлайк">👎</span>
+                                        <span class="menu" onclick="toggleMenu('${ad.id}')">•••</span>
+                                </div>
+                                <div class="menu-options" id="menu-${ad.id}">
+                                        ${ad.userId === userId ? `
+                                                <button onclick="editAd('${ad.id}')">Редактировать</button>
+                                                <button onclick="deleteAd('${ad.id}')">Удалить</button>
+                                        ` : `
+                                                <button onclick="hideAd('${ad.id}')">Не показывать</button>
+                                                <button onclick="openComplaintDialog()">Пожаловаться</button>
+                                        `}
+                                </div>
+                        `;
+                        adList.appendChild(adDiv);
+                });
         }
 
         // Открытие профиля в Telegram
         function openTelegramProfile(id) {
-            if (id !== 'guest') {
-                window.location.href = `tg://user?id=${id}`;
-            }
+                if (id !== 'guest') {
+                        window.location.href = `tg://user?id=${id}`;
+                }
         }
 
         // Переключение меню
         function toggleMenu(adId) {
-         console.log('Toggling menu for ad:', adId);
-         // Закрываем все открытые меню
-         const openMenus = document.querySelectorAll('.menu-options[style="display: block;"]');
-         openMenus.forEach(menu => {
-           menu.style.display = 'none';
-         });
-         // Открываем текущее меню
-         const menu = document.getElementById(`menu-${adId}`);
-         if (menu) {
-           menu.style.display = 'block';
-         } else {
-           console.error('Menu not found for ad:', adId);
-         }
-       }
+                console.log('Toggling menu for ad:', adId);
+                // Закрываем все открытые меню
+                const openMenus = document.querySelectorAll('.menu-options[style="display: block;"]');
+                openMenus.forEach(menu => {
+                        menu.style.display = 'none';
+                });
+                // Открываем текущее меню
+                const menu = document.getElementById(`menu-${adId}`);
+                if (menu) {
+                        menu.style.display = 'block';
+                } else {
+                        console.error('Menu not found for ad:', adId);
+                }
+        }
 
         // Открытие окна создания/редактирования
         function openCreateDialog(adId = null) {
-            console.log('Opening create dialog, adId:', adId);
-            const dialog = document.getElementById('createDialog');
-            const title = document.getElementById('dialogTitle');
-            editAdId = adId;
+                console.log('Opening create dialog, adId:', adId); // Для отладки
+                const dialog = document.getElementById('createDialog');
+                const title = document.getElementById('dialogTitle');
+                editAdId = adId;
 
-            if (adId) {
-                const ad = ads.find(a => a.id === adId);
-                if (!ad) {
-                    console.error('Ad not found:', adId);
-                    return;
+                if (dialog && title) {
+                        if (adId) {
+                                const ad = ads.find(a => a.id === adId);
+                                if (!ad) {
+                                        console.error('Ad not found:', adId);
+                                        return;
+                                }
+                                document.getElementById('adTitle').value = ad.title;
+                                document.getElementById('adDescription').value = ad.description;
+                                document.getElementById('adCity').value = ad.city;
+                                document.getElementById('adType').value = ad.type;
+                                document.getElementById('adDate').value = ad.date;
+                                document.getElementById('adGender').value = ad.gender;
+                                title.textContent = 'Редактировать объявление';
+                        } else {
+                                document.getElementById('adTitle').value = '';
+                                document.getElementById('adDescription').value = '';
+                                document.getElementById('adCity').value = 'Москва';
+                                document.getElementById('adType').value = 'Встреча';
+                                document.getElementById('adDate').value = 'Сегодня';
+                                document.getElementById('adGender').value = 'Любой';
+                                title.textContent = 'Создать объявление';
+                        }
+                        dialog.showModal();
+                        event?.stopPropagation(); // Останавливаем всплытие события клика
+                } else {
+                        console.error('Create dialog or title not found');
                 }
-                document.getElementById('adTitle').value = ad.title;
-                document.getElementById('adDescription').value = ad.description;
-                document.getElementById('adCity').value = ad.city;
-                document.getElementById('adType').value = ad.type;
-                document.getElementById('adDate').value = ad.date;
-                document.getElementById('adGender').value = ad.gender;
-                title.textContent = 'Редактировать объявление';
-            } else {
-                document.getElementById('adTitle').value = '';
-                document.getElementById('adDescription').value = '';
-                document.getElementById('adCity').value = 'Москва';
-                document.getElementById('adType').value = 'Встреча';
-                document.getElementById('adDate').value = 'Сегодня';
-                document.getElementById('adGender').value = 'Любой';
-                title.textContent = 'Создать объявление';
-            }
-            dialog.showModal();
         }
 
         // Сохранение объявления
         function saveAd() {
-            const title = document.getElementById('adTitle').value;
-            const description = document.getElementById('adDescription').value;
-            const city = document.getElementById('adCity').value;
-            const type = document.getElementById('adType').value;
-            const date = document.getElementById('adDate').value;
-            const gender = document.getElementById('adGender').value;
+                const title = document.getElementById('adTitle').value;
+                const description = document.getElementById('adDescription').value;
+                const city = document.getElementById('adCity').value;
+                const type = document.getElementById('adType').value;
+                const date = document.getElementById('adDate').value;
+                const gender = document.getElementById('adGender').value;
 
-            if (!title || !description) {
-                alert('Заполните заголовок и описание');
-                return;
-            }
+                if (!title || !description) {
+                        alert('Заполните заголовок и описание');
+                        return;
+                }
 
-            const userAds = ads.filter(ad => ad.userId === userId);
-            if (!editAdId && userAds.length >= 3) {
-                alert('Вы можете создать не более 3 объявлений.');
-                return;
-            }
+                const userAds = ads.filter(ad => ad.userId === userId);
+                if (!editAdId && userAds.length >= 3) {
+                        alert('Вы можете создать не более 3 объявлений.');
+                        return;
+                }
 
-            let newAdId;
-            if (editAdId) {
-                const adIndex = ads.findIndex(ad => ad.id === editAdId);
-                ads[adIndex] = { ...ads[adIndex], title, description, city, type, date, gender };
-                newAdId = editAdId;
-            } else {
-                newAdId = Date.now().toString();
-                ads.push({
-                    id: newAdId,
-                    userId,
-                    userName,
-                    title,
-                    description,
-                    city,
-                    type,
-                    date,
-                    gender,
-                    createdAt: new Date().toISOString()
+                let newAdId;
+                if (editAdId) {
+                        const adIndex = ads.findIndex(ad => ad.id === editAdId);
+                        ads[adIndex] = { ...ads[adIndex], title, description, city, type, date, gender };
+                        newAdId = editAdId;
+                } else {
+                        newAdId = Date.now().toString();
+                        ads.push({
+                                id: newAdId,
+                                userId,
+                                userName,
+                                title,
+                                description,
+                                city,
+                                type,
+                                date,
+                                gender,
+                                createdAt: new Date().toISOString()
+                        });
+                        likesDislikes[newAdId] = { likes: [], dislikes: [] };
+                }
+
+                // Сохранение в облако и localStorage
+                const savePromises = [
+                        new Promise((resolve) => {
+                                localStorage.setItem('ads', JSON.stringify(ads));
+                                if (window.Telegram?.WebApp) {
+                                        Telegram.WebApp.CloudStorage.setItem('ads', JSON.stringify(ads), (error) => {
+                                                if (error) console.error('Error saving ads:', error);
+                                                resolve();
+                                        });
+                                } else {
+                                        resolve();
+                                }
+                        }),
+                        new Promise((resolve) => {
+                                localStorage.setItem('likesDislikes', JSON.stringify(likesDislikes));
+                                if (window.Telegram?.WebApp) {
+                                        Telegram.WebApp.CloudStorage.setItem('likesDislikes', JSON.stringify(likesDislikes), (error) => {
+                                                if (error) console.error('Error saving likesDislikes:', error);
+                                                resolve();
+                                        });
+                                } else {
+                                        resolve();
+                                }
+                        })
+                ];
+
+                Promise.all(savePromises).then(() => {
+                        closeDialog('createDialog');
+                        renderAds();
                 });
-                likesDislikes[newAdId] = { likes: [], dislikes: [] };
-            }
-
-            // Сохранение в облако и localStorage
-            const savePromises = [
-                new Promise((resolve) => {
-                    localStorage.setItem('ads', JSON.stringify(ads));
-                    if (window.Telegram?.WebApp) {
-                        Telegram.WebApp.CloudStorage.setItem('ads', JSON.stringify(ads), (error) => {
-                            if (error) console.error('Error saving ads:', error);
-                            resolve();
-                        });
-                    } else {
-                        resolve();
-                    }
-                }),
-                new Promise((resolve) => {
-                    localStorage.setItem('likesDislikes', JSON.stringify(likesDislikes));
-                    if (window.Telegram?.WebApp) {
-                        Telegram.WebApp.CloudStorage.setItem('likesDislikes', JSON.stringify(likesDislikes), (error) => {
-                            if (error) console.error('Error saving likesDislikes:', error);
-                            resolve();
-                        });
-                    } else {
-                        resolve();
-                    }
-                })
-            ];
-
-            Promise.all(savePromises).then(() => {
-                closeDialog('createDialog');
-                renderAds();
-            });
         }
 
         // Редактирование объявления
         function editAd(adId) {
-            openCreateDialog(adId);
+                openCreateDialog(adId);
         }
 
         // Удаление объявления
         function deleteAd(adId) {
-            ads = ads.filter(ad => ad.id !== adId);
-            localStorage.setItem('ads', JSON.stringify(ads));
-            renderAds();
+                ads = ads.filter(ad => ad.id !== adId);
+                localStorage.setItem('ads', JSON.stringify(ads));
+                renderAds();
         }
 
         // Открытие окна жалобы
         function openComplaintDialog() {
-            document.getElementById('complaintText').value = '';
-            document.getElementById('complaintDialog').showModal();
+                document.getElementById('complaintText').value = '';
+                document.getElementById('complaintDialog').showModal();
         }
 
         // Отправка жалобы (заглушка)
         function submitComplaint() {
-            const complaint = document.getElementById('complaintText').value;
-            if (complaint) {
-                console.log('Жалоба:', complaint); // В продакшене отправить на сервер
-                closeDialog('complaintDialog');
-            }
+                const complaint = document.getElementById('complaintText').value;
+                if (complaint) {
+                        console.log('Жалоба:', complaint); // В продакшене отправить на сервер
+                        closeDialog('complaintDialog');
+                }
         }
 
         // Закрытие модального окна
         function closeDialog(dialogId) {
-            document.getElementById(dialogId).close();
+                document.getElementById(dialogId).close();
         }
 
         // Применение выбора города
         function applyCity() {
-            const selected = document.querySelector('input[name="cityOption"]:checked');
-            if (selected) {
-                document.getElementById('city').value = selected.value;
-                renderAds();
-            }
-            closeDialog('cityDialog');
+                const selected = document.querySelector('input[name="cityOption"]:checked');
+                if (selected) {
+                        document.getElementById('city').value = selected.value;
+                        renderAds();
+                }
+                closeDialog('cityDialog');
         }
 
         // Применение выбора вида
         function applyType() {
-            const selected = document.querySelector('input[name="typeOption"]:checked');
-            if (selected) {
-                document.getElementById('type').value = selected.value;
-                renderAds();
-            }
-            closeDialog('typeDialog');
+                const selected = document.querySelector('input[name="typeOption"]:checked');
+                if (selected) {
+                        document.getElementById('type').value = selected.value;
+                        renderAds();
+                }
+                closeDialog('typeDialog');
         }
 
         // Обработчики событий
@@ -920,118 +928,66 @@
         document.getElementById('date').addEventListener('change', renderAds);
         document.getElementById('gender').addEventListener('change', renderAds);
         document.getElementById('sort').addEventListener('change', function() {
-            currentSort = this.value || 'rating';
-            renderAds();
-            this.value = ''; // Сбрасываем на заглушку •••
+                currentSort = this.value || 'rating';
+                renderAds();
+                this.value = ''; // Сбрасываем на заглушку •••
         });
 
         // Начальная отрисовка
         renderAds();
 
-        // Объявляем editAdId глобально
-        let editAdId = null;
-
         // Очистка поиска при клике вне поля
         document.addEventListener('click', function(event) {
-            const searchInput = document.getElementById('search');
-            if (event.target !== searchInput && event.target !== document.getElementById('sort')) {
-                searchInput.blur();
-            }
+                const searchInput = document.getElementById('search');
+                if (event.target !== searchInput && event.target !== document.getElementById('sort')) {
+                        searchInput.blur();
+                }
         });
 
         // Закрытие меню при клике вне
         document.addEventListener('click', function(event) {
-            const openMenus = document.querySelectorAll('.menu-options[style="display: block;"]');
-            if (!event.target.closest('.menu') && !event.target.closest('.menu-options') && !event.target.closest('.create-btn') && !event.target.closest('.floating-btn')) {
-                openMenus.forEach(menu => {
-                    menu.style.display = 'none';
-                });
-            }
+                const openMenus = document.querySelectorAll('.menu-options[style="display: block;"]');
+                if (!event.target.closest('.menu') && !event.target.closest('.menu-options') && !event.target.closest('.create-btn') && !event.target.closest('.floating-btn')) {
+                        openMenus.forEach(menu => {
+                                menu.style.display = 'none';
+                        });
+                }
         });
 
         // Открытие модального окна
         function openModal() {
-            console.log('Opening modal'); // Для отладки
-            const modal = document.getElementById('modal');
-            const backdrop = document.getElementById('modalBackdrop');
-            if (modal && backdrop) {
-                modal.classList.add('open');
-                backdrop.classList.add('open');
-            } else {
-                console.error('Modal or backdrop not found');
-            }
+                console.log('Opening modal'); // Для отладки
+                const modal = document.getElementById('modal');
+                const backdrop = document.getElementById('modalBackdrop');
+                if (modal && backdrop) {
+                        modal.classList.add('open');
+                        backdrop.classList.add('open');
+                        event?.stopPropagation(); // Останавливаем всплытие события клика
+                } else {
+                        console.error('Modal or backdrop not found');
+                }
         }
 
         // Закрытие модального окна
         function closeModal() {
-            console.log('Closing modal'); // Для отладки
-            const modal = document.getElementById('modal');
-            const backdrop = document.getElementById('modalBackdrop');
-            if (modal && backdrop) {
-                modal.classList.remove('open');
-                backdrop.classList.remove('open');
-            }
+                console.log('Closing modal'); // Для отладки
+                const modal = document.getElementById('modal');
+                const backdrop = document.getElementById('modalBackdrop');
+                if (modal && backdrop) {
+                        modal.classList.remove('open');
+                        backdrop.classList.remove('open');
+                }
         }
 
         // Закрытие модального окна при клике на фон
         document.addEventListener('DOMContentLoaded', function() {
-            const backdrop = document.getElementById('modalBackdrop');
-            if (backdrop) {
-                backdrop.addEventListener('click', closeModal);
-            } else {
-                console.error('modalBackdrop not found');
-            }
-        });
-
-        // Отладка для кнопки Создать
-        function openCreateDialog(adId = null) {
-            console.log('Opening create dialog, adId:', adId); // Для отладки
-            const dialog = document.getElementById('createDialog');
-            const title = document.getElementById('dialogTitle');
-            editAdId = adId;
-
-            if (dialog && title) {
-                if (adId) {
-                    const ad = ads.find(a => a.id === adId);
-                    if (!ad) {
-                        console.error('Ad not found:', adId);
-                        return;
-                    }
-                    document.getElementById('adTitle').value = ad.title;
-                    document.getElementById('adDescription').value = ad.description;
-                    document.getElementById('adCity').value = ad.city;
-                    document.getElementById('adType').value = ad.type;
-                    document.getElementById('adDate').value = ad.date;
-                    document.getElementById('adGender').value = ad.gender;
-                    title.textContent = 'Редактировать объявление';
+                const backdrop = document.getElementById('modalBackdrop');
+                if (backdrop) {
+                        backdrop.addEventListener('click', closeModal);
                 } else {
-                    document.getElementById('adTitle').value = '';
-                    document.getElementById('adDescription').value = '';
-                    document.getElementById('adCity').value = 'Москва';
-                    document.getElementById('adType').value = 'Встреча';
-                    document.getElementById('adDate').value = 'Сегодня';
-                    document.getElementById('adGender').value = 'Любой';
-                    title.textContent = 'Создать объявление';
+                        console.error('modalBackdrop not found');
                 }
-                dialog.showModal();
-            } else {
-                console.error('Create dialog or title not found');
-            }
-        }
+        });
     </script>
-<!-- Плавающая кнопка -->
-    <div class="floating-btn" onclick="openModal()"></div>
-
-    <!-- Модальное окно -->
-    <div class="modal" id="modal">
-        <button class="close-btn" onclick="closeModal()">Закрыть</button>
-        <div class="modal-content">
-            <h2>Модальное окно</h2>
-            <p>Здесь можно добавить любой контент для модального окна.</p>
-        </div>
-    </div>
-
-    <!-- Фон затемнения -->
-    <div class="modal-backdrop" id="modalBackdrop"></div>
 </body>
 </html>
