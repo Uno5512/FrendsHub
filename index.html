@@ -529,9 +529,20 @@
 
         // Переключение меню
         function toggleMenu(adId) {
-            const menu = document.getElementById(`menu-${adId}`);
-            menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
-        }
+         console.log('Toggling menu for ad:', adId);
+         // Закрываем все открытые меню
+         const openMenus = document.querySelectorAll('.menu-options[style="display: block;"]');
+         openMenus.forEach(menu => {
+           menu.style.display = 'none';
+         });
+         // Открываем текущее меню
+         const menu = document.getElementById(`menu-${adId}`);
+         if (menu) {
+           menu.style.display = 'block';
+         } else {
+           console.error('Menu not found for ad:', adId);
+         }
+       }
 
         // Открытие окна создания/редактирования
         function openCreateDialog(adId = null) {
