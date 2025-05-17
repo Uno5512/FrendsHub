@@ -181,9 +181,6 @@
             text-decoration: underline;
         }
         .ad-item .menu {
-            position: absolute;
-            top: 16px;
-            right: 16px;
             cursor: pointer;
             font-size: 20px;
         }
@@ -211,6 +208,32 @@
         }
         .ad-item .menu-options button:hover {
             background: #F5F5F5;
+        }
+
+        .ad-actions {
+                position: absolute;
+                top: 16px;
+                right: 16px;
+                display: flex;
+                align-items: center;
+                gap: 12px;
+        }
+
+        .ad-actions .action {
+                cursor: pointer;
+                font-size: 18px;
+        }
+
+        .ad-actions .counter {
+                font-size: 14px;
+                color: #000;
+        }
+
+        .ad-actions .counter::before {
+                content: '•';
+                color: #d7e0aa;
+                margin-right: 4px;
+
         }
         .create-btn {
             position: fixed;
@@ -409,6 +432,15 @@
           renderAds();
         }
 
+        function shareAd(adId) {
+          const url = `${window.location.origin}/#${adId}`;
+          navigator.clipboard.writeText(url).then(() => {
+            alert('Ссылка на объявление скопирована!');
+          }).catch(() => {
+            alert('Не удалось скопировать ссылку');
+          });
+        }
+
         // Отрисовка объявлений
         function renderAds() {
             const adList = document.getElementById('adList');
@@ -466,7 +498,15 @@
                     <h3>${ad.title}</h3>
                     <p>${ad.description}</p>
                     <p><small>Город: ${ad.city} | Вид: ${ad.type} | Дата: ${ad.date} | Пол: ${ad.gender} | ${new Date(ad.createdAt).toLocaleDateString()}</small></p>
+                    <div class="ad-actions">
+                    <span class="action dislike" title="Дизлайк">👎</span>
+                    <span class="action like" title="Лайк">👍</span>
+                    <span class="action favorite" title="В избранное">❤️</span>
+                    <span class="action share" onclick="shareAd('${ad.id}')" title="Поделиться">🔗</span>
+                    <span class="counter">• 0</span>
                     <span class="menu" onclick="toggleMenu('${ad.id}')">•••</span>
+                </div>
+                    <div class="menu-options" id="menu lã
                     <div class="menu-options" id="menu-${ad.id}">
                         ${ad.userId === userId ? `
                             <button onclick="editAd('${ad.id}')">Редактировать</button>
