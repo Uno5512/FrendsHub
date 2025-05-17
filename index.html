@@ -63,7 +63,7 @@
             margin: 5px 0;
         }
         .back-btn {
-            background-color: #0088cc;
+            background-color: #0088ccm;
             color: #fff;
             border: none;
             padding: 10px 20px;
@@ -76,8 +76,17 @@
         }
         .error-message {
             color: red;
+            text-align: center;
             margin-top: 10px;
-            display: none;
+            font-size: 14px;
+        }
+        .debug-info {
+            background-color: #fff;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+            font-size: 12px;
+            color: #555;
         }
     </style>
 </head>
@@ -87,11 +96,12 @@
             <img class="avatar" id="userAvatar" src="https://via.placeholder.com/60" alt="User Avatar" onclick="navigateTo('account')">
             <span class="username" id="username">Гость</span>
         </div>
-        <div class="error-message" id="errorMessage"></div>
 
         <div class="main-page active" id="mainPage">
             <h1>Добро пожаловать!</h1>
-            <p>Это главная страница вашего Telegram Mini App. Здесь вы можете добавить свой контент.</p>
+            <p>Это главная страница вашего Telegram Mini App.</p>
+            <div class="error-message" id="errorMessage"></div>
+            <div class="debug-info" id="debugInfo"></div>
         </div>
 
         <div class="account-page" id="accountPage">
@@ -112,51 +122,66 @@
         let userName = 'Гость';
         let userAvatar = 'https://via.placeholder.com/60';
 
-        function showError(message) {
-            const errorDiv = document.getElementById('errorMessage');
-            errorDiv.textContent = message;
-            errorDiv.style.display = 'block';
-        }
-
-        function hideError() {
-            const errorDiv = document.getElementById('errorMessage');
-            errorDiv.textContent = '';
-            errorDiv.style.display = 'none';
-        }
-
-        function initializeApp() {
-            if (!window.Telegram?.WebApp) {
-                showError('Telegram WebApp API недоступен. Убедитесь, что вы открыли приложение в Telegram.');
-                console.error('Telegram WebApp API is not available.');
-                return;
+        function displayError(message) {
+            const errorElement = document.getElementById('errorMessage');
+            if (errorElement) {
+                errorElement.textContent = message;
             }
+            console.error(message);
+        }
 
+        function displayDebugInfo(info) {
+            const debugElement = document.getElementById('debugInfo');
+            if (debugElement) {
+                debugElement.textContent = info;
+            }
+            console.log(info);
+        }
+
+        function initializeTelegram() {
             try {
-                Telegram.WebApp.ready();
-                const user = Telegram.WebApp.initDataUnsafe?.user;
-                if (user) {
-                    userId = user.id || 'guest';
-                    userName = user.username || user.first_name || 'Гость';
-                    userAvatar = user.photo_url || 'https://via.placeholder.com/60';
-                    document.body.classList.add('telegram');
-                    hideError();
-                } else {
-                    showError('Не удалось получить данные пользователя. Попробуйте перезагрузить приложение.');
-                    console.warn('No user data found in initDataUnsafe.');
+                // Проверка наличия Telegram WebApp
+                if (!window.Telegram || !window.Telegram.WebApp) {
+                    displayError('Ошибка: Telegram WebApp API недоступен. Запустите приложение через Telegram.');
+                    displayDebugInfo('Telegram object: ' + JSON.stringify(window.Telegram));
+                    userId = 'guest';
+                    updateUI();
+                    return;
                 }
 
-                // Обновление UI с данными пользователя
-                document.getElementById('username').textContent = userName;
-                document.getElementById('userAvatar').src = userAvatar;
-                document.getElementById('accountUsername').textContent = userName;
-                document.getElementById('accountUserId').textContent = userId || 'Неизвестно';
-                document.getElementById('accountAvatar').src = userAvatar;
+                // Инициализация WebApp
+                Telegram.WebApp.ready();
+                Telegram.WebApp.expand(); // Разворачивает приложение на полный экран
+                const initData = Telegram.WebApp.initDataUnsafe;
+                displayDebugInfo('initDataUnsafe: ' + JSON.stringify(initData));
 
-                console.log('User data:', { userId, userName, userAvatar });
+                // Проверка данных пользователя
+                if (initData && initData.user) {
+                    userId = initData.user.id || 'guest';
+                    userName = initData.user.username || initData.user.first_name || 'Гость';
+                    userAvatar = initData.user.photo_url || 'https://via.placeholder.com/60';
+                    document.body.classList.add('telegram');
+                    displayDebugInfo(`User data - ID: ${userId}, Name: ${userName}, Avatar: ${userAvatar}`);
+                } else {
+                    displayError('Не удалось получить данные пользователя. Проверьте настройки приватности Telegram.');
+                    userId = 'guest';
+                }
+
+                // Обновление UI
+                updateUI();
             } catch (error) {
-                showError('Ошибка при инициализации приложения. Попробуйте позже.');
-                console.error('Initialization error:', error);
+                displayError('Ошибка инициализации Telegram: ' + error.message);
+                userId = 'guest';
+                updateUI();
             }
+        }
+
+        function updateUI() {
+            document.getElementById('username').textContent = userName;
+            document.getElementById('userAvatar').src = userAvatar;
+            document.getElementById('accountUsername').textContent = userName;
+            document.getElementById('accountUserId').textContent = userId || 'Неизвестно';
+            document.getElementById('accountAvatar').src = userAvatar;
         }
 
         // Навигация между страницами
@@ -173,8 +198,8 @@
             }
         }
 
-        // Инициализация при загрузке страницы
-        document.addEventListener('DOMContentLoaded', initializeApp);
+        // Запуск инициализации
+        document.addEventListener('DOMContentLoaded', initializeTelegram);
     </script>
 </body>
 </html>
