@@ -1,4 +1,43 @@
-<!DOCTYPE html>
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -133,7 +172,7 @@
 
     <script>
         // Конфигурация
-        const BOT_NAME = '@YourBotName'; // Замените на имя вашего бота, например, '@MyTestBot'
+        const BOT_NAME = '@Friends_HubBot'; // Замените на имя вашего бота, например, '@MyTestBot'
 
         // Переменные состояния
         let userId = null;
@@ -207,22 +246,20 @@
             script.src = 'https://telegram.org/js/telegram-widget.js?22';
             script.setAttribute('data-telegram-login', BOT_NAME);
             script.setAttribute('data-size', 'large');
-            script.setAttribute('data-auth-url', window.location.href); // Redirect back to this page
+            script.setAttribute('data-auth-url', window.location.href);
             script.setAttribute('data-request-access', 'write');
             script.setAttribute('data-onsuccess', 'onTelegramAuth');
             document.getElementById('telegramWidget').appendChild(script);
         }
 
-        // Callback для обработки успешной авторизации через виджет
         window.onTelegramAuth = function(user) {
             try {
-                userId = user.id || ' Improvepress('id') || 'guest';
+                userId = user.id || 'guest';
                 userName = user.username || user.first_name || 'Гость';
                 userAvatar = user.photo_url || 'https://via.placeholder.com/60';
                 isLoggedIn = true;
                 displayDebugInfo(`Widget login - ID: ${userId}, Name: ${userName}, Avatar: ${userAvatar}`);
                 
-                // Сохранение данных в localStorage для сессии
                 localStorage.setItem('telegram_user', JSON.stringify({
                     id: userId,
                     username: userName,
@@ -235,7 +272,6 @@
             }
         };
 
-        // Проверка сохраненных данных при загрузке
         function checkStoredUser() {
             const storedUser = localStorage.getItem('telegram_user');
             if (storedUser) {
@@ -253,7 +289,6 @@
             }
         }
 
-        // Навигация между страницами
         function navigateTo(page) {
             const mainPage = document.getElementById('mainPage');
             const accountPage = document.getElementById('accountPage');
@@ -267,15 +302,12 @@
             }
         }
 
-        // Обработчик кнопки Telegram Connect
         document.getElementById('telegramConnect').addEventListener('click', () => {
             if (!isLoggedIn) {
-                // Виджет уже встроен, пользователь нажмет на него
                 displayDebugInfo('User clicked Telegram Connect button.');
             }
         });
 
-        // Запуск инициализации
         document.addEventListener('DOMContentLoaded', () => {
             checkStoredUser();
             initializeTelegram();
