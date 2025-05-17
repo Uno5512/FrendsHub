@@ -414,7 +414,14 @@
 
             // Фильтрация
             let filteredAds = ads.filter(ad =>
-                (ad.title.toLowerCase().includes(search) || ad.description.toLowerCase().includes(search)) &&
+                (
+                    ad.title.toLowerCase().includes(search) ||
+                    ad.description.toLowerCase().includes(search) ||
+                    ad.city.toLowerCase().includes(search) ||
+                    ad.type.toLowerCase().includes(search) ||
+                    ad.date.toLowerCase().includes(search) ||
+                    ad.gender.toLowerCase().includes(search)
+                ) &&
                 (city === '' || ad.city === city) &&
                 (type === '' || ad.type === type) &&
                 (date === '' || ad.date === date) &&
