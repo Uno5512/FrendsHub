@@ -424,6 +424,7 @@
         let ads = JSON.parse(localStorage.getItem('ads')) || [];
         let currentSort = 'newest'; // По умолчанию новые
         let hiddenAds = JSON.parse(localStorage.getItem('hiddenAds')) || [];
+        let likesDislikes = JSON.parse(localStorage.getItem('likesDislikes')) || {};
         let editAdId = null;
 
         function hideAd(adId) {
@@ -439,6 +440,39 @@
           }).catch(() => {
             alert('Не удалось скопировать ссылку');
           });
+
+        function toggleLike(adId) {
+                if (!userId) return alert('Авторизуйтесь для оценки');
+                likesDislikes[adId] = likesDislikes[adId] || { likes: [], dislikes: [] };
+                const userLiked = likesDislikes[adId].likes.includes(userId);
+                const userDisliked = likesDislikes[adId].dislikes.includes(userId);
+                if (userLiked) {
+                        likesDislikes[adId].likes = likesDislikes[adId].likes.filter(id => id !== userId);
+                } else {
+                        likesDislikes[adId].likes.push(userId);
+                        if (userDisliked) {
+                                likesDislikes[adId].dislikes = likesDislikes[adId].dislikes.filter(id => id !== userId);
+                        }
+                }
+                localStorage.setItem('likesDislikes', JSON.stringify(likesDislikes));
+                renderAds();
+        }
+
+        function toggleDislike(adId) {
+                if (!userId) return alert('Авторизуйтесь для оценки');
+                likesDislikes[adId] = likesDislikes[adId] || { likes: [], dislikes: [] };
+                const userLiked = likesDislikes[adId].likes.includes(userId);
+                const userDisliked = likesDislikes[adId].dislikes.includes(userId);
+                if (userDisliked) {
+                        likesDislikes[adId].dislikes = likesDislikes[adId].dislikes.filter(id => id !== userId);
+                } else {
+                        likesDislikes[adId].dislikes.push(userId);
+                        if (userLiked) {
+                                likesDislikes[adId].likes = likesDislikes[adId].likes.filter(id => id !== userId);
+                        }
+                }
+                localStorage.setItem('likesDislikes', JSON.stringify(likesDislikes));
+                renderAds();
         }
 
         // Отрисовка объявлений
@@ -499,11 +533,11 @@
                     <p>${ad.description}</p>
                     <p><small>Город: ${ad.city} | Вид: ${ad.type} | Дата: ${ad.date} | Пол: ${ad.gender} | ${new Date(ad.createdAt).toLocaleDateString()}</small></p>
                     <div class="ad-actions">
-                    <span class="counter">0</span>
+                    <span class="counter">0 ${((likesDislikes[ad.id]?.likes?.length || 0) - (likesDislikes[ad.id]?.dislikes?.length || 0))}</span>
                     <span class="action share" onclick="shareAd('${ad.id}')" title="Поделиться">🔗</span>
                     <span class="action favorite" title="В избранное">❤️</span>
-                    <span class="action like" title="Лайк">👍</span>
-                    <span class="action dislike" title="Дизлайк">👎</span>
+                    <span class="action like" ${likesDislikes[ad.id]?.likes?.includes(userId) ? 'liked' : ''}" onclick="toggleLike('${ad.id}')" title="Лайк">👍</span>
+                    <span class="action dislike" ${likesDislikes[ad.id]?.dislikes?.includes(userId) ? 'disliked' : ''}" onclick="toggleDislike('${ad.id}')" title="Дизлайк">👎</span>
                     <span class="menu" onclick="toggleMenu('${ad.id}')">•••</span>
                 </div>
                     <div class="menu-options" id="menu-${ad.id}">
