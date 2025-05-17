@@ -245,9 +245,8 @@
 </head>
 <body>
     <div class="container">
-        <div class="search-container">
-        <input type="text" id="search" placeholder="Поиск">
-    </div>
+        <div class="search-filter-container">
+            <input type="text" id="search" placeholder="Поиск">
         <div class="filters">
             <select id="city">
                 <option value="">Город</option>
@@ -278,6 +277,7 @@
                 <option value="oldest">Старые</option>
             </select>
         </div>
+    </div>
         <div class="ad-list" id="adList"></div>
         <button class="create-btn" onclick="openCreateDialog()">+ Создать</button>
     </div>
