@@ -190,8 +190,8 @@
         .ad-item .menu-options {
             display: none;
             position: absolute;
-            top: 24px;
-            right: 0;
+            top: 30px;
+            right: 8;
             background: #fff;
             border: 1px solid #E6E6E6;
             border-radius: 8px;
@@ -625,6 +625,16 @@
                 searchInput.blur();
             }
         });
+        // Закрытие меню при клике вне
+        document.addEventListener('click', function(event) {
+          const openMenus = document.querySelectorAll('.menu-options[style="display: block;"]');
+          if (!event.target.closest('.menu') && !event.target.closest('.menu-options')) {
+            openMenus.forEach(menu => {
+              menu.style.display = 'none';
+             });
+           }
+         });
+
     </script>
 </body>
 </html>
