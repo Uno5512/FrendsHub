@@ -30,7 +30,8 @@
         .image-container {
             display: flex;
             justify-content: center;
-            margin-bottom: 12px;
+            margin-top: 16px;
+            margin-bottom: 10px;
         }
 
         .header-image {
@@ -144,6 +145,10 @@
             font-size: 16px;
             cursor: pointer;
             z-index: 1002;
+        }
+
+        button[data-modal-open="createDialog"].hidden {
+            display: none;
         }
 
         dialog {
@@ -424,6 +429,10 @@
             cursor: pointer;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
             z-index: 1000;
+        }
+
+        .floating-btn.hidden {
+            display: none;
         }
 
         .floating-btn::before {
@@ -1539,6 +1548,20 @@
             renderAds();
         }
 
+        // Управление видимостью кнопок при вводе в поиск
+        function toggleSearchButtons() {
+            const searchInput = document.getElementById('search');
+            const createButton = document.querySelector('button[data-modal-open="createDialog"]');
+            const accountButton = document.querySelector('.floating-btn');
+            if (searchInput.value.trim() !== '') {
+                createButton.classList.add('hidden');
+                accountButton.classList.add('hidden');
+            } else {
+                createButton.classList.remove('hidden');
+                accountButton.classList.remove('hidden');
+            }
+        }
+
         // Закрытие модалок по клику на backdrop и кнопки
         function setupDialogBackdropClose() {
             ['createDialog', 'complaintDialog', 'cityDialog', 'typeDialog', 'dateDialog', 'genderDialog', 'favoritesDialog'].forEach(dialogId => {
@@ -1564,7 +1587,7 @@
             const containerHeight = searchContainer.offsetHeight;
             if (currentScrollY > lastScrollY && currentScrollY > containerHeight) {
                 searchContainer.classList.add('hidden');
-            } else if (currentScrollY < lastScrollY) {
+            } else {
                 searchContainer.classList.remove('hidden');
             }
             lastScrollY = currentScrollY;
@@ -1621,6 +1644,9 @@
         document.getElementById('birthYear')?.addEventListener('input', updateProfileAge);
         document.getElementById('adTitle').addEventListener('input', updateCounters);
         document.getElementById('adDescription').addEventListener('input', updateCounters);
+        document.getElementById('search').addEventListener('input', toggleSearchButtons);
+        document.getElementById('search').addEventListener('focus', toggleSearchButtons);
+        document.getElementById('search').addEventListener('blur', toggleSearchButtons);
         document.addEventListener('click', closeMenus);
         document.addEventListener('click', triggerVibration);
         window.addEventListener('scroll', handleScroll);
