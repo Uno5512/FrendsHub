@@ -1565,15 +1565,17 @@
             editAdId = null;
         });
 
-// Свайпы
+        // Свайпы
         function handleSwipe(adId, element) {
             let startX = 0;
             let currentX = 0;
             let isSwiping = false;
+            let moved = false; // Флаг для определения движения
 
             element.addEventListener('touchstart', (e) => {
                 startX = e.touches[0].clientX;
                 isSwiping = true;
+                moved = false; // Сбрасываем флаг
                 element.style.transition = 'none';
             });
 
@@ -1582,16 +1584,18 @@
                 currentX = e.touches[0].clientX;
                 const deltaX = currentX - startX;
                 if (deltaX < 0) {
-                    element.style.transform = `translateX(${deltaX}px)`;
+                    element.style.transform = translateX(${deltaX}px);
+                }
+                if (Math.abs(deltaX) > 5) { // Проверяем, было ли значительное движение
+                    moved = true;
                 }
             });
 
             element.addEventListener('touchend', (e) => {
                 if (!isSwiping) return;
                 isSwiping = false;
-                const deltaX = currentX - startX;
                 element.style.transition = 'transform 0.5s ease';
-                if (deltaX < -100) {
+                if (moved && (currentX - startX) < -100) { // Проверяем, было ли движение и достаточно ли длинное
                     hideAd(adId);
                 } else {
                     element.style.transform = 'translateX(0)';
