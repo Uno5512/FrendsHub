@@ -53,7 +53,7 @@
   </template>
 
   <script type="text/babel">
-    const { useState, useEffect } = React;
+    const { useState, useEffect, useRef } = React;
 
     // Modal Component
     function Modal({ children, onClose }) {
@@ -199,61 +199,88 @@
       );
     }
 
-    // Announcement Component
+    // Announcement Component (Updated)
     function Announcement({ data, isOwn, onLike, onDislike, onParticipate, onEdit, onDelete }) {
       const [expanded, setExpanded] = useState(false);
       const [showOptions, setShowOptions] = useState(false);
+      const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0 });
+      const buttonRef = useRef(null);
+
+      const handleOptionsClick = (e) => {
+        const rect = buttonRef.current.getBoundingClientRect();
+        setMenuPosition({
+          top: rect.bottom + window.scrollY + 4, // 4px offset below button
+          left: rect.right + window.scrollX - 120 // 120px width of menu
+        });
+        setShowOptions(!showOptions);
+      };
 
       return (
-        <article
-          onClick={(e) => {
-            if (!e.target.closest('button') && !e.target.closest('a')) setExpanded(!expanded);
-          }}
-          className={`p-4 rounded-[22px] border ${isOwn ? 'border-blue-500' : 'border-gray-300'} bg-white cursor-pointer announcement-expanded`}
-          style={{ maxHeight: expanded ? '500px' : '150px', overflow: 'hidden' }}
-        >
-          <h3 className="font-bold">{data.title}</h3>
-          {expanded && (
-            <div className="mt-2">
-              <p>{data.description}</p>
-              <div className="text-sm text-gray-500">{data.metatags.join(', ')} • {data.createdAt}</div>
-              <div className="flex items-center gap-2 mt-2">
-                <img src={data.creatorAvatar} alt="Аватар создателя" className="w-8 h-8 rounded-full" loading="lazy" />
+        <>
+          <article
+            onClick={(e) => {
+              if (!e.target.closest('button') && !e.target.closest('a')) setExpanded(!expanded);
+            }}
+            className={`p-4 rounded-[22px] border ${isOwn ? 'border-blue-500' : 'border-gray-300'} bg-white cursor-pointer announcement-expanded`}
+            style={{ maxHeight: expanded ? '500px' : '150px', overflow: 'hidden' }}
+          >
+            <h3 className="font-bold">{data.title}</h3>
+            {expanded && (
+              <div className="mt-2">
+                <p>{data.description}</p>
+                <div className="text-sm text-gray-500">{data.metatags.join(', ')} • {data.createdAt}</div>
+                <div className="flex items-center gap-2 mt-2">
+                  <img src={data.creatorAvatar} alt="Аватар создателя" className="w-8 h-8 rounded-full" loading="lazy" />
+                  <button
+                    onClick={() => onParticipate(data.id)}
+                    className="bg-blue-500 text-white px-2 py-1 rounded ml-2"
+                    aria-label="Участвовать"
+                  >
+                    Участвовать ({data.participants})
+                  </button>
+                </div>
               </div>
+            )}
+            <div className="flex justify-between items-center mt-2">
+              <a href="#" className="text-blue-500">{data.creatorName}</a>
+              <span>{data.age} лет</span>
+              <span>{data.participants} участник(ов)</span>
+              <div className="flex gap-2">
+                <button onClick={() => onLike(data.id)} className="text-green-500" aria-label="Лайк">👍 {data.likes}</button>
+                <button onClick={() => onDislike(data.id)} className="text-red-500" aria-label="Дизлайк">👎 {data.dislikes}</button>
+                <button
+                  ref={buttonRef}
+                  onClick={handleOptionsClick}
+                  className="text-gray-500"
+                  aria-label="Опции"
+                >
+                  ⋯
+                </button>
+              </div>
+            </div>
+          </article>
+          {showOptions && (
+            <div
+              className="fixed bg-white border rounded shadow-lg p-2 w-32 z-50"
+              style={{ top: `${menuPosition.top}px`, left: `${menuPosition.left}px` }}
+            >
+              {isOwn ? (
+                <>
+                  <button onClick={() => { onEdit(data); setShowOptions(false); }} className="block w-full text-left hover:bg-gray-100 p-1">Редактировать</button>
+                  <button onClick={() => { onDelete(data.id); setShowOptions(false); }} className="block w-full text-left hover:bg-gray-100 p-1">Удалить</button>
+                  <button onClick={() => setShowOptions(false)} className="block w-full text-left hover:bg-gray-100 p-1">Поделиться</button>
+                </>
+              ) : (
+                <>
+                  <button onClick={() => setShowOptions(false)} className="block w-full text-left hover:bg-gray-100 p-1">Поделиться</button>
+                  <button onClick={() => setShowOptions(false)} className="block w-full text-left hover:bg-gray-100 p-1">В избранное</button>
+                  <button onClick={() => setShowOptions(false)} className="block w-full text-left hover:bg-gray-100 p-1">Не показывать</button>
+                  <button onClick={() => setShowOptions(false)} className="block w-full text-left hover:bg-gray-100 p-1">Пожаловаться</button>
+                </>
+              )}
             </div>
           )}
-          <div className="flex justify-between items-center mt-2">
-            <a href="#" className="text-blue-500">{data.creatorName}</a>
-            <span>{data.age} лет</span>
-            <span>{data.participants} участник(ов)</span>
-            <div className="flex gap-2">
-              <button onClick={() => onLike(data.id)} className="text-green-500" aria-label="Лайк">👍 {data.likes}</button>
-              <button onClick={() => onDislike(data.id)} className="text-red-500" aria-label="Дизлайк">👎 {data.dislikes}</button>
-              <button onClick={() => onParticipate(data.id)} className="bg-blue-500 text-white px-2 py-1 rounded" aria-label="Участвовать">Участвовать</button>
-              <div className="relative">
-                <button onClick={() => setShowOptions(!showOptions)} className="text-gray-500" aria-label="Опции">⋯</button>
-                {showOptions && (
-                  <div className="absolute right-0 mt-2 bg-white border rounded shadow-lg p-2">
-                    {isOwn ? (
-                      <>
-                        <button onClick={() => onEdit(data)} className="block w-full text-left">Редактировать</button>
-                        <button onClick={() => onDelete(data.id)} className="block w-full text-left">Удалить</button>
-                        <button className="block w-full text-left">Поделиться</button>
-                      </>
-                    ) : (
-                      <>
-                        <button className="block w-full text-left">Поделиться</button>
-                        <button className="block w-full text-left">В избранное</button>
-                        <button className="block w-full text-left">Не показывать</button>
-                        <button className="block w-full text-left">Пожаловаться</button>
-                      </>
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </article>
+        </>
       );
     }
 
@@ -352,12 +379,25 @@
       const [user, setUser] = useState(null);
       const [isSynced, setIsSynced] = useState(null);
       const [announcements, setAnnouncements] = useState([
-        { id: 1, title: 'Прогулка в парке', description: 'Присоединяйтесь к прогулке!', metatags: ['Москва', 'Прогулка'], creatorName: 'Алексей', creatorAvatar: 'https://mir-s3-cdn-cf.behance.net/project_modules/fs_webp/cf5343120913219.60bb24ccb2f89.jpg', age: 25, participants: 3, likes: 5, dislikes: 2, createdAt: '01.11.2023' }
+        {
+          id: 1,
+          title: 'Прогулка в парке',
+          description: 'Присоединяйтесь к прогулке!',
+          metatags: ['Москва', 'Прогулка'],
+          creatorName: 'Алексей',
+          creatorAvatar: 'https://mir-s3-cdn-cf.behance.net/project_modules/fs_webp/cf5343120913219.60bb24ccb2f89.jpg',
+          age: 25,
+          participants: 3,
+          likes: 5,
+          dislikes: 2,
+          createdAt: '01.11.2023'
+        }
       ]);
       const [filteredAnnouncements, setFilteredAnnouncements] = useState(announcements);
       const [showAccount, setShowAccount] = useState(false);
       const [showCreate, setShowCreate] = useState(false);
       const [applications, setApplications] = useState([]);
+      const [currentFilters, setCurrentFilters] = useState({ query: '', filters: {} });
 
       useEffect(() => {
         setTimeout(() => setIsSynced(Math.random() > 0.5), 1000); // Simulate Telegram sync
@@ -369,45 +409,94 @@
       };
 
       const handleSearch = (query, filters) => {
+        setCurrentFilters({ query, filters });
         let result = [...announcements];
         if (query) {
           const lowerQuery = query.toLowerCase();
-          result = result.filter(a => 
+          result = result.filter(a =>
             a.title.toLowerCase().includes(lowerQuery) ||
             a.description.toLowerCase().includes(lowerQuery) ||
             a.metatags.some(tag => tag.toLowerCase().includes(lowerQuery))
           );
         }
-        result = result.filter(a => 
+        result = result.filter(a =>
           (!filters.city || a.metatags.includes(filters.city)) &&
           (!filters.type || a.metatags.includes(filters.type)) &&
           (!filters.date || a.metatags.includes(filters.date)) &&
           (!filters.gender || a.metatags.includes(filters.gender))
         );
-        if (filters.sort === 'По рейтингу') result.sort((a, b) => (b.likes - b.dislikes) - (a.likes - a.dislikes));
+        if (filters.sort === 'По рейтингу') {
+          result.sort((a, b) => (b.likes - b.dislikes) - (a.likes - a.dislikes));
+        } else if (filters.sort === 'Новые') {
+          result.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        } else if (filters.sort === 'Старые') {
+          result.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+        }
         setFilteredAnnouncements(result);
       };
 
       const handleLike = (id) => {
-        setAnnouncements(prev => prev.map(a => a.id === id ? { ...a, likes: a.likes + 1 } : a));
+        setAnnouncements(prev => {
+          const updated = prev.map(a => (a.id === id ? { ...a, likes: a.likes + 1 } : a));
+          handleSearch(currentFilters.query, currentFilters.filters); // Reapply filters
+          return updated;
+        });
       };
 
       const handleDislike = (id) => {
-        setAnnouncements(prev => prev.map(a => a.id === id ? { ...a, dislikes: a.dislikes + 1 } : a));
+        setAnnouncements(prev => {
+          const updated = prev.map(a => (a.id === id ? { ...a, dislikes: a.dislikes + 1 } : a));
+          handleSearch(currentFilters.query, currentFilters.filters); // Reapply filters
+          return updated;
+        });
       };
 
       const handleParticipate = (id) => {
-        setApplications(prev => [...prev, { id: Date.now(), announcementTitle: announcements.find(a => a.id === id).title, participants: [{ id: 1, name: user.name, avatar: user.avatar }] }]);
-        setAnnouncements(prev => prev.map(a => a.id === id ? { ...a, participants: a.participants + 1 } : a));
+        setAnnouncements(prev => {
+          const updated = prev.map(a =>
+            a.id === id ? { ...a, participants: a.participants + 1 } : a
+          );
+          setFilteredAnnouncements(prevFiltered =>
+            prevFiltered.map(a =>
+              a.id === id ? { ...a, participants: a.participants + 1 } : a
+            )
+          );
+          setApplications(prev => [
+            ...prev,
+            {
+              id: Date.now(),
+              announcementTitle: updated.find(a => a.id === id).title,
+              participants: [{ id: 1, name: user.name, avatar: user.avatar }]
+            }
+          ]);
+          return updated;
+        });
       };
 
       const handleCreate = (data) => {
-        const newAnnouncement = { ...data, id: Date.now(), creatorName: user.name, creatorAvatar: user.avatar, age: 25, participants: 0, likes: 0, dislikes: 0 };
-        setAnnouncements(prev => [...prev, newAnnouncement]);
+        const newAnnouncement = {
+          ...data,
+          id: Date.now(),
+          creatorName: user.name,
+          creatorAvatar: user.avatar,
+          age: 25,
+          participants: 0,
+          likes: 0,
+          dislikes: 0
+        };
+        setAnnouncements(prev => {
+          const updated = [...prev, newAnnouncement];
+          handleSearch(currentFilters.query, currentFilters.filters); // Reapply filters
+          return updated;
+        });
       };
 
       const handleDelete = (id) => {
-        setAnnouncements(prev => prev.filter(a => a.id !== id));
+        setAnnouncements(prev => {
+          const updated = prev.filter(a => a.id !== id);
+          handleSearch(currentFilters.query, currentFilters.filters); // Reapply filters
+          return updated;
+        });
       };
 
       if (isSynced === null) {
