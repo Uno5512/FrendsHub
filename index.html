@@ -1,643 +1,473 @@
-<script type="text/javascript">
-        var gk_isXlsx = false;
-        var gk_xlsxFileLookup = {};
-        var gk_fileData = {};
-        function filledCell(cell) {
-          return cell !== '' && cell != null;
-        }
-        function loadFileData(filename) {
-        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
-            try {
-                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
-                var firstSheetName = workbook.SheetNames[0];
-                var worksheet = workbook.Sheets[firstSheetName];
-
-                // Convert sheet to JSON to filter blank rows
-                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
-                // Filter out blank rows (rows where all cells are empty, null, or undefined)
-                var filteredData = jsonData.filter(row => row.some(filledCell));
-
-                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
-                var headerRowIndex = filteredData.findIndex((row, index) =>
-                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
-                );
-                // Fallback
-                if (headerRowIndex === -1 || headerRowIndex > 25) {
-                  headerRowIndex = 0;
-                }
-
-                // Convert filtered JSON back to CSV
-                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
-                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
-                return csv;
-            } catch (e) {
-                console.error(e);
-                return "";
-            }
-        }
-        return gk_fileData[filename] || "";
-        }
-        </script><!DOCTYPE html>
-<html lang="ru">
+<!DOCTYPE html>
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FriendsHub Mini App</title>
-    <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500&display=swap" rel="stylesheet">
-    <style>
-        body {
-            font-family: 'Rubik', sans-serif;
-            margin: 0;
-            padding: 0;
-            background: #eedfc8;
-            overflow-x: hidden;
-        }
-
-        .modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.5);
-            backdrop-filter: blur(8px);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-            transition: opacity 0.3s ease;
-        }
-
-        .modal-content {
-            background: #fff;
-            padding: 16px;
-            border-radius: 8px;
-            max-width: 400px;
-            width: 90%;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
-
-        .modal-content h2 {
-            font-size: 18px;
-            margin-bottom: 16px;
-        }
-
-        .modal-content input,
-        .modal-content textarea,
-        .modal-content select {
-            padding: 8px;
-            font-size: 16px;
-            background: #f1d299;
-            border: none;
-            border-radius: 8px;
-            margin-bottom: 10px;
-            width: 100%;
-        }
-
-        .modal-content textarea {
-            min-height: 100px;
-            resize: vertical;
-        }
-
-        .modal-content select:focus,
-        .modal-content input:focus,
-        .modal-content textarea:focus {
-            outline: none;
-        }
-
-        .modal-content button {
-            padding: 10px 20px;
-            font-size: 16px;
-            border-radius: 8px;
-            cursor: pointer;
-            margin: 5px;
-        }
-
-        .modal-content button[type="button"] {
-            background: #E5E7EB;
-            color: #1A2A44;
-            border: none;
-        }
-
-        .modal-content button[type="submit"],
-        .modal-content button:not([type="button"]) {
-            background: #987eeb;
-            color: #fff;
-            border: none;
-        }
-
-        #main {
-            display: none;
-            padding: 20px;
-            max-width: 600px;
-            margin: 0 auto;
-        }
-
-        .logo {
-            width: 100px;
-            height: 100px;
-            object-fit: contain;
-            display: block;
-            margin: 16px auto 10px;
-        }
-
-        .search-bar {
-            background: #f1d299;
-            border: 2px solid #f6e1bc;
-            border-radius: 22px;
-            padding: 8px;
-            margin: 8px 0 16px;
-            position: sticky;
-            top: 16px;
-            z-index: 100;
-        }
-
-        .search-bar input {
-            padding: 8px;
-            font-size: 22px;
-            border-radius: 8px;
-            background: #f1d299;
-            border: none;
-            width: 100%;
-        }
-
-        .search-bar input:focus {
-            outline: none;
-        }
-
-        .filters {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 2px;
-            margin-top: 4px;
-        }
-
-        .filters select {
-            padding: 4px;
-            font-size: 18px;
-            background: #f1d299;
-            border: 1px solid #f6e1bc;
-            border-radius: 22px;
-            cursor: pointer;
-            flex: 1;
-            min-width: 60px;
-        }
-
-        .filters select:focus {
-            outline: none;
-        }
-
-        .announcement {
-            background: #efefef;
-            padding: 16px;
-            border-radius: 22px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            margin: 8px 0;
-            transition: transform 0.5s ease, opacity 0.5s ease;
-        }
-
-        .announcement.own {
-            border: 1px solid #ff6200;
-        }
-
-        .announcement.expanded .announcement-details {
-            max-height: 1000px;
-            opacity: 1;
-        }
-
-        .announcement-header h3 {
-            font-size: 18px;
-            font-weight: 500;
-            margin-bottom: 8px;
-            color: #41494e;
-            hyphens: auto;
-            word-wrap: break-word;
-            white-space: normal;
-            max-width: 100%;
-            cursor: pointer;
-        }
-
-        .announcement-details {
-            max-height: 0;
-            opacity: 0;
-            overflow: hidden;
-            transition: max-height 0.7s ease-in-out, opacity 0.7s ease-in-out;
-            margin-bottom: 16px;
-        }
-
-        .announcement-details p {
-            font-size: 18px;
-            line-height: 1.5;
-            color: #555;
-            hyphens: auto;
-            word-wrap: break-word;
-            white-space: normal;
-        }
-
-        .announcement-details p:nth-child(2) {
-            font-size: 12px;
-            color: #555;
-        }
-
-        .creator-container {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin: 8px 0 4px;
-        }
-
-        .creator-container img {
-            width: 48px;
-            height: 48px;
-            border-radius: 50%;
-            object-fit: cover;
-        }
-
-        .buttons {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            justify-content: space-between;
-        }
-
-        .buttons span {
-            font-size: 16px;
-            color: #555;
-        }
-
-        .buttons button {
-            padding: 5px 10px;
-            font-size: 16px;
-            border-radius: 8px;
-            cursor: pointer;
-            background: #987eeb;
-            color: #fff;
-            border: none;
-        }
-
-        .create-btn,
-        .account-btn {
-            position: fixed;
-            bottom: 20px;
-            width: 60px;
-            height: 60px;
-            background: #987eeb;
-            color: #fff;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-            z-index: 1000;
-            transition: transform 0.3s ease;
-        }
-
-        .create-btn:hover,
-        .account-btn:hover {
-            transform: scale(1.1);
-        }
-
-        .create-btn {
-            right: 20px;
-        }
-
-        .account-btn {
-            left: 20px;
-            font-size: 16px;
-        }
-
-        .account-btn::before {
-            content: '👤';
-            font-size: 24px;
-        }
-
-        .notification {
-            position: fixed;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%) translateY(-100%);
-            background: #987eeb;
-            color: #fff;
-            padding: 12px 24px;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-            z-index: 1004;
-            opacity: 0;
-            transition: opacity 0.3s ease, transform 0.3s ease;
-        }
-
-        .notification.show {
-            opacity: 1;
-            transform: translateX(-50%) translateY(0);
-        }
-
-        button:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fibonacci Poetry</title>
+  <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/react@18.3.1/umd/react.production.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.26.9/babel.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="manifest" href="data:application/manifest+json,{}">
+  <style>
+    body {
+      font-family: 'Rubik', sans-serif;
+    }
+    .modal-backdrop {
+      backdrop-filter: blur(5px);
+      background-color: rgba(0, 0, 0, 0.5);
+    }
+    .announcement-expanded {
+      transition: max-height 0.3s ease-in-out;
+    }
+  </style>
 </head>
 <body>
-    <!-- Модальное окно входа -->
-    <div id="loginModal" class="modal">
-        <div class="modal-content">
-            <h2>Вход</h2>
-            <button onclick="telegramConnect()">Telegram Connect</button>
-            <p id="syncError" class="notification" style="display: none;">Синхронизация Telegram не удалась, войдите обычным путем</p>
-            <button id="registerBtn" onclick="showRegistration()" style="display: none;">Зарегистрироваться</button>
-            <div id="registrationForm" style="display: none; margin-top: 20px;">
-                <img src="https://uno5512.github.io/FrendsHub/3.png" style="width: 50px; height: 50px; border-radius: 50%; float: left; margin-right: 10px;">
-                <input type="text" placeholder="Имя" id="name" style="width: 150px; margin-bottom: 10px;">
-                <input type="date" id="birthdate" style="width: 150px; margin-bottom: 10px;">
-                <select id="gender" style="width: 150px; margin-bottom: 10px;">
-                    <option value="male">Мужской</option>
-                    <option value="female">Женский</option>
-                    <option value="other">Не важно</option>
-                </select>
-                <textarea placeholder="О себе" id="about" style="width: 100%; height: 60px; margin-bottom: 10px;"></textarea>
-                <button onclick="cancelRegistration()">Отмена</button>
-                <button id="nextBtn" onclick="submitRegistration()" disabled>Далее</button>
+  <div id="root"></div>
+  <template id="city-options">
+    <option value="Москва">Москва</option>
+    <option value="Казань">Казань</option>
+    <option value="Санкт-Петербург">Санкт-Петербург</option>
+  </template>
+  <template id="type-options">
+    <option value="Прогулка">Прогулка</option>
+    <option value="Общение">Общение</option>
+    <option value="Игры">Игры</option>
+  </template>
+  <template id="date-options">
+    <option value="Сегодня">Сегодня</option>
+    <option value="Завтра">Завтра</option>
+    <option value="На неделе">На неделе</option>
+  </template>
+  <template id="gender-options">
+    <option value="Мужской">Мужской</option>
+    <option value="Женский">Женский</option>
+    <option value="Не важно">Не важно</option>
+  </template>
+  <template id="sort-options">
+    <option value="По рейтингу">По рейтингу</option>
+    <option value="Верифицированные">Верифицированные</option>
+    <option value="Новые">Новые</option>
+    <option value="Старые">Старые</option>
+  </template>
+
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+
+    // Modal Component
+    function Modal({ children, onClose }) {
+      return (
+        <div className="fixed inset-0 modal-backdrop flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-3xl shadow-lg max-w-md w-full">
+            {children}
+            <button onClick={onClose} className="mt-4 text-gray-500 hover:text-gray-700">Закрыть</button>
+          </div>
+        </div>
+      );
+    }
+
+    // Registration Modal
+    function RegistrationModal({ onRegister }) {
+      const [name, setName] = useState('');
+      const [birthdate, setBirthdate] = useState('');
+      const [gender, setGender] = useState('Не важно');
+      const [about, setAbout] = useState('');
+      const [avatar, setAvatar] = useState('https://mir-s3-cdn-cf.behance.net/project_modules/fs_webp/cf5343120913219.60bb24ccb2f89.jpg');
+      const [error, setError] = useState('');
+
+      const handleNext = () => {
+        if (!name || !birthdate || !about) {
+          setError('Пожалуйста, заполните все обязательные поля');
+          return;
+        }
+        onRegister({ name, birthdate, gender, about, avatar });
+      };
+
+      return (
+        <Modal onClose={() => {}}>
+          <h2 className="text-xl font-bold mb-4">Регистрация</h2>
+          <div className="flex flex-col gap-4">
+            <div className="flex gap-4">
+              <img src={avatar} alt="Аватар" className="w-16 h-16 rounded-full" loading="lazy" />
+              <input
+                type="text"
+                placeholder="Имя *"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="p-2 rounded-lg border"
+                required
+                aria-label="Имя"
+              />
             </div>
-        </div>
-    </div>
-
-    <!-- Главная страница -->
-    <div id="main">
-        <img src="https://uno5512.github.io/FrendsHub/3.png" class="logo">
-        <div class="search-bar">
-            <input type="text" placeholder="Поиск" oninput="searchAnnouncements(this.value)">
-            <div class="filters">
-                <select id="cityFilter">
-                    <option value="">Город: Все</option>
-                    <option value="Москва">Москва</option>
-                    <option value="Казань">Казань</option>
-                    <option value="Санкт-Петербург">Санкт-Петербург</option>
-                </select>
-                <select id="typeFilter">
-                    <option value="">Вид: Все</option>
-                    <option value="Прогулка">Прогулка</option>
-                    <option value="Общение">Общение</option>
-                    <option value="Игры">Игры</option>
-                </select>
-                <select id="dateFilter">
-                    <option value="">Дата: Все</option>
-                    <option value="Сегодня">Сегодня</option>
-                    <option value="Завтра">Завтра</option>
-                    <option value="На неделе">На неделе</option>
-                </select>
-                <select id="genderFilter">
-                    <option value="">Пол: Все</option>
-                    <option value="Мужской">Мужской</option>
-                    <option value="Женский">Женский</option>
-                    <option value="Не важно">Не важно</option>
-                </select>
-                <select id="sortFilter" onchange="sortAnnouncements()">
-                    <option value="rating">Сортировка: По рейтингу</option>
-                    <option value="verified">Верифицированные</option>
-                    <option value="newest">Новые</option>
-                    <option value="oldest">Старые</option>
-                </select>
+            <input
+              type="date"
+              value={birthdate}
+              onChange={(e) => setBirthdate(e.target.value)}
+              className="p-2 rounded-lg border"
+              required
+              aria-label="Дата рождения"
+            />
+            <select
+              value={gender}
+              onChange={(e) => setGender(e.target.value)}
+              className="p-2 rounded-lg border"
+              aria-label="Пол"
+            >
+              <option value="Мужской">Мужской</option>
+              <option value="Женский">Женский</option>
+              <option value="Не важно">Не важно</option>
+            </select>
+            <textarea
+              placeholder="О себе *"
+              value={about}
+              onChange={(e) => setAbout(e.target.value)}
+              className="p-2 rounded-lg border w-full"
+              required
+              aria-label="О себе"
+            />
+            {error && <p className="text-red-500">{error}</p>}
+            <div className="flex gap-4">
+              <button className="bg-gray-300 px-4 py-2 rounded-lg">Отмена</button>
+              <button onClick={handleNext} className="bg-blue-500 text-white px-4 py-2 rounded-lg">Далее</button>
             </div>
+          </div>
+        </Modal>
+      );
+    }
+
+    // Search Bar Component
+    function SearchBar({ onSearch }) {
+      const [query, setQuery] = useState('');
+      const [filters, setFilters] = useState({
+        city: 'Москва',
+        type: 'Прогулка',
+        date: 'Сегодня',
+        gender: 'Не важно',
+        sort: 'По рейтингу'
+      });
+
+      const handleFilterChange = (e) => {
+        const { name, value } = e.target;
+        setFilters(prev => ({ ...prev, [name]: value }));
+        onSearch(query, { ...filters, [name]: value });
+      };
+
+      return (
+        <section className="p-4">
+          <input
+            type="search"
+            placeholder="Поиск..."
+            value={query}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              onSearch(e.target.value, filters);
+            }}
+            className="w-full p-2 mb-4 rounded-[22px] border"
+            aria-label="Поиск объявлений"
+          />
+          <fieldset className="flex flex-wrap gap-2">
+            <legend className="sr-only">Фильтры</legend>
+            <select name="city" onChange={handleFilterChange} className="p-2 rounded-lg border" aria-label="Город">
+              <option value="Москва">Москва</option>
+              <option value="Казань">Казань</option>
+              <option value="Санкт-Петербург">Санкт-Петербург</option>
+            </select>
+            <select name="type" onChange={handleFilterChange} className="p-2 rounded-lg border" aria-label="Вид">
+              <option value="Прогулка">Прогулка</option>
+              <option value="Общение">Общение</option>
+              <option value="Игры">Игры</option>
+            </select>
+            <select name="date" onChange={handleFilterChange} className="p-2 rounded-lg border" aria-label="Дата">
+              <option value="Сегодня">Сегодня</option>
+              <option value="Завтра">Завтра</option>
+              <option value="На неделе">На неделе</option>
+            </select>
+            <select name="gender" onChange={handleFilterChange} className="p-2 rounded-lg border" aria-label="Пол">
+              <option value="Мужской">Мужской</option>
+              <option value="Женский">Женский</option>
+              <option value="Не важно">Не важно</option>
+            </select>
+            <select name="sort" onChange={handleFilterChange} className="p-2 rounded-lg border" aria-label="Сортировка">
+              <option value="По рейтингу">По рейтингу</option>
+              <option value="Верифицированные">Верифицированные</option>
+              <option value="Новые">Новые</option>
+              <option value="Старые">Старые</option>
+            </select>
+          </fieldset>
+        </section>
+      );
+    }
+
+    // Announcement Component
+    function Announcement({ data, isOwn, onLike, onDislike, onParticipate, onEdit, onDelete }) {
+      const [expanded, setExpanded] = useState(false);
+      const [showOptions, setShowOptions] = useState(false);
+
+      return (
+        <article
+          onClick={(e) => {
+            if (!e.target.closest('button') && !e.target.closest('a')) setExpanded(!expanded);
+          }}
+          className={`p-4 rounded-[22px] border ${isOwn ? 'border-blue-500' : 'border-gray-300'} bg-white cursor-pointer announcement-expanded`}
+          style={{ maxHeight: expanded ? '500px' : '150px', overflow: 'hidden' }}
+        >
+          <h3 className="font-bold">{data.title}</h3>
+          {expanded && (
+            <div className="mt-2">
+              <p>{data.description}</p>
+              <div className="text-sm text-gray-500">{data.metatags.join(', ')} • {data.createdAt}</div>
+              <div className="flex items-center gap-2 mt-2">
+                <img src={data.creatorAvatar} alt="Аватар создателя" className="w-8 h-8 rounded-full" loading="lazy" />
+              </div>
+            </div>
+          )}
+          <div className="flex justify-between items-center mt-2">
+            <a href="#" className="text-blue-500">{data.creatorName}</a>
+            <span>{data.age} лет</span>
+            <span>{data.participants} участник(ов)</span>
+            <div className="flex gap-2">
+              <button onClick={() => onLike(data.id)} className="text-green-500" aria-label="Лайк">👍 {data.likes}</button>
+              <button onClick={() => onDislike(data.id)} className="text-red-500" aria-label="Дизлайк">👎 {data.dislikes}</button>
+              <button onClick={() => onParticipate(data.id)} className="bg-blue-500 text-white px-2 py-1 rounded" aria-label="Участвовать">Участвовать</button>
+              <div className="relative">
+                <button onClick={() => setShowOptions(!showOptions)} className="text-gray-500" aria-label="Опции">⋯</button>
+                {showOptions && (
+                  <div className="absolute right-0 mt-2 bg-white border rounded shadow-lg p-2">
+                    {isOwn ? (
+                      <>
+                        <button onClick={() => onEdit(data)} className="block w-full text-left">Редактировать</button>
+                        <button onClick={() => onDelete(data.id)} className="block w-full text-left">Удалить</button>
+                        <button className="block w-full text-left">Поделиться</button>
+                      </>
+                    ) : (
+                      <>
+                        <button className="block w-full text-left">Поделиться</button>
+                        <button className="block w-full text-left">В избранное</button>
+                        <button className="block w-full text-left">Не показывать</button>
+                        <button className="block w-full text-left">Пожаловаться</button>
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </article>
+      );
+    }
+
+    // Account Modal
+    function AccountModal({ user, announcements, applications, onClose }) {
+      return (
+        <Modal onClose={onClose}>
+          <h2 className="text-xl font-bold mb-4">Аккаунт</h2>
+          <div className="flex flex-col gap-4">
+            <img src={user.avatar} alt="Аватар" className="w-16 h-16 rounded-full" loading="lazy" />
+            <p><strong>Имя:</strong> {user.name}</p>
+            <p><strong>Дата рождения:</strong> {user.birthdate}</p>
+            <p><strong>Пол:</strong> {user.gender}</p>
+            <p><strong>О себе:</strong> {user.about}</p>
+            <h3 className="font-bold">Избранное</h3>
+            <ul>{/* Placeholder for favorites */}</ul>
+            <h3 className="font-bold">Заявки</h3>
+            {applications.map(app => (
+              <div key={app.id}>
+                <p>{app.announcementTitle}</p>
+                {app.participants.map(p => (
+                  <div key={p.id} className="flex items-center gap-2">
+                    <img src={p.avatar} alt="Участник" className="w-8 h-8 rounded-full" loading="lazy" />
+                    <a href="#" className="text-blue-500">{p.name}</a>
+                    <button className="bg-blue-500 text-white px-2 py-1 rounded">Выбрать</button>
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+        </Modal>
+      );
+    }
+
+    // Create Announcement Modal
+    function CreateAnnouncementModal({ onCreate, onClose }) {
+      const [title, setTitle] = useState('');
+      const [description, setDescription] = useState('');
+      const [filters, setFilters] = useState({ city: 'Москва', type: 'Прогулка', date: 'Сегодня', gender: 'Не важно' });
+
+      const handleCreate = () => {
+        onCreate({ title, description, metatags: Object.values(filters), createdAt: new Date().toLocaleDateString() });
+        onClose();
+      };
+
+      return (
+        <Modal onClose={onClose}>
+          <h2 className="text-xl font-bold mb-4">Создать объявление</h2>
+          <input
+            type="text"
+            placeholder="Заголовок"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            className="p-2 rounded-lg border w-full mb-4"
+            aria-label="Заголовок"
+          />
+          <textarea
+            placeholder="Описание"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            className="p-2 rounded-lg border w-full mb-4"
+            aria-label="Описание"
+          />
+          <div className="flex flex-wrap gap-2">
+            <select name="city" onChange={(e) => setFilters(f => ({ ...f, city: e.target.value }))} className="p-2 rounded-lg border" aria-label="Город">
+              <option value="Москва">Москва</option>
+              <option value="Казань">Казань</option>
+              <option value="Санкт-Петербург">Санкт-Петербург</option>
+            </select>
+            <select name="type" onChange={(e) => setFilters(f => ({ ...f, type: e.target.value }))} className="p-2 rounded-lg border" aria-label="Вид">
+              <option value="Прогулка">Прогулка</option>
+              <option value="Общение">Общение</option>
+              <option value="Игры">Игры</option>
+            </select>
+            <select name="date" onChange={(e) => setFilters(f => ({ ...f, date: e.target.value }))} className="p-2 rounded-lg border" aria-label="Дата">
+              <option value="Сегодня">Сегодня</option>
+              <option value="Завтра">Завтра</option>
+              <option value="На неделе">На неделе</option>
+            </select>
+            <select name="gender" onChange={(e) => setFilters(f => ({ ...f, gender: e.target.value }))} className="p-2 rounded-lg border" aria-label="Пол">
+              <option value="Мужской">Мужской</option>
+              <option value="Женский">Женский</option>
+              <option value="Не важно">Не важно</option>
+            </select>
+          </div>
+          <div className="flex gap-4 mt-4">
+            <button onClick={onClose} className="bg-gray-300 px-4 py-2 rounded-lg">Отмена</button>
+            <button onClick={handleCreate} className="bg-blue-500 text-white px-4 py-2 rounded-lg">Отправить</button>
+          </div>
+        </Modal>
+      );
+    }
+
+    // Main App Component
+    function App() {
+      const [user, setUser] = useState(null);
+      const [isSynced, setIsSynced] = useState(null);
+      const [announcements, setAnnouncements] = useState([
+        { id: 1, title: 'Прогулка в парке', description: 'Присоединяйтесь к прогулке!', metatags: ['Москва', 'Прогулка'], creatorName: 'Алексей', creatorAvatar: 'https://mir-s3-cdn-cf.behance.net/project_modules/fs_webp/cf5343120913219.60bb24ccb2f89.jpg', age: 25, participants: 3, likes: 5, dislikes: 2, createdAt: '01.11.2023' }
+      ]);
+      const [filteredAnnouncements, setFilteredAnnouncements] = useState(announcements);
+      const [showAccount, setShowAccount] = useState(false);
+      const [showCreate, setShowCreate] = useState(false);
+      const [applications, setApplications] = useState([]);
+
+      useEffect(() => {
+        setTimeout(() => setIsSynced(Math.random() > 0.5), 1000); // Simulate Telegram sync
+      }, []);
+
+      const handleRegister = (userData) => {
+        setUser(userData);
+        setIsSynced(true);
+      };
+
+      const handleSearch = (query, filters) => {
+        let result = [...announcements];
+        if (query) {
+          const lowerQuery = query.toLowerCase();
+          result = result.filter(a => 
+            a.title.toLowerCase().includes(lowerQuery) ||
+            a.description.toLowerCase().includes(lowerQuery) ||
+            a.metatags.some(tag => tag.toLowerCase().includes(lowerQuery))
+          );
+        }
+        result = result.filter(a => 
+          (!filters.city || a.metatags.includes(filters.city)) &&
+          (!filters.type || a.metatags.includes(filters.type)) &&
+          (!filters.date || a.metatags.includes(filters.date)) &&
+          (!filters.gender || a.metatags.includes(filters.gender))
+        );
+        if (filters.sort === 'По рейтингу') result.sort((a, b) => (b.likes - b.dislikes) - (a.likes - a.dislikes));
+        setFilteredAnnouncements(result);
+      };
+
+      const handleLike = (id) => {
+        setAnnouncements(prev => prev.map(a => a.id === id ? { ...a, likes: a.likes + 1 } : a));
+      };
+
+      const handleDislike = (id) => {
+        setAnnouncements(prev => prev.map(a => a.id === id ? { ...a, dislikes: a.dislikes + 1 } : a));
+      };
+
+      const handleParticipate = (id) => {
+        setApplications(prev => [...prev, { id: Date.now(), announcementTitle: announcements.find(a => a.id === id).title, participants: [{ id: 1, name: user.name, avatar: user.avatar }] }]);
+        setAnnouncements(prev => prev.map(a => a.id === id ? { ...a, participants: a.participants + 1 } : a));
+      };
+
+      const handleCreate = (data) => {
+        const newAnnouncement = { ...data, id: Date.now(), creatorName: user.name, creatorAvatar: user.avatar, age: 25, participants: 0, likes: 0, dislikes: 0 };
+        setAnnouncements(prev => [...prev, newAnnouncement]);
+      };
+
+      const handleDelete = (id) => {
+        setAnnouncements(prev => prev.filter(a => a.id !== id));
+      };
+
+      if (isSynced === null) {
+        return (
+          <div className="min-h-screen flex items-center justify-center">
+            <div className="flex gap-2">
+              <span className="w-2 h-2 bg-blue-500 rounded-full animate-bounce"></span>
+              <span className="w-2 h-2 bg-blue-500 rounded-full animate-bounce delay-100"></span>
+              <span className="w-2 h-2 bg-blue-500 rounded-full animate-bounce delay-200"></span>
+            </div>
+          </div>
+        );
+      }
+
+      if (!isSynced) {
+        return (
+          <Modal onClose={() => setIsSynced(true)}>
+            <p className="mb-4">Синхронизация Telegram не удалась, войдите обычным путем</p>
+            <button onClick={() => setIsSynced(true)} className="bg-blue-500 text-white px-4 py-2 rounded-lg">Зарегистрироваться</button>
+          </Modal>
+        );
+      }
+
+      if (!user) {
+        return <RegistrationModal onRegister={handleRegister} />;
+      }
+
+      return (
+        <div className="min-h-screen bg-gray-100">
+          <header className="p-4 flex justify-center">
+            <img src="https://uno5512.github.io/FrendsHub/3.png" alt="Логотип" className="w-[100px] h-[100px]" loading="lazy" />
+          </header>
+          <main className="p-4">
+            <SearchBar onSearch={handleSearch} />
+            <section className="space-y-4">
+              {filteredAnnouncements.map(a => (
+                <Announcement
+                  key={a.id}
+                  data={a}
+                  isOwn={a.creatorName === user.name}
+                  onLike={handleLike}
+                  onDislike={handleDislike}
+                  onParticipate={handleParticipate}
+                  onEdit={() => {}}
+                  onDelete={handleDelete}
+                />
+              ))}
+            </section>
+          </main>
+          <footer className="fixed bottom-4 right-4 flex gap-4">
+            <button onClick={() => setShowCreate(true)} className="bg-blue-500 text-white w-12 h-12 rounded-full flex items-center justify-center text-2xl" aria-label="Создать объявление">+</button>
+            <button onClick={() => setShowAccount(true)} className="bg-gray-500 text-white w-12 h-12 rounded-full flex items-center justify-center" aria-label="Открыть аккаунт">↑</button>
+          </footer>
+          {showAccount && <AccountModal user={user} announcements={announcements} applications={applications} onClose={() => setShowAccount(false)} />}
+          {showCreate && <CreateAnnouncementModal onCreate={handleCreate} onClose={() => setShowCreate(false)} />}
         </div>
-        <div id="announcements"></div>
-        <button class="create-btn" onclick="showCreateModal()">+</button>
-        <button class="account-btn" onclick="showAccount()">👤</button>
-    </div>
+      );
+    }
 
-    <!-- Модальное окно создания объявления -->
-    <div id="createModal" class="modal" style="display: none;">
-        <div class="modal-content">
-            <h2>Создать объявление</h2>
-            <input type="text" placeholder="Заголовок" id="createTitle" maxlength="40">
-            <textarea placeholder="Описание" id="createDescription" style="height: 80px;"></textarea>
-            <select id="createCity">
-                <option value="Москва">Москва</option>
-                <option value="Казань">Казань</option>
-                <option value="Санкт-Петербург">Санкт-Петербург</option>
-            </select>
-            <select id="createType">
-                <option value="Прогулка">Прогулка</option>
-                <option value="Общение">Общение</option>
-                <option value="Игры">Игры</option>
-            </select>
-            <select id="createDate">
-                <option value="Сегодня">Сегодня</option>
-                <option value="Завтра">Завтра</option>
-                <option value="На неделе">На неделе</option>
-            </select>
-            <select id="createGender">
-                <option value="Мужской">Мужской</option>
-                <option value="Женский">Женский</option>
-                <option value="Не важно">Не важно</option>
-            </select>
-            <button onclick="cancelCreate()">Отмена</button>
-            <button onclick="submitCreate()">Отправить</button>
-        </div>
-    </div>
-
-    <!-- Модальное окно аккаунта -->
-    <div id="accountModal" class="modal" style="display: none;">
-        <div class="modal-content">
-            <h2>Аккаунт</h2>
-            <p><strong>Избранное:</strong> <span id="favoritesList">(пусто)</span></p>
-            <p><strong>Заявки:</strong> <span id="applicationsList">(пусто)</span></p>
-            <button onclick="closeAccount()">Закрыть</button>
-        </div>
-    </div>
-
-    <script>
-        let announcements = [
-            { id: 1, title: "Прогулка по Москве", desc: "Гуляем в парке Горького", city: "Москва", type: "Прогулка", date: "Сегодня", gender: "Не важно", creator: "Я", age: 25, likes: 10, dislikes: 2, participants: 5, isOwn: true, created: Date.now() },
-            { id: 2, title: "Игры в Казани", desc: "Настолки и веселье", city: "Казань", type: "Игры", date: "Завтра", gender: "Не важно", creator: "Алексей", age: 25, likes: 15, dislikes: 1, participants: 3, isOwn: false, created: Date.now() - 86400000 }
-        ];
-        let favorites = [];
-        let applications = [];
-
-        // Логика входа
-        function telegramConnect() {
-            document.getElementById('syncError').style.display = 'block';
-            document.getElementById('registerBtn').style.display = 'block';
-        }
-
-        function showRegistration() {
-            document.getElementById('registrationForm').style.display = 'block';
-            checkRegistrationFields();
-        }
-
-        function cancelRegistration() {
-            document.getElementById('registrationForm').style.display = 'none';
-        }
-
-        function checkRegistrationFields() {
-            const name = document.getElementById('name').value;
-            const birthdate = document.getElementById('birthdate').value;
-            const gender = document.getElementById('gender').value;
-            const about = document.getElementById('about').value;
-            document.getElementById('nextBtn').disabled = !(name && birthdate && gender && about);
-        }
-
-        document.querySelectorAll('#registrationForm input, #registrationForm textarea, #registrationForm select').forEach(el => {
-            el.oninput = checkRegistrationFields;
-        });
-
-        function submitRegistration() {
-            document.getElementById('loginModal').style.display = 'none';
-            document.getElementById('main').style.display = 'block';
-            renderAnnouncements();
-        }
-
-        // Рендеринг объявлений
-        function renderAnnouncements(filtered = announcements) {
-            const container = document.getElementById('announcements');
-            container.innerHTML = '';
-            filtered.forEach(ann => {
-                const div = document.createElement('div');
-                div.className = `announcement ${ann.isOwn ? 'own' : ''} ${ann.expanded ? 'expanded' : ''}`;
-                div.innerHTML = `
-                    <div class="announcement-header">
-                        <h3>${ann.title}</h3>
-                        <div class="buttons">
-                            <span>${ann.creator}, ${ann.age} лет</span>
-                            <span>Участники: ${ann.participants}</span>
-                            <button onclick="likeAnnouncement(${ann.id}); event.stopPropagation();">Лайк (${ann.likes})</button>
-                            <button onclick="dislikeAnnouncement(${ann.id}); event.stopPropagation();">Дизлайк (${ann.dislikes})</button>
-                            <button onclick="showOptions(${ann.id}); event.stopPropagation();">...</button>
-                        </div>
-                    </div>
-                    <div class="announcement-details">
-                        <p>${ann.desc}</p>
-                        <p style="font-size: 12px; color: #666;">${ann.city} | ${ann.type} | ${ann.date} | ${ann.gender}</p>
-                        <div style="display: flex; align-items: center; margin-top: 10px;">
-                            <img src="https://uno5512.github.io/FrendsHub/3.png" style="width: 40px; height: 40px; border-radius: 50%; margin-right: 10px;">
-                            <button onclick="participate(${ann.id}); event.stopPropagation();">Участвовать (${ann.participants})</button>
-                        </div>
-                    </div>
-                `;
-                div.onclick = (e) => {
-                    if (!e.target.closest('.buttons') && !e.target.closest('button')) {
-                        ann.expanded = !ann.expanded;
-                        renderAnnouncements(filtered);
-                    }
-                };
-                container.appendChild(div);
-            });
-        }
-
-        // Интеракции
-        function likeAnnouncement(id) {
-            const ann = announcements.find(a => a.id === id);
-            ann.likes++;
-            sortAnnouncements();
-        }
-
-        function dislikeAnnouncement(id) {
-            const ann = announcements.find(a => a.id === id);
-            ann.dislikes++;
-            sortAnnouncements();
-        }
-
-        function participate(id) {
-            const ann = announcements.find(a => a.id === id);
-            ann.participants++;
-            if (!ann.isOwn) applications.push(ann);
-            renderAnnouncements();
-            updateAccount();
-        }
-
-        function showOptions(id) {
-            const ann = announcements.find(a => a.id === id);
-            if (ann.isOwn) {
-                alert('Опции: Поделиться, Редактировать, Удалить');
-            } else {
-                const action = prompt('Опции: Поделиться, В избранное, Не показывать, Пожаловаться');
-                if (action === 'В избранное') favorites.push(ann);
-                updateAccount();
-            }
-        }
-
-        // Поиск и фильтрация
-        function searchAnnouncements(query) {
-            const filtered = announcements.filter(ann => {
-                const searchStr = `${ann.title} ${ann.desc} ${ann.city} ${ann.type} ${ann.date} ${ann.gender}`.toLowerCase();
-                return searchStr.includes(query.toLowerCase());
-            });
-            applyFilters(filtered);
-        }
-
-        function applyFilters(list) {
-            const city = document.getElementById('cityFilter').value;
-            const type = document.getElementById('typeFilter').value;
-            const date = document.getElementById('dateFilter').value;
-            const gender = document.getElementById('genderFilter').value;
-            let filtered = list;
-            if (city) filtered = filtered.filter(ann => ann.city === city);
-            if (type) filtered = filtered.filter(ann => ann.type === type);
-            if (date) filtered = filtered.filter(ann => ann.date === date);
-            if (gender) filtered = filtered.filter(ann => ann.gender === gender);
-            renderAnnouncements(filtered);
-        }
-
-        function sortAnnouncements() {
-            const sort = document.getElementById('sortFilter').value;
-            if (sort === 'rating') announcements.sort((a, b) => (b.likes - b.dislikes) - (a.likes - a.dislikes));
-            if (sort === 'newest') announcements.sort((a, b) => b.created - a.created);
-            if (sort === 'oldest') announcements.sort((a, b) => a.created - b.created);
-            renderAnnouncements();
-        }
-
-        // Создание объявления
-        function showCreateModal() {
-            document.getElementById('createModal').style.display = 'flex';
-        }
-
-        function cancelCreate() {
-            document.getElementById('createModal').style.display = 'none';
-        }
-
-        function submitCreate() {
-            const title = document.getElementById('createTitle').value;
-            const desc = document.getElementById('createDescription').value;
-            if (title && desc) {
-                announcements.push({
-                    id: announcements.length + 1,
-                    title,
-                    desc,
-                    city: document.getElementById('createCity').value,
-                    type: document.getElementById('createType').value,
-                    date: document.getElementById('createDate').value,
-                    gender: document.getElementById('createGender').value,
-                    creator: "Я",
-                    age: 25,
-                    likes: 0,
-                    dislikes: 0,
-                    participants: 0,
-                    isOwn: true,
-                    created: Date.now()
-                });
-                sortAnnouncements();
-                cancelCreate();
-            } else {
-                alert('Заполните заголовок и описание');
-            }
-        }
-
-        // Аккаунт
-        function showAccount() {
-            updateAccount();
-            document.getElementById('accountModal').style.display = 'flex';
-        }
-
-        function updateAccount() {
-            document.getElementById('favoritesList').textContent = favorites.length ? favorites.map(f => f.title).join(', ') : '(пусто)';
-            document.getElementById('applicationsList').textContent = applications.length ? applications.map(a => a.title).join(', ') : '(пусто)';
-        }
-
-        function closeAccount() {
-            document.getElementById('accountModal').style.display = 'none';
-        }
-
-        renderAnnouncements();
-    </script>
+    ReactDOM.render(<App />, document.getElementById('root'));
+  </script>
 </body>
 </html>
