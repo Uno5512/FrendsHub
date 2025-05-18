@@ -1121,13 +1121,7 @@
                         `}
                     </div>
                 `;
-                adList.appendChild(adItem);
-                //  Удаляем этот обработчик, чтобы клик вне заголовка/описания не скрывал объявление
-                // adItem.addEventListener('click', (e) => {
-                //     if (!e.target.closest('h3') && !e.target.closest('.description')) {
-                //         hideAd(ad.id);
-                //     }
-                // });
+
                 setTimeout(() => {
                     adItem.style.opacity = '1';
                     adItem.style.transform = 'translateY(0)';
