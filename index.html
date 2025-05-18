@@ -286,7 +286,9 @@
             font-size: 18px;
             line-height: 1.5;
             color: #555;
-            display: block;
+            hyphens: auto;
+            word-wrap: break-word;
+            white-space: normal;
         }
 
         .ad-item p.tags {
@@ -295,8 +297,9 @@
         }
 
         .ad-content {
-            max-height: 1000px;
-            opacity: 1;
+            max-height: 0;
+            opacity: 0;
+            overflow: hidden;
             transition: max-height 0.7s ease-in-out, opacity 0.7s ease-in-out;
         }
 
@@ -370,7 +373,7 @@
         .ad-actions .action.like,
         .ad-actions .action.dislike {
             position: relative;
-            top: 2px;
+            top: 4px;
         }
 
         .menu {
@@ -591,8 +594,8 @@
     <dialog id="createDialog" aria-labelledby="dialogTitle">
         <form method="dialog" id="create-ad-form">
             <h2 id="dialogTitle">Создать объявление</h2>
-            <input type="text" id="adTitle" placeholder="Заголовок" maxlength="75" aria-label="Заголовок объявления">
-            <span class="counter" id="titleCounter">75/75</span>
+            <input type="text" id="adTitle" placeholder="Заголовок" maxlength="63" aria-label="Заголовок объявления">
+            <span class="counter" id="titleCounter">63/63</span>
             <textarea id="adDescription" placeholder="Описание" maxlength="500" aria-label="Описание объявления"></textarea>
             <span class="counter" id="descriptionCounter">500/500</span>
             <fieldset>
@@ -888,7 +891,7 @@
             const descriptionInput = document.getElementById('adDescription');
             const titleCounter = document.getElementById('titleCounter');
             const descriptionCounter = document.getElementById('descriptionCounter');
-            titleCounter.textContent = `${75 - (titleInput.value.length || 0)}/75`;
+            titleCounter.textContent = `${63 - (titleInput.value.length || 0)}/63`;
             descriptionCounter.textContent = `${500 - (descriptionInput.value.length || 0)}/500`;
         }
 
