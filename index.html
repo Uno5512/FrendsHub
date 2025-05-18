@@ -745,7 +745,7 @@
                 <label><input type="radio" name="dateOption" value="Завтра"> Завтра</label>
                 <label><input type="radio" name="dateOption" value="На неделе"> На неделе</label>
             </div>
-            <button type="button" onclick="document.getElementById('dateDialog').close()" aria-label="Отменить выбор даты">Отменить</button>
+            <button type="button" onclick="document.getElementById('cityDialog').close()" aria-label="Отменить выбор даты">Отменить</button>
             <button type="submit">Применить</button>
         </form>
     </dialog>
@@ -766,7 +766,7 @@
     <dialog id="favoritesDialog" aria-labelledby="favoritesTitle">
         <div class="modal-content">
             <h2 id="favoritesTitle">Избранное</h2>
-            <div class="profile" onclick="openTelegramProfile('user-1', event)" aria-label="Профиль TONI">
+            <div class="profile" onclick="openTelegramProfile('user-1')" aria-label="Профиль TONI">
                 <img src="https://mir-s3-cdn-cf.behance.net/project_modules/fs_webp/51174a180992325.6514258f750ff.jpg" alt="Аватар TONI">
                 <div class="info">
                     <span class="name">TONI</span>
@@ -1090,8 +1090,8 @@
                         <p class="description" onclick="toggleAdExpansion('${ad.id}')">${ad.description}</p>
                         <p class="tags"><small>Город: ${ad.city} | Вид: ${ad.type} | Дата: ${ad.date} | Пол: ${ad.gender} | ${new Date(ad.createdAt).toLocaleDateString()}</small></p>
                         <div class="creator-container">
-                            <img class="ad-avatar" src="${avatarSrc}" alt="Аватар ${ad.userName}" onclick="openTelegramProfile('${ad.userId}', event)">
-                            <div class="join-btn" onclick="joinEvent('${ad.id}', event)" style="width: calc(48px + ${participantCount * 24}px)">
+                            <img class="ad-avatar" src="${avatarSrc}" alt="Аватар ${ad.userName}" onclick="openTelegramProfile('${ad.userId}')">
+                            <div class="join-btn" onclick="joinEvent('${ad.id}')" style="width: calc(48px + ${participantCount * 24}px)">
                                 <span class="participant-count">${participantCount}</span>
                                 <div class="participant-avatars">${participantAvatarsHtml}</div>
                             </div>
@@ -1099,7 +1099,7 @@
                     </div>
                     <div class="user">
                         <div class="user-info">
-                            <span class="name" onclick="openTelegramProfile('${ad.userId}', event)">${ad.userName}</span>
+                            <span class="name" onclick="openTelegramProfile('${ad.userId}')">${ad.userName}</span>
                             <span class="age">${ad.age || 'Не указан'}</span>
                         </div>
                         <div class="ad-actions">
@@ -1123,8 +1123,8 @@
                 `;
                 adList.appendChild(adItem);
                 adItem.addEventListener('click', (e) => {
-                    if (!e.target.closest('.ad-avatar') && !e.target.closest('.join-btn')) {
-                        toggleAdExpansion(ad.id);
+                    if (!e.target.closest('h3') && !e.target.closest('.description')) {
+                        hideAd(ad.id);
                     }
                 });
                 setTimeout(() => {
@@ -1137,8 +1137,7 @@
         }
 
         // Участие в событии
-        function joinEvent(adId, e) {
-            e.stopPropagation();
+        function joinEvent(adId) {
             if (!participants[adId]) participants[adId] = [];
             if (!participants[adId].includes(userId)) {
                 participants[adId].push(userId);
@@ -1305,8 +1304,7 @@
         }
 
         // Открытие профиля
-        function openTelegramProfile(userId, e) {
-            e.stopPropagation();
+        function openTelegramProfile(userId) {
             if (isTelegramMode) {
                 const user = ads.find(ad => ad.userId === userId)?.userName || 'TONI';
                 window.open(`https://t.me/${user.startsWith('@') ? user : '@' + user}`, '_blank');
