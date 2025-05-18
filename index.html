@@ -821,28 +821,21 @@
         localStorage.setItem('userId', appState.userId);
 
         // Утилитные функции
-        const utils = {
-            createElement: (tag, attrs = {}, ...children) => {
-                try {
-                    const el = document.createElement(tag);
-                    Object.keys(attrs).forEach(key => {
-                        if (key === 'className') el.className = attrs[key];
-                        else if (key === 'innerHTML') el.innerHTML = attrs[key];
-                        else el.setAttribute(key, attrs[key]);
-                    });
-                    children.forEach(child => {
-                        if (typeof child === 'string') {
-                            el.appendChild(document.createTextNode(child));
-                        } else if (child) {
-                            el.appendChild(child);
-                        }
-                    });
-                    return el;
-                } catch (error) {
-                    console.error(`Ошибка создания элемента ${tag}:`, error);
-                    return document.createElement('div');
-                }
-            },
+	openDialog: (dialogId) => {
+	    try {
+	        const dialog = document.getElementById(dialogId);
+	        if (!dialog) {
+	            console.error(`Dialog with ID ${dialogId} not found`);
+	            utils.showNotification(`Ошибка: диалог ${dialogId} не найден`);
+	            return;
+	        }
+	        console.log(`Opening dialog: ${dialogId}`); // Отладочный вывод
+	        dialog.showModal();
+	    } catch (error) {
+	        console.error(`Ошибка открытия диалога ${dialogId}:`, error);
+	        utils.showNotification('Не удалось открыть диалог');
+	    }
+	},
 
             showNotification: (message, duration = 2000) => {
                 try {
