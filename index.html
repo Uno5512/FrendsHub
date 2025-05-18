@@ -452,6 +452,10 @@
             z-index: 10;
         }
 
+        .menu-options.show {
+            display: block;
+        }
+
         .menu-options button {
             display: block;
             width: 100%;
@@ -745,7 +749,7 @@
                 <label><input type="radio" name="dateOption" value="Завтра"> Завтра</label>
                 <label><input type="radio" name="dateOption" value="На неделе"> На неделе</label>
             </div>
-            <button type="button" onclick="document.getElementById('cityDialog').close()" aria-label="Отменить выбор даты">Отменить</button>
+            <button type="button" onclick="document.getElementById('dateDialog').close()" aria-label="Отменить выбор даты">Отменить</button>
             <button type="submit">Применить</button>
         </form>
     </dialog>
@@ -788,39 +792,94 @@
     <div class="notification" id="notification"></div>
 
     <script>
-        // utils.js (вспомогательные функции)
+        // Глобальная переменная для хранения ID объявления для жалобы/редактирования
+        let complaintAdId = null;
+
+        // Размер пакета для ленивой загрузки
+        const lazyLoadBatchSize = 10;
+
+        // Состояние приложения
+        const appState = {
+            ads: JSON.parse(localStorage.getItem('ads')) || [],
+            users: JSON.parse(localStorage.getItem('users')) || [],
+            userId: localStorage.getItem('userId') || 'user-' + Date.now(),
+            userName: 'TONI',
+            filters: {
+                search: '',
+                city: '',
+                type: '',
+                date: '',
+                gender: '',
+                sort: 'rating'
+            },
+            likesDislikes: JSON.parse(localStorage.getItem('likesDislikes')) || {},
+            favorites: JSON.parse(localStorage.getItem('favorites')) || [],
+            hiddenAds: JSON.parse(localStorage.getItem('hiddenAds')) || [],
+            participants: JSON.parse(localStorage.getItem('participants')) || {},
+        };
+
+        localStorage.setItem('userId', appState.userId);
+
+        // Утилитные функции
         const utils = {
-            createElement: (tag, attributes, children) => {
-                const element = document.createElement(tag);
-                Object.assign(element, attributes);
-                if (Array.isArray(children)) {
-                    children.forEach(child => element.append(child));
-                } else if (children) {
-                    element.append(child);
+            createElement: (tag, attrs = {}, ...children) => {
+                try {
+                    const el = document.createElement(tag);
+                    Object.keys(attrs).forEach(key => {
+                        if (key === 'className') el.className = attrs[key];
+                        else if (key === 'innerHTML') el.innerHTML = attrs[key];
+                        else el.setAttribute(key, attrs[key]);
+                    });
+                    children.forEach(child => {
+                        if (typeof child === 'string') {
+                            el.appendChild(document.createTextNode(child));
+                        } else if (child) {
+                            el.appendChild(child);
+                        }
+                    });
+                    return el;
+                } catch (error) {
+                    console.error(`Ошибка создания элемента ${tag}:`, error);
+                    return document.createElement('div');
                 }
-                return element;
             },
 
-            showNotification: (message) => {
-                const notification = document.getElementById('notification');
-                notification.textContent = message;
-                notification.classList.add('show');
-                setTimeout(() => {
-                    notification.classList.remove('show');
-                }, 2000);
+            showNotification: (message, duration = 2000) => {
+                try {
+                    const notification = document.getElementById('notification');
+                    notification.textContent = message;
+                    notification.classList.add('show');
+                    setTimeout(() => notification.classList.remove('show'), duration);
+                } catch (error) {
+                    console.error('Ошибка отображения уведомления:', error);
+                }
             },
 
             openDialog: (dialogId) => {
-                document.getElementById(dialogId).showModal();
+                try {
+                    document.getElementById(dialogId).showModal();
+                } catch (error) {
+                    console.error(`Ошибка открытия диалога ${dialogId}:`, error);
+                    utils.showNotification('Не удалось открыть диалог');
+                }
             },
 
             closeDialog: (dialogId) => {
-                document.getElementById(dialogId).close();
+                try {
+                    document.getElementById(dialogId).close();
+                } catch (error) {
+                    console.error(`Ошибка закрытия диалога ${dialogId}:`, error);
+                    utils.showNotification('Не удалось закрыть диалог');
+                }
             },
 
             toggleElementVisibility: (elementId, isVisible) => {
-                const element = document.getElementById(elementId);
-                element.style.display = isVisible ? 'block' : 'none';
+                try {
+                    const element = document.getElementById(elementId);
+                    element.style.display = isVisible ? 'block' : 'none';
+                } catch (error) {
+                    console.error(`Ошибка переключения видимости ${elementId}:`, error);
+                }
             },
 
             debounce: (func, delay) => {
@@ -832,478 +891,717 @@
             },
 
             isElementInViewport: (el) => {
-                const rect = el.getBoundingClientRect();
-                return (
-                    rect.top >= 0 &&
-                    rect.left >= 0 &&
-                    rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
-                    rect.right <= (window.innerWidth || document.documentElement.clientWidth)
-                );
+                try {
+                    const rect = el.getBoundingClientRect();
+                    return (
+                        rect.top >= 0 &&
+                        rect.left >= 0 &&
+                        rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
+                        rect.right <= (window.innerWidth || document.documentElement.clientWidth)
+                    );
+                } catch (error) {
+                    console.error('Ошибка проверки видимости:', error);
+                    return false;
+                }
             },
 
             animateElement: (element, animationName, callback) => {
-                element.classList.add('animate__animated', 'animate__' + animationName);
-                element.addEventListener('animationend', () => {
-                    element.classList.remove('animate__animated', 'animate__' + animationName);
-                    if (callback) callback();
-                }, { once: true });
+                try {
+                    element.classList.add('animate__animated', 'animate__' + animationName);
+                    element.addEventListener('animationend', () => {
+                        element.classList.remove('animate__animated', 'animate__' + animationName);
+                        if (callback) callback();
+                    }, { once: true });
+                } catch (error) {
+                    console.error(`Ошибка анимации элемента:`, error);
+                }
+            },
+
+            filterAds: (ads, filters, userId, hiddenAds) => {
+                try {
+                    return ads.filter(ad => {
+                        if (hiddenAds.includes(ad.id)) return false;
+                        if (filters.search && !ad.title.toLowerCase().includes(filters.search.toLowerCase()) && !ad.description.toLowerCase().includes(filters.search.toLowerCase())) return false;
+                        if (filters.city && ad.city !== filters.city) return false;
+                        if (filters.type && ad.type !== filters.type) return false;
+                        if (filters.date) {
+                            const today = new Date();
+                            const adDate = new Date(ad.createdAt);
+                            if (filters.date === 'Сегодня' && adDate.toDateString() !== today.toDateString()) return false;
+                            if (filters.date === 'Завтра' && adDate.toDateString() !== new Date(today.setDate(today.getDate() + 1)).toDateString()) return false;
+                            if (filters.date === 'На неделе' && (adDate < today || adDate > new Date(today.setDate(today.getDate() + 7)))) return false;
+                        }
+                        if (filters.gender && ad.gender !== filters.gender && filters.gender !== 'Любой') return false;
+                        return true;
+                    }).sort((a, b) => {
+                        if (filters.sort === 'newest') return new Date(b.createdAt) - new Date(a.createdAt);
+                        if (filters.sort === 'oldest') return new Date(a.createdAt) - new Date(b.createdAt);
+                        const ratingA = (appState.likesDislikes[a.id]?.likes?.length || 0) - (appState.likesDislikes[a.id]?.dislikes?.length || 0);
+                        const ratingB = (appState.likesDislikes[b.id]?.likes?.length || 0) - (appState.likesDislikes[b.id]?.dislikes?.length || 0);
+                        return ratingB - ratingA;
+                    });
+                } catch (error) {
+                    console.error('Ошибка фильтрации:', error);
+                    utils.showNotification('Ошибка при фильтрации объявлений');
+                    return ads;
+                }
             }
         };
 
-        // ad-renderer.js (рендеринг объявлений)
+        // Рендеринг объявлений
         const adRenderer = {
             createAdElement: (ad, userId, likesDislikes, favorites, participants,
                 toggleAdExpansion, openTelegramProfile, shareAd, toggleFavorite,
                 toggleLike, toggleDislike, toggleMenu, editAd, deleteAd, hideAd,
                 openComplaintDialog, joinEvent) => {
-                const isLiked = likesDislikes[ad.id]?.likes.includes(userId);
-                const isDisliked = likesDislikes[ad.id]?.dislikes.includes(userId);
-                const isFavorited = favorites.includes(ad.id);
-                const avatarSrc = ad.userId === 'user-1' ? 'https://mir-s3-cdn-cf.behance.net/project_modules/fs_webp/51174a180992325.6514258f750ff.jpg' : 'https://mir-s3-cdn-cf.behance.net/project_modules/fs/90e60f125956251.6123f46744b17.jpg';
-                const participantCount = participants[ad.id]?.length || 0;
-                const rating = (likesDislikes[ad.id]?.likes?.length || 0) - (likesDislikes[ad.id]?.dislikes?.length || 0);
+                try {
+                    const isLiked = likesDislikes[ad.id]?.likes?.includes(userId) || false;
+                    const isDisliked = likesDislikes[ad.id]?.dislikes?.includes(userId) || false;
+                    const isFavorited = favorites.includes(ad.id);
+                    const avatarSrc = ad.userId === userId ? 'https://mir-s3-cdn-cf.behance.net/project_modules/fs_webp/51174a180992325.6514258f750ff.jpg' : 'https://mir-s3-cdn-cf.behance.net/project_modules/fs/90e60f125956251.6123f46744b17.jpg';
+                    const participantCount = participants[ad.id]?.length || 0;
+                    const rating = (likesDislikes[ad.id]?.likes?.length || 0) - (likesDislikes[ad.id]?.dislikes?.length || 0);
 
-                let participantAvatarsHtml = '';
-                participants[ad.id]?.forEach((pUserId, pIndex) => {
-                    const pAvatarSrc = pUserId === 'user-1' ? 'https://mir-s3-cdn-cf.behance.net/project_modules/fs_webp/51174a180992325.6514258f750ff.jpg' : 'https://mir-s3-cdn-cf.behance.net/project_modules/fs/90e60f125956251.6123f46744b17.jpg';
-                    participantAvatarsHtml += `<img class="participant-avatar" src="${pAvatarSrc}" alt="Аватар участника ${pUserId}" style="z-index: ${pIndex}; transform: translateX(${pIndex * -8}px);">`;
-                });
+                    let participantAvatarsHtml = '';
+                    participants[ad.id]?.forEach((pUserId, pIndex) => {
+                        const pAvatarSrc = pUserId === userId ? 'https://mir-s3-cdn-cf.behance.net/project_modules/fs_webp/51174a180992325.6514258f750ff.jpg' : 'https://mir-s3-cdn-cf.behance.net/project_modules/fs/90e60f125956251.6123f46744b17.jpg';
+                        participantAvatarsHtml += `<img class="participant-avatar" src="${pAvatarSrc}" alt="Аватар участника ${pUserId}" style="z-index: ${pIndex}; transform: translateX(${pIndex * -8}px);">`;
+                    });
 
-                const adItem = utils.createElement('article', {
-                    className: `ad-item ${ad.userId === userId ? 'own' : ''}`,
-                    'aria-label': `Объявление от ${ad.userName}`,
-                    'data-ad-id': ad.id,
-                    style: 'opacity: 0; transform: translateY(50px);'
-                }, [
-                    utils.createElement('h3', { onclick: () => toggleAdExpansion(ad.id) }, ad.title),
-                    utils.createElement('div', { className: 'ad-content' }, [
-                        utils.createElement('p', { className: 'description', onclick: () => toggleAdExpansion(ad.id) }, ad.description),
-                        utils.createElement('p', { className: 'tags' }, `<small>Город: ${ad.city} | Вид: ${ad.type} | Дата: ${ad.date} | Пол: ${ad.gender} | ${new Date(ad.createdAt).toLocaleDateString()}</small>`),
-                        utils.createElement('div', { className: 'creator-container' }, [
-                            utils.createElement('img', { className: 'ad-avatar', src: avatarSrc, alt: `Аватар ${ad.userName}`, onclick: () => openTelegramProfile(ad.userId) }),
-                            utils.createElement('div', { className: 'join-btn', onclick: () => joinEvent(ad.id), style: `width: calc(48px + ${participantCount * 24}px)` }, [
-                                utils.createElement('span', { className: 'participant-count' }, participantCount),
-                                utils.createElement('div', { className: 'participant-avatars' }, participantAvatarsHtml)
+                    return utils.createElement('article', {
+                        className: `ad-item ${ad.userId === userId ? 'own' : ''}`,
+                        'data-ad-id': ad.id,
+                        'aria-label': `Объявление от ${ad.userName || 'Аноним'}`
+                    }, [
+                        utils.createElement('h3', { onclick: () => toggleAdExpansion(ad.id) }, ad.title),
+                        utils.createElement('div', { className: 'ad-content' }, [
+                            utils.createElement('p', { className: 'description', onclick: () => toggleAdExpansion(ad.id) }, ad.description),
+                            utils.createElement('p', { className: 'tags' }, `<small>Город: ${ad.city} | Вид: ${ad.type} | Дата: ${ad.date} | Пол: ${ad.gender} | ${new Date(ad.createdAt).toLocaleDateString()}</small>`),
+                            utils.createElement('div', { className: 'creator-container' }, [
+                                utils.createElement('img', { className: 'ad-avatar', src: avatarSrc, alt: `Аватар ${ad.userName || 'Аноним'}`, onclick: () => openTelegramProfile(ad.userId) }),
+                                utils.createElement('div', { className: 'join-btn', onclick: () => joinEvent(ad.id), style: `width: calc(48px + ${participantCount * 24}px)` }, [
+                                    utils.createElement('span', { className: 'participant-count' }, participantCount.toString()),
+                                    utils.createElement('div', { className: 'participant-avatars', innerHTML: participantAvatarsHtml })
+                                ])
+                            ])
+                        ]),
+                        utils.createElement('div', { className: 'user' }, [
+                            utils.createElement('div', { className: 'user-info' }, [
+                                utils.createElement('span', { className: 'name', onclick: () => openTelegramProfile(ad.userId) }, ad.userName || 'Аноним'),
+                                utils.createElement('span', { className: 'age' }, ad.age || 'Не указан')
+                            ]),
+                            utils.createElement('div', { className: 'ad-actions' }, [
+                                utils.createElement('span', { className: 'counter' }, rating.toString()),
+                                utils.createElement('span', { className: 'action share', onclick: () => shareAd(ad.id) }, `<img src="https://uno5512.github.io/FrendsHub/5.png" alt="Поделиться">`),
+                                utils.createElement('span', { className: `action favorite ${isFavorited ? 'favorited' : ''}`, onclick: () => toggleFavorite(ad.id) }, `<img src="https://uno5512.github.io/FrendsHub/4.png" alt="Избранное">`),
+                                utils.createElement('span', { className: `action like ${isLiked ? 'liked' : ''}`, onclick: () => toggleLike(ad.id) }, `<img src="https://uno5512.github.io/FrendsHub/2.png" alt="Лайк">`),
+                                utils.createElement('span', { className: `action dislike ${isDisliked ? 'disliked' : ''}`, onclick: () => toggleDislike(ad.id) }, `<img src="https://uno5512.github.io/FrendsHub/1.png" alt="Дизлайк">`),
+                                utils.createElement('span', { className: 'menu', onclick: (e) => toggleMenu(ad.id, e) }, '•••')
+                            ])
+                        ]),
+                        utils.createElement('div', { className: 'menu-options', id: `menu-${ad.id}` }, [
+                            ...(ad.userId === userId ? [
+                                utils.createElement('button', { onclick: () => editAd(ad.id) }, 'Редактировать'),
+                                utils.createElement('button', { onclick: () => deleteAd(ad.id) }, 'Удалить')
+                            ] : [
+                                utils.createElement('button', { onclick: () => hideAd(ad.id) }, 'Не показывать'),
+                                utils.createElement('button', { onclick: () => openComplaintDialog(ad.id) }, 'Пожаловаться')
                             ])
                         ])
-                    ]),
-                    utils.createElement('div', { className: 'user' }, [
-                        utils.createElement('div', { className: 'user-info' }, [
-                            utils.createElement('span', { className: 'name', onclick: () => openTelegramProfile(ad.userId) }, ad.userName),
-                            utils.createElement('span', { className: 'age' }, ad.age || 'Не указан')
-                        ]),
-                        utils.createElement('div', { className: 'ad-actions' }, [
-                            utils.createElement('span', { className: 'counter' }, rating),
-                            utils.createElement('span', { className: 'action share', onclick: () => shareAd(ad.id) }, `<img src="https://uno5512.github.io/FrendsHub/5.png" alt="Поделиться">`),
-                            utils.createElement('span', { className: `action favorite ${isFavorited ? 'favorited' : ''}`, onclick: () => toggleFavorite(ad.id) }, `<img src="https://uno5512.github.io/FrendsHub/4.png" alt="Избранное">`),
-                            utils.createElement('span', { className: `action like ${isLiked ? 'liked' : ''}`, onclick: () => toggleLike(ad.id) }, `<img src="https://uno5512.github.io/FrendsHub/2.png" alt="Лайк">`),
-                            utils.createElement('span', { className: `action dislike ${isDisliked ? 'disliked' : ''}`, onclick: () => toggleDislike(ad.id) }, `<img src="https://uno5512.github.io/FrendsHub/1.png" alt="Дизлайк">`),
-                            utils.createElement('span', { className: 'menu', onclick: () => toggleMenu(ad.id) }, '•••')
-                        ]),
-                    ]),
-                    utils.createElement('div', { className: 'menu-options', id: `menu-${ad.id}` }, [
-                        ...(ad.userId === userId ? [
-                            utils.createElement('button', { onclick: () => editAd(ad.id) }, 'Редактировать'),
-                            utils.createElement('button', { onclick: () => deleteAd(ad.id) }, 'Удалить')
-                        ] : [
-                            utils.createElement('button', { onclick: () => hideAd(ad.id) }, 'Не показывать'),
-                            utils.createElement('button', { onclick: () => openComplaintDialog(complaintAdId) }, 'Пожаловаться') // Используем complaintAdId
-                        ])
-                    ])
-                ]);
-
-                adItem.addEventListener('click', (e) => {
-                    if (!e.target.closest('h3') && !e.target.closest('.description')) {
-                        hideAd(ad.id);
-                    }
-                });
-
-                return adItem;
+                    ]);
+                } catch (error) {
+                    console.error(`Ошибка рендеринга объявления ${ad.id}:`, error);
+                    utils.showNotification('Ошибка при отображении объявления');
+                    return utils.createElement('div', {}, 'Ошибка отображения');
+                }
             },
 
             renderAdBatch: (filteredAds, adList, appState, adActions) => {
-                const start = adList.children.length;
-                const end = Math.min(start + lazyLoadBatchSize, filteredAds.length);
-                const batch = filteredAds.slice(start, end);
+                try {
+                    const start = adList.children.length;
+                    const end = Math.min(start + lazyLoadBatchSize, filteredAds.length);
+                    const batch = filteredAds.slice(start, end);
 
-                batch.forEach((ad, index) => {
-                    const adElement = adRenderer.createAdElement(ad, appState.userId, appState.likesDislikes, appState.favorites, appState.participants,
-                        adActions.toggleAdExpansion, adActions.openTelegramProfile, adActions.shareAd, adActions.toggleFavorite,
-                        adActions.toggleLike, adActions.toggleDislike, adActions.toggleMenu, adActions.editAd, adActions.deleteAd, adActions.hideAd,
-                        adActions.openComplaintDialog, adActions.joinAd);
-                adList.appendChild(adElement);
-            });
+                    batch.forEach((ad, index) => {
+                        const adElement = adRenderer.createAdElement(ad, appState.userId, appState.likesDislikes, appState.favorites, appState.participants,
+                            adActions.toggleAdExpansion, adActions.openTelegramProfile, adActions.shareAd, adActions.toggleFavorite,
+                            adActions.toggleLike, adActions.toggleDislike, adActions.toggleMenu, adActions.editAd, adActions.deleteAd, adActions.hideAd,
+                            adActions.openComplaintDialog, adActions.joinAd);
+                        adList.appendChild(adElement);
+                        setTimeout(() => {
+                            adElement.style.opacity = '1';
+                            adElement.style.transform = 'translateY(0)';
+                        }, index * 100);
+                    });
 
-            if (end < filteredAds.length) {
-                window.addEventListener('scroll', adRenderer.handleScroll);
+                    if (end < filteredAds.length) {
+                        window.addEventListener('scroll', adRenderer.handleScroll);
+                    } else {
+                        window.removeEventListener('scroll', adRenderer.handleScroll);
+                    }
+                } catch (error) {
+                    console.error('Ошибка рендеринга списка объявлений:', error);
+                    utils.showNotification('Не удалось отобразить объявления');
+                }
+            },
+
+            handleScroll: () => {
+                try {
+                    const adList = document.getElementById('adList');
+                    const filteredAds = utils.filterAds(appState.ads, appState.filters, appState.userId, appState.hiddenAds);
+                    if (adList.children.length < filteredAds.length && window.innerHeight + window.scrollY >= document.body.offsetHeight - 200) {
+                        window.removeEventListener('scroll', adRenderer.handleScroll);
+                        adRenderer.renderAdBatch(filteredAds, adList, appState, adActions);
+                    }
+                } catch (error) {
+                    console.error('Ошибка обработки прокрутки:', error);
+                    utils.showNotification('Ошибка при загрузке объявлений');
+                }
+            },
+
+            renderFavorites: () => {
+                try {
+                    const favoritesList = document.getElementById('favoritesList');
+                    const favoritesSearch = document.getElementById('favoritesSearch').value.toLowerCase();
+                    favoritesList.innerHTML = '';
+
+                    const filteredFavorites = appState.favorites.filter(id => {
+                        const ad = appState.ads.find(ad => ad.id === id);
+                        return ad && ad.title.toLowerCase().includes(favoritesSearch);
+                    });
+
+                    if (filteredFavorites.length === 0) {
+                        favoritesList.innerHTML = '<p>Нет избранных объявлений</p>';
+                        return;
+                    }
+
+                    filteredFavorites.forEach(id => {
+                        const ad = appState.ads.find(ad => ad.id === id);
+                        if (ad) {
+                            const favoriteItem = utils.createElement('div', { className: 'favorite-item' }, ad.title);
+                            favoritesList.appendChild(favoriteItem);
+                        }
+                    });
+                } catch (error) {
+                    console.error('Ошибка рендеринга избранного:', error);
+                    utils.showNotification('Ошибка при отображении избранного');
+                }
             }
-        },
+        };
 
-        handleScroll: () => {
-            const adList = document.getElementById('adList');
-            const filteredAds = utils.filterAds(appState.ads, appState.filters, appState.userId, appState.hiddenAds);
-            if (adList.children.length < filteredAds.length && window.innerHeight + window.scrollY >= document.body.offsetHeight - 200) {
-                window.removeEventListener('scroll', adRenderer.handleScroll);
+        // Действия с объявлениями
+        const adActions = {
+            toggleAdExpansion: (adId) => {
+                try {
+                    const adItem = document.querySelector(`.ad-item[data-ad-id="${adId}"]`);
+                    if (adItem) {
+                        adItem.classList.toggle('expanded');
+                    }
+                } catch (error) {
+                    console.error(`Ошибка развертывания ${adId}:`, error);
+                    utils.showNotification('Ошибка при развертывании объявления');
+                }
+            },
+
+            openTelegramProfile: (userId) => {
+                try {
+                    const user = appState.users.find(user => user.id === userId);
+                    if (user && user.telegram) {
+                        window.open(`https://t.me/${user.telegram}`, '_blank');
+                    } else {
+                        console.log(`Открыть профиль ${userId}`);
+                    }
+                } catch (error) {
+                    console.error(`Ошибка открытия профиля ${userId}:`, error);
+                    utils.showNotification('Ошибка при открытии профиля');
+                }
+            },
+
+            shareAd: (adId) => {
+                try {
+                    const ad = appState.ads.find(ad => ad.id === adId);
+                    if (ad) {
+                        const shareText = `Check out this ad: ${ad.title} - ${ad.description}`;
+                        if (navigator.share) {
+                            navigator.share({ title: ad.title, text: shareText, url: window.location.href })
+                                .then(() => utils.showNotification('Поделился объявлением'))
+                                .catch(() => utils.showNotification('Ошибка при шаринге'));
+                        } else {
+                            navigator.clipboard.writeText(shareText).then(() => utils.showNotification('Ссылка скопирована'));
+                        }
+                    }
+                } catch (error) {
+                    console.error(`Ошибка шаринга ${adId}:`, error);
+                    utils.showNotification('Ошибка при шаринге');
+                }
+            },
+
+            toggleFavorite: (adId) => {
+                try {
+                    if (appState.favorites.includes(adId)) {
+                        appState.favorites = appState.favorites.filter(id => id !== adId);
+                    } else {
+                        appState.favorites.push(adId);
+                    }
+                    localStorage.setItem('favorites', JSON.stringify(appState.favorites));
+                    renderAds();
+                    adRenderer.renderFavorites();
+                } catch (error) {
+                    console.error(`Ошибка избранного ${adId}:`, error);
+                    utils.showNotification('Ошибка при добавлении в избранное');
+                }
+            },
+
+            toggleLike: (adId) => {
+                try {
+                    appState.likesDislikes[adId] = appState.likesDislikes[adId] || { likes: [], dislikes: [] };
+                    const likes = appState.likesDislikes[adId].likes;
+                    if (likes.includes(appState.userId)) {
+                        likes.splice(likes.indexOf(appState.userId), 1);
+                    } else {
+                        likes.push(appState.userId);
+                        appState.likesDislikes[adId].dislikes = appState.likesDislikes[adId].dislikes.filter(id => id !== appState.userId);
+                    }
+                    localStorage.setItem('likesDislikes', JSON.stringify(appState.likesDislikes));
+                    renderAds();
+                } catch (error) {
+                    console.error(`Ошибка лайка ${adId}:`, error);
+                    utils.showNotification('Ошибка при установке лайка');
+                }
+            },
+
+            toggleDislike: (adId) => {
+                try {
+                    appState.likesDislikes[adId] = appState.likesDislikes[adId] || { likes: [], dislikes: [] };
+                    const dislikes = appState.likesDislikes[adId].dislikes;
+                    if (dislikes.includes(appState.userId)) {
+                        dislikes.splice(dislikes.indexOf(appState.userId), 1);
+                    } else {
+                        dislikes.push(appState.userId);
+                        appState.likesDislikes[adId].likes = appState.likesDislikes[adId].likes.filter(id => id !== appState.userId);
+                    }
+                    localStorage.setItem('likesDislikes', JSON.stringify(appState.likesDislikes));
+                    renderAds();
+                } catch (error) {
+                    console.error(`Ошибка дизлайка ${adId}:`, error);
+                    utils.showNotification('Ошибка при установке дизлайка');
+                }
+            },
+
+            toggleMenu: (adId, event) => {
+                try {
+                    event.stopPropagation();
+                    const menu = document.getElementById(`menu-${adId}`);
+                    menu.classList.toggle('show');
+                } catch (error) {
+                    console.error(`Ошибка меню ${adId}:`, error);
+                    utils.showNotification('Ошибка при открытии меню');
+                }
+            },
+
+            editAd: (adId) => {
+                try {
+                    const ad = appState.ads.find(ad => ad.id === adId);
+                    if (ad) {
+                        document.getElementById('adTitle').value = ad.title;
+                        document.getElementById('adDescription').value = ad.description;
+                        document.getElementById('adCity').value = ad.city;
+                        document.getElementById('adType').value = ad.type;
+                        document.getElementById('adDate').value = ad.date;
+                        document.getElementById('adGender').value = ad.gender;
+                        document.getElementById('adAge').value = ad.age || '';
+                        complaintAdId = adId;
+                        utils.openDialog('createDialog');
+                        const form = document.getElementById('create-ad-form');
+                        form.onsubmit = (e) => updateAd(e, adId);
+                    }
+                } catch (error) {
+                    console.error(`Ошибка редактирования ${adId}:`, error);
+                    utils.showNotification('Ошибка при редактировании');
+                }
+            },
+
+            deleteAd: async (adId) => {
+                try {
+                    const adItem = document.querySelector(`.ad-item[data-ad-id="${adId}"]`);
+                    if (adItem) {
+                        adItem.classList.add('removing');
+                        await new Promise(resolve => setTimeout(resolve, 500));
+                        adItem.remove();
+                    }
+                    appState.ads = appState.ads.filter(ad => ad.id !== adId);
+                    appState.favorites = appState.favorites.filter(id => id !== adId);
+                    delete appState.likesDislikes[adId];
+                    delete appState.participants[adId];
+                    localStorage.setItem('ads', JSON.stringify(appState.ads));
+                    localStorage.setItem('favorites', JSON.stringify(appState.favorites));
+                    localStorage.setItem('likesDislikes', JSON.stringify(appState.likesDislikes));
+                    localStorage.setItem('participants', JSON.stringify(appState.participants));
+                    renderAds();
+                    adRenderer.renderFavorites();
+                } catch (error) {
+                    console.error(`Ошибка удаления ${adId}:`, error);
+                    utils.showNotification('Ошибка при удалении');
+                }
+            },
+
+            hideAd: (adId) => {
+                try {
+                    if (!appState.hiddenAds.includes(adId)) {
+                        appState.hiddenAds.push(adId);
+                        localStorage.setItem('hiddenAds', JSON.stringify(appState.hiddenAds));
+                        renderAds();
+                    }
+                } catch (error) {
+                    console.error(`Ошибка скрытия ${adId}:`, error);
+                    utils.showNotification('Ошибка при скрытии объявления');
+                }
+            },
+
+            openComplaintDialog: (adId) => {
+                try {
+                    complaintAdId = adId;
+                    utils.openDialog('complaintDialog');
+                } catch (error) {
+                    console.error(`Ошибка открытия жалобы ${adId}:`, error);
+                    utils.showNotification('Ошибка при открытии формы жалобы');
+                }
+            },
+
+            joinAd: (adId) => {
+                try {
+                    if (!appState.participants[adId]) {
+                        appState.participants[adId] = [];
+                    }
+                    if (!appState.participants[adId].includes(appState.userId)) {
+                        appState.participants[adId].push(appState.userId);
+                        localStorage.setItem('participants', JSON.stringify(appState.participants));
+                        renderAds();
+                    }
+                } catch (error) {
+                    console.error(`Ошибка участия ${adId}:`, error);
+                    utils.showNotification('Ошибка при присоединении к событию');
+                }
+            }
+        };
+
+        // Загрузка данных
+        const loadCloudData = async () => {
+            try {
+                const response = await fetch('https://my-json-server.typicode.com/uno5512/FrendsHub/db');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                appState.ads = data.ads;
+                appState.users = data.users;
+                localStorage.setItem('ads', JSON.stringify(appState.ads));
+                localStorage.setItem('users', JSON.stringify(appState.users));
+                renderAds();
+            } catch (error) {
+                console.error('Ошибка загрузки данных:', error);
+                utils.showNotification('Ошибка при загрузке данных. Используются локальные данные.');
+                appState.ads = JSON.parse(localStorage.getItem('ads') || '[]');
+                appState.users = JSON.parse(localStorage.getItem('users') || '[]');
+                renderAds();
+            }
+        };
+
+        // Рендеринг объявлений
+        const renderAds = () => {
+            try {
+                const adList = document.getElementById('adList');
+                adList.innerHTML = '';
+                appState.filters.search = document.getElementById('search').value;
+                appState.filters.city = document.getElementById('city').value;
+                appState.filters.type = document.getElementById('type').value;
+                appState.filters.date = document.getElementById('date').value;
+                appState.filters.gender = document.getElementById('gender').value;
+                appState.filters.sort = document.getElementById('sort').value;
+
+                const filteredAds = utils.filterAds(appState.ads, appState.filters, appState.userId, appState.hiddenAds);
                 adRenderer.renderAdBatch(filteredAds, adList, appState, adActions);
+            } catch (error) {
+                console.error('Ошибка рендеринга объявлений:', error);
+                utils.showNotification('Ошибка при отображении объявлений');
             }
-        },
+        };
 
-        renderFavorites: () => {
-            const favoritesList = document.getElementById('favoritesList');
-            const favoritesSearch = document.getElementById('favoritesSearch').value.toLowerCase();
-            favoritesList.innerHTML = '';
-
-            const filteredFavorites = appState.favorites.filter(id => {
-                const ad = appState.ads.find(ad => ad.id === id);
-                return ad && ad.title.toLowerCase().includes(favoritesSearch);
-            });
-
-            if (filteredFavorites.length === 0) {
-                favoritesList.innerHTML = '<p>Нет избранных объявлений</p>';
-                return;
+        // Обновление счётчиков
+        const updateCounters = () => {
+            try {
+                const titleLength = document.getElementById('adTitle').value.length;
+                const descriptionLength = document.getElementById('adDescription').value.length;
+                document.getElementById('titleCounter').textContent = `${63 - titleLength}/63`;
+                document.getElementById('descriptionCounter').textContent = `${500 - descriptionLength}/500`;
+            } catch (error) {
+                console.error('Ошибка обновления счётчиков:', error);
             }
+        };
 
-            filteredFavorites.forEach(id => {
-                const ad = appState.ads.find(ad => ad.id === id);
-                if (ad) {
-                    const favoriteItem = utils.createElement('div', { class: 'favorite-item' }, ad.title);
-                    favoritesList.appendChild(favoriteItem);
+        // Открытие диалога фильтра
+        const openFilterDialog = (filterType) => {
+            try {
+                const dialogId = `${filterType}Dialog`;
+                utils.openDialog(dialogId);
+            } catch (error) {
+                console.error(`Ошибка открытия диалога фильтра ${filterType}:`, error);
+                utils.showNotification('Ошибка при открытии фильтра');
+            }
+        };
+
+        // Обработка фильтров
+        const handleFilterSubmit = (filterType, event) => {
+            try {
+                event.preventDefault();
+                const selectedValue = document.querySelector(`input[name="${filterType}Option"]:checked`)?.value || '';
+                document.getElementById(filterType).value = selectedValue;
+                appState.filters[filterType] = selectedValue;
+                renderAds();
+                utils.closeDialog(`${filterType}Dialog`);
+            } catch (error) {
+                console.error(`Ошибка применения фильтра ${filterType}:`, error);
+                utils.showNotification('Ошибка при применении фильтра');
+            }
+        };
+
+        // Обновление возраста профиля
+        const updateProfileAge = () => {
+            try {
+                const birthDay = document.getElementById('birthDay').value;
+                const birthMonth = document.getElementById('birthMonth').value;
+                const birthYear = document.getElementById('birthYear').value;
+
+                if (birthDay && birthMonth && birthYear) {
+                    const birthDate = new Date(birthYear, birthMonth - 1, birthDay);
+                    const ageDiffMs = Date.now() - birthDate.getTime();
+                    const ageDate = new Date(ageDiffMs);
+                    const age = Math.abs(ageDate.getUTCFullYear() - 1970);
+                    document.getElementById('profileAge').textContent = `${age} лет`;
                 }
-            });
-        }
-    };
-
-    const adActions = {
-        toggleAdExpansion: (adId) => {
-            const adItem = document.querySelector(`.ad-item[data-id="${adId}"]`);
-            if (adItem) {
-                adItem.classList.toggle('expanded');
+            } catch (error) {
+                console.error('Ошибка обновления возраста:', error);
+                utils.showNotification('Ошибка при обновлении возраста');
             }
-        },
+        };
 
-        openTelegramProfile: (userId) => {
-            const user = appState.users.find(user => user.id === userId);
-            if (user && user.telegram) {
-                window.open(`https://t.me/${user.telegram}`, '_blank');
+        // Открытие диалога избранного
+        const openFavoritesDialog = () => {
+            try {
+                utils.openDialog('favoritesDialog');
+                adRenderer.renderFavorites();
+            } catch (error) {
+                console.error('Ошибка открытия избранного:', error);
+                utils.showNotification('Ошибка при открытии избранного');
             }
-        },
+        };
 
-        shareAd: (adId) => {
-            const ad = appState.ads.find(ad => ad.id === adId);
-            if (ad) {
-                const shareText = `Check out this ad: ${ad.title} - ${ad.description}`;
-                navigator.share ? navigator.share({ title: ad.title, text: shareText, url: window.location.href }) : navigator.clipboard.writeText(shareText);
-                showNotification('Ссылка скопирована', 2000);
+        // Переключение видимости кнопок
+        const toggleSearchButtons = () => {
+            try {
+                const searchInput = document.getElementById('search').value.trim();
+                const createButton = document.querySelector('button[data-modal-open="createDialog"]');
+                createButton.classList.toggle('hidden', !!searchInput);
+            } catch (error) {
+                console.error('Ошибка переключения кнопок:', error);
             }
-        },
+        };
 
-        toggleFavorite: (adId) => {
-            if (appState.favorites.includes(adId)) {
-                appState.favorites = appState.favorites.filter(id => id !== adId);
-            } else {
-                appState.favorites.push(adId);
+        // Закрытие меню
+        const closeMenus = (event) => {
+            try {
+                if (!event.target.classList.contains('menu')) {
+                    document.querySelectorAll('.menu-options').forEach(menu => menu.classList.remove('show'));
+                }
+            } catch (error) {
+                console.error('Ошибка закрытия меню:', error);
             }
-            localStorage.setItem('favorites', JSON.stringify(appState.favorites));
-            renderAds();
-            adRenderer.renderFavorites();
-        },
+        };
 
-        toggleLike: (adId) => {
-            const key = `like_${adId}`;
-            if (appState.likesDislikes[key]) {
-                delete appState.likesDislikes[key];
-            } else {
-                appState.likesDislikes[key] = true;
+        // Вибрация
+        const triggerVibration = () => {
+            try {
+                if ("vibrate" in navigator) {
+                    navigator.vibrate(50);
+                }
+            } catch (error) {
+                console.error('Ошибка вибрации:', error);
             }
-            localStorage.setItem('likesDislikes', JSON.stringify(appState.likesDislikes));
-            renderAds();
-        },
+        };
 
-        toggleDislike: (adId) => {
-            const key = `dislike_${adId}`;
-            if (appState.likesDislikes[key]) {
-                delete appState.likesDislikes[key];
-            } else {
-                appState.likesDislikes[key] = true;
+        // Создание объявления
+        const createAd = (e) => {
+            try {
+                e.preventDefault();
+                const title = document.getElementById('adTitle').value.trim();
+                const description = document.getElementById('adDescription').value.trim();
+                if (!title || !description) {
+                    utils.showNotification('Заголовок и описание обязательны');
+                    return;
+                }
+                const newAd = {
+                    id: Date.now().toString(),
+                    title,
+                    description,
+                    city: document.getElementById('adCity').value,
+                    type: document.getElementById('adType').value,
+                    date: document.getElementById('adDate').value,
+                    gender: document.getElementById('adGender').value,
+                    age: document.getElementById('adAge').value,
+                    userId: appState.userId,
+                    userName: appState.userName,
+                    createdAt: new Date().toISOString()
+                };
+                appState.ads.push(newAd);
+                localStorage.setItem('ads', JSON.stringify(appState.ads));
+                utils.closeDialog('createDialog');
+                document.getElementById('create-ad-form').reset();
+                updateCounters();
+                renderAds();
+            } catch (error) {
+                console.error('Ошибка создания объявления:', error);
+                utils.showNotification('Ошибка при создании объявления');
             }
-            localStorage.setItem('likesDislikes', JSON.stringify(appState.likesDislikes));
-            renderAds();
-        },
+        };
 
-        toggleMenu: (adId, event) => {
-            event.stopPropagation();
-            const menu = document.querySelector(`.ad-item[data-id="${adId}"] .menu-options`);
-            if (menu) {
-                menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+        // Обновление объявления
+        const updateAd = (e, adId) => {
+            try {
+                e.preventDefault();
+                const adIndex = appState.ads.findIndex(ad => ad.id === adId);
+                if (adIndex === -1) return;
+                const title = document.getElementById('adTitle').value.trim();
+                const description = document.getElementById('adDescription').value.trim();
+                if (!title || !description) {
+                    utils.showNotification('Заголовок и описание обязательны');
+                    return;
+                }
+                appState.ads[adIndex] = {
+                    ...appState.ads[adIndex],
+                    title,
+                    description,
+                    city: document.getElementById('adCity').value,
+                    type: document.getElementById('adType').value,
+                    date: document.getElementById('adDate').value,
+                    gender: document.getElementById('adGender').value,
+                    age: document.getElementById('adAge').value,
+                    createdAt: new Date().toISOString()
+                };
+                localStorage.setItem('ads', JSON.stringify(appState.ads));
+                utils.closeDialog('createDialog');
+                document.getElementById('create-ad-form').reset();
+                updateCounters();
+                renderAds();
+                document.getElementById('create-ad-form').onsubmit = createAd;
+                complaintAdId = null;
+            } catch (error) {
+                console.error(`Ошибка обновления ${adId}:`, error);
+                utils.showNotification('Ошибка при сохранении изменений');
             }
-        },
+        };
 
-        editAd: (adId) => {
-            const ad = appState.ads.find(ad => ad.id === adId);
-            if (ad) {
-                document.getElementById('adTitle').value = ad.title;
-                document.getElementById('adDescription').value = ad.description;
-                document.getElementById('adCity').value = ad.city;
-                document.getElementById('adType').value = ad.type;
-                document.getElementById('adDate').value = ad.date;
-                document.getElementById('adGender').value = ad.gender;
-                document.getElementById('adAge').value = ad.age;
-
-                complaintAdId = adId;
-                document.getElementById('createDialog').showModal();
+        // Отправка жалобы
+        const submitComplaint = (e) => {
+            try {
+                e.preventDefault();
+                const reason = document.getElementById('complaintText').value.trim();
+                if (!reason) {
+                    utils.showNotification('Укажите причину жалобы');
+                    return;
+                }
+                console.log(`Жалоба на ${complaintAdId}: ${reason}`);
+                utils.showNotification('Жалоба отправлена');
+                utils.closeDialog('complaintDialog');
+                document.getElementById('complaint-form').reset();
+                complaintAdId = null;
+            } catch (error) {
+                console.error(`Ошибка отправки жалобы ${complaintAdId}:`, error);
+                utils.showNotification('Ошибка при отправке жалобы');
             }
-        },
+        };
 
-        deleteAd: async (adId) => {
-            const adItem = document.querySelector(`.ad-item[data-id="${adId}"]`);
-            if (adItem) {
-                adItem.classList.add('removing');
-                await new Promise(resolve => setTimeout(resolve, 500));
-                adItem.remove();
-            }
-
-            appState.ads = appState.ads.filter(ad => ad.id !== adId);
-            localStorage.setItem('ads', JSON.stringify(appState.ads));
-            renderAds();
-        },
-
-        hideAd: (adId) => {
-            appState.hiddenAds.push(adId);
-            localStorage.setItem('hiddenAds', JSON.stringify(appState.hiddenAds));
-            renderAds();
-        },
-
-        openComplaintDialog: (adId) => {
-            complaintAdId = adId;
-            document.getElementById('complaintDialog').showModal();
-        },
-
-        joinAd: (adId) => {
-            if (!appState.participants[adId]) {
-                appState.participants[adId] = [];
-            }
-            if (!appState.participants[adId].includes(appState.userId)) {
-                appState.participants[adId].push(appState.userId);
+        // Сброс приложения
+        const resetApp = () => {
+            try {
+                appState.favorites = [];
+                appState.hiddenAds = [];
+                appState.participants = {};
+                appState.likesDislikes = {};
+                localStorage.setItem('favorites', JSON.stringify(appState.favorites));
+                localStorage.setItem('hiddenAds', JSON.stringify(appState.hiddenAds));
                 localStorage.setItem('participants', JSON.stringify(appState.participants));
+                localStorage.setItem('likesDislikes', JSON.stringify(appState.likesDislikes));
+                adRenderer.renderFavorites();
                 renderAds();
+                utils.showNotification('Данные сброшены');
+            } catch (error) {
+                console.error('Ошибка сброса приложения:', error);
+                utils.showNotification('Ошибка при сбросе данных');
+            }
+        };
+
+        // Инициализация
+        async function init() {
+            try {
+                await loadCloudData();
+
+                // Обработчики фильтров
+                document.getElementById('city').addEventListener('click', () => openFilterDialog('city'));
+                document.getElementById('type').addEventListener('click', () => openFilterDialog('type'));
+                document.getElementById('date').addEventListener('click', () => openFilterDialog('date'));
+                document.getElementById('gender').addEventListener('click', () => openFilterDialog('gender'));
+                document.getElementById('sort').addEventListener('change', renderAds);
+
+                // Обработчик поиска
+                document.getElementById('search').addEventListener('input', () => {
+                    renderAds();
+                    toggleSearchButtons();
+                });
+
+                // Обработчики счётчиков
+                document.getElementById('adTitle').addEventListener('input', updateCounters);
+                document.getElementById('adDescription').addEventListener('input', updateCounters);
+
+                // Обработчик поиска по избранному
+                document.getElementById('favoritesSearch').addEventListener('input', adRenderer.renderFavorites);
+
+                // Обработчик создания объявления
+                document.getElementById('create-ad-form').addEventListener('submit', createAd);
+
+                // Обработчик жалобы
+                document.getElementById('complaint-form').addEventListener('submit', submitComplaint);
+
+                // Обработчики фильтров
+                document.getElementById('city-form').addEventListener('submit', (e) => handleFilterSubmit('city', e));
+                document.getElementById('type-form').addEventListener('submit', (e) => handleFilterSubmit('type', e));
+                document.getElementById('date-form').addEventListener('submit', (e) => handleFilterSubmit('date', e));
+                document.getElementById('gender-form').addEventListener('submit', (e) => handleFilterSubmit('gender', e));
+
+                // Обработчик кнопки создания
+                document.querySelector('button[data-modal-open="createDialog"]').addEventListener('click', () => {
+                    document.getElementById('create-ad-form').onsubmit = createAd;
+                    document.getElementById('create-ad-form').reset();
+                    updateCounters();
+                    utils.openDialog('createDialog');
+                });
+
+                // Обработчики возраста
+                document.getElementById('birthDay').addEventListener('input', updateProfileAge);
+                document.getElementById('birthMonth').addEventListener('input', updateProfileAge);
+                document.getElementById('birthYear').addEventListener('input', updateProfileAge);
+
+                // Глобальные обработчики
+                document.addEventListener('click', closeMenus);
+                document.addEventListener('click', triggerVibration);
+
+                renderAds();
+            } catch (error) {
+                console.error('Ошибка инициализации:', error);
+                utils.showNotification('Приложение не запустилось', 5000);
             }
         }
-    };
 
-    const utils = {
-        createElement: (tag, attrs = {}, ...children) => {
-            const el = document.createElement(tag);
-            Object.keys(attrs).forEach(key => el.setAttribute(key, attrs[key]));
-            children.forEach(child => {
-                if (typeof child === 'string') {
-                    el.appendChild(document.createTextNode(child));
-                } else {
-                    el.appendChild(child);
-                }
-            });
-            return el;
-        },
-
-        filterAds: (ads, filters, userId, hiddenAds) => {
-            return ads.filter(ad => {
-                if (hiddenAds.includes(ad.id)) return false;
-                if (filters.search && !ad.title.toLowerCase().includes(filters.search.toLowerCase())) return false;
-                if (filters.city && ad.city !== filters.city) return false;
-                if (filters.type && ad.type !== filters.type) return false;
-                if (filters.date) {
-                    const today = new Date();
-                    const adDate = new Date(ad.createdAt);
-                    if (filters.date === 'Сегодня' && adDate.toDateString() !== today.toDateString()) return false;
-                    if (filters.date === 'Завтра' && adDate.toDateString() !== new Date(today.setDate(today.getDate() + 1)).toDateString()) return false;
-                    if (filters.date === 'На неделе' && (adDate < today || adDate > new Date(today.setDate(today.getDate() + 7)))) return false;
-                }
-                if (filters.gender && ad.gender !== filters.gender && filters.gender !== 'Любой') return false;
-                return true;
-            }).sort((a, b) => {
-                if (filters.sort === 'newest') return new Date(b.createdAt) - new Date(a.createdAt);
-                if (filters.sort === 'oldest') return new Date(a.createdAt) - new Date(b.createdAt);
-                return 0;
-            });
-        }
-    };
-
-    const appState = {
-        ads: JSON.parse(localStorage.getItem('ads')) || [],
-        users: JSON.parse(localStorage.getItem('users')) || [],
-        userId: localStorage.getItem('userId') || 'user-' + Date.now(),
-        filters: {
-            search: '',
-            city: '',
-            type: '',
-            date: '',
-            gender: '',
-            sort: 'rating'
-        },
-        likesDislikes: JSON.parse(localStorage.getItem('likesDislikes')) || {},
-        favorites: JSON.parse(localStorage.getItem('favorites')) || [],
-        hiddenAds: JSON.parse(localStorage.getItem('hiddenAds')) || [],
-        participants: JSON.parse(localStorage.getItem('participants')) || {},
-    };
-
-    localStorage.setItem('userId', appState.userId);
-
-    const loadCloudData = async () => {
-        try {
-            const response = await fetch('https://my-json-server.typicode.com/uno5512/FrendsHub/db');
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            const data = await response.json();
-            appState.ads = data.ads;
-            appState.users = data.users;
-            localStorage.setItem('ads', JSON.stringify(appState.ads));
-            localStorage.setItem('users', JSON.stringify(appState.users));
-        } catch (error) {
-            console.error('Error fetching data:', error);
-            showNotification('Ошибка при загрузке данных', 3000);
-        }
-    };
-
-    const renderAds = () => {
-        const adList = document.getElementById('adList');
-        adList.innerHTML = '';
-        const searchInput = document.getElementById('search').value;
-        appState.filters.search = searchInput;
-
-        const cityFilter = document.getElementById('city').value;
-        appState.filters.city = cityFilter;
-
-        const typeFilter = document.getElementById('type').value;
-        appState.filters.type = typeFilter;
-
-        const dateFilter = document.getElementById('date').value;
-        appState.filters.date = dateFilter;
-
-        const genderFilter = document.getElementById('gender').value;
-        appState.filters.gender = genderFilter;
-
-        const sortFilter = document.getElementById('sort').value;
-        appState.filters.sort = sortFilter;
-
-        const filteredAds = utils.filterAds(appState.ads, appState.filters, appState.userId, appState.hiddenAds);
-        adRenderer.renderAdBatch(filteredAds, adList, appState, adActions);
-    };
-
-    const updateCounters = () => {
-        const titleLength = document.getElementById('adTitle').value.length;
-        const descriptionLength = document.getElementById('adDescription').value.length;
-        document.getElementById('titleCounter').textContent = `${63 - titleLength}/63`;
-        document.getElementById('descriptionCounter').textContent = `${500 - descriptionLength}/500`;
-    };
-
-    const openFilterDialog = (filterType) => {
-        document.getElementById(`${filterType}Dialog`).showModal();
-
-        const form = document.getElementById(`${filterType}-form`);
-        form.addEventListener('submit', (event) => {
-            event.preventDefault();
-            const selectedValue = document.querySelector(`input[name="${filterType}Option"]:checked`).value;
-            document.getElementById(filterType).value = selectedValue;
-            appState.filters[filterType] = selectedValue;
-            renderAds();
-            document.getElementById(`${filterType}Dialog`).close();
-        });
-    };
-
-    const updateProfileAge = () => {
-        const birthDay = document.getElementById('birthDay').value;
-        const birthMonth = document.getElementById('birthMonth').value;
-        const birthYear = document.getElementById('birthYear').value;
-
-        if (birthDay && birthMonth && birthYear) {
-            const birthDate = new Date(birthYear, birthMonth - 1, birthDay);
-            const ageDiffMs = Date.now() - birthDate.getTime();
-            const ageDate = new Date(ageDiffMs);
-            const age = Math.abs(ageDate.getUTCFullYear() - 1970);
-
-            document.getElementById('profileAge').textContent = `Возраст: ${age}`;
-        }
-    };
-
-    const openFavoritesDialog = () => {
-        document.getElementById('favoritesDialog').showModal();
-        adRenderer.renderFavorites();
-    };
-
-    const showNotification = (message, duration) => {
-        const notification = document.getElementById('notification');
-        notification.textContent = message;
-        notification.classList.add('show');
-        setTimeout(() => {
-            notification.classList.remove('show');
-        }, duration);
-    };
-
-    const toggleSearchButtons = () => {
-        const searchInput = document.getElementById('search').value.trim();
-        const createButton = document.querySelector('button[data-modal-open="createDialog"]');
-
-        if (searchInput) {
-            createButton.classList.add('hidden');
-        } else {
-            createButton.classList.remove('hidden');
-        }
-    };
-
-    const closeMenus = (event) => {
-        if (!event.target.classList.contains('menu')) {
-            document.querySelectorAll('.menu-options').forEach(menu => menu.style.display = 'none');
-        }
-    };
-
-    const triggerVibration = () => {
-        if ("vibrate" in navigator) {
-            navigator.vibrate(50);
-        }
-    };
-
-    async function init() {
-        try {
-            await loadCloudData();
-            renderAds();
-
-            document.getElementById('search').addEventListener('input', () => {
-                renderAds();
-                toggleSearchButtons();
-            });
-
-            document.getElementById('city').addEventListener('click', () => openFilterDialog('city'));
-            document.getElementById('type').addEventListener('click', () => openFilterDialog('type'));
-            document.getElementById('date').addEventListener('click', () => openFilterDialog('date'));
-            document.getElementById('gender').addEventListener('click', () => openFilterDialog('gender'));
-            document.getElementById('sort').addEventListener('change', renderAds);
-
-            document.getElementById('adTitle').addEventListener('input', updateCounters);
-            document.getElementById('adDescription').addEventListener('input', updateCounters);
-
-            document.getElementById('favoritesSearch').addEventListener('input', adRenderer.renderFavorites);
-
-            //  Добавляем обработчик для кнопки "Создать"
-            const createButton = document.querySelector('button[data-modal-open="createDialog"]');
-            createButton.addEventListener('click', () => {
-                document.getElementById('createDialog').showModal();
-            });
-
-            document.getElementById('birthDay').addEventListener('input', updateProfileAge);
-            document.getElementById('birthMonth').addEventListener('input', updateProfileAge);
-            document.getElementById('birthYear').addEventListener('input', updateProfileAge);
-
-            document.addEventListener('click', closeMenus);
-            document.addEventListener('click', triggerVibration);
-
-        } catch (error) {
-            console.error("Initialization failed:", error);
-            showNotification("Приложение не запустилось", 5000);
-        }
-    }
-
-    init();
-</script>
+        init();
+    </script>
 </body>
-
 </html>
