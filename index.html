@@ -1122,6 +1122,12 @@
                     </div>
                 `;
 
+                adList.appendChild(adItem);
+                adItem.addEventListener('click', (e) => {
+                    if (!e.target.closest('h3') && !e.target.closest('.description')) {
+                        hideAd(ad.id);
+                    }
+                });
                 setTimeout(() => {
                     adItem.style.opacity = '1';
                     adItem.style.transform = 'translateY(0)';
@@ -1130,7 +1136,6 @@
             });
             renderedAdsCount = end;
         }
-
         // Участие в событии
         function joinEvent(adId) {
             if (!participants[adId]) participants[adId] = [];
