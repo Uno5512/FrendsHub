@@ -1,96 +1,158 @@
-<!DOCTYPE html>
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FriendsHub</title>
+    <title>FriendsHub Mini App</title>
     <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500&display=swap" rel="stylesheet">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
         body {
             font-family: 'Rubik', sans-serif;
+            margin: 0;
+            padding: 0;
             background: #eedfc8;
-            color: #1A2A44;
-            padding: 16px;
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
+            overflow-x: hidden;
         }
 
-        .container {
-            max-width: 600px;
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(8px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal-content {
+            background: #fff;
+            padding: 16px;
+            border-radius: 8px;
+            max-width: 400px;
+            width: 90%;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .modal-content h2 {
+            font-size: 18px;
+            margin-bottom: 16px;
+        }
+
+        .modal-content input,
+        .modal-content textarea,
+        .modal-content select {
+            padding: 8px;
+            font-size: 16px;
+            background: #f1d299;
+            border: none;
+            border-radius: 8px;
+            margin-bottom: 10px;
             width: 100%;
         }
 
-        .image-container {
-            display: flex;
-            justify-content: center;
-            margin-top: 16px;
-            margin-bottom: 10px;
+        .modal-content textarea {
+            min-height: 100px;
+            resize: vertical;
         }
 
-        .header-image {
+        .modal-content select:focus,
+        .modal-content input:focus,
+        .modal-content textarea:focus {
+            outline: none;
+        }
+
+        .modal-content button {
+            padding: 10px 20px;
+            font-size: 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 5px;
+        }
+
+        .modal-content button[type="button"] {
+            background: #E5E7EB;
+            color: #1A2A44;
+            border: none;
+        }
+
+        .modal-content button[type="submit"],
+        .modal-content button:not([type="button"]) {
+            background: #987eeb;
+            color: #fff;
+            border: none;
+        }
+
+        #main {
+            display: none;
+            padding: 20px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .logo {
             width: 100px;
             height: 100px;
             object-fit: contain;
+            display: block;
+            margin: 16px auto 10px;
         }
 
-        .search-filter-container {
+        .search-bar {
             background: #f1d299;
             border: 2px solid #f6e1bc;
             border-radius: 22px;
             padding: 8px;
-            margin-bottom: 16px;
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
+            margin: 8px 0 16px;
             position: sticky;
             top: 16px;
             z-index: 100;
         }
 
-        .refresh-loader {
-            display: none;
-            text-align: center;
-            padding: 12px;
-            background: #f1d299;
-            border-radius: 22px;
-        }
-
-        .refresh-loader.active {
-            display: block;
-        }
-
-        .refresh-loader .dot {
-            display: inline-block;
-            width: 8px;
-            height: 8px;
-            background: #987eeb;
-            border-radius: 50%;
-            margin: 0 4px;
-            animation: bounce 0.6s infinite alternate;
-        }
-
-        .refresh-loader .dot:nth-child(2) {
-            animation-delay: 0.2s;
-        }
-
-        .refresh-loader .dot:nth-child(3) {
-            animation-delay: 0.4s;
-        }
-
-        @keyframes bounce {
-            to {
-                transform: translateY(-6px);
-            }
-        }
-
-        .search-filter-container input {
+        .search-bar input {
             padding: 8px;
             font-size: 22px;
             border-radius: 8px;
@@ -99,7 +161,7 @@
             width: 100%;
         }
 
-        .search-filter-container input:focus {
+        .search-bar input:focus {
             outline: none;
         }
 
@@ -125,161 +187,25 @@
             outline: none;
         }
 
-        button[data-modal-open="createDialog"] {
-            position: fixed;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 160px;
-            height: 80px;
-            background: #987eeb;
-            opacity: 0.5;
-            backdrop-filter: blur(5px);
-            -webkit-backdrop-filter: blur(5px);
-            color: #fff;
-            border: none;
-            border-radius: 24px;
-            font-size: 16px;
-            cursor: pointer;
-            z-index: 1002;
-            transition: bottom 0.3s ease;
-            bottom: 0;
-        }
-
-        button[data-modal-open="createDialog"].hidden {
-            bottom: -60px;
-        }
-
-        dialog {
-            border: none;
-            border-radius: 8px;
-            background: #fff;
-            padding: 16px;
-            max-width: 400px;
-            width: 90%;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            z-index: 1003;
-        }
-
-        dialog::backdrop {
-            background: rgba(0, 0, 0, 0.5);
-        }
-
-        dialog form {
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-        }
-
-        dialog h2 {
-            font-size: 18px;
-            margin-bottom: 16px;
-        }
-
-        dialog select,
-        dialog input,
-        dialog textarea {
-            padding: 8px;
-            font-size: 16px;
-            background: #f1d299;
-            border: none;
-            border-radius: 8px;
-        }
-
-        dialog select:focus,
-        dialog input:focus,
-        dialog textarea:focus {
-            outline: none;
-        }
-
-        dialog textarea {
-            min-height: 100px;
-            resize: vertical;
-        }
-
-        dialog button {
-            padding: 10px 20px;
-            font-size: 16px;
-            border-radius: 8px;
-            cursor: pointer;
-        }
-
-        dialog button[type="button"] {
-            background: #E5E7EB;
-            color: #1A2A44;
-            border: none;
-        }
-
-        dialog button[type="submit"],
-        dialog button.close-btn {
-            background: #987eeb;
-            color: #fff;
-            border: none;
-        }
-
-        .select-options {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .select-options label {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 8px;
-            background: #F5F5F5;
-            border-radius: 8px;
-            cursor: pointer;
-        }
-
-        .counter {
-            font-size: 12px;
-            color: #555;
-            margin-top: 4px;
-        }
-
-        .ad-list {
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-            margin-bottom: 80px;
-            scroll-behavior: smooth;
-            position: relative;
-        }
-
-        .ad-item {
+        .announcement {
             background: #efefef;
             padding: 16px;
-            padding-bottom: 14px;
             border-radius: 22px;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            position: relative;
+            margin: 8px 0;
             transition: transform 0.5s ease, opacity 0.5s ease;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            min-height: 100%;
         }
 
-        .ad-item.removing {
-            transform: translateX(-100%);
-            transition: transform 0.5s ease;
-        }
-
-        .ad-item.own {
+        .announcement.own {
             border: 1px solid #ff6200;
         }
 
-        .ad-item.expanded .ad-content {
+        .announcement.expanded .announcement-details {
             max-height: 1000px;
             opacity: 1;
         }
 
-        .ad-item h3 {
+        .announcement-header h3 {
             font-size: 18px;
             font-weight: 500;
             margin-bottom: 8px;
@@ -291,22 +217,7 @@
             cursor: pointer;
         }
 
-        .ad-item p.description {
-            font-size: 18px;
-            line-height: 1.5;
-            color: #555;
-            hyphens: auto;
-            word-wrap: break-word;
-            white-space: normal;
-            cursor: pointer;
-        }
-
-        .ad-item p.tags {
-            font-size: 12px;
-            color: #555;
-        }
-
-        .ad-content {
+        .announcement-details {
             max-height: 0;
             opacity: 0;
             overflow: hidden;
@@ -314,164 +225,60 @@
             margin-bottom: 16px;
         }
 
-        .creator-container {
-            display: flex;
-            flex-direction: row;
-            align-items: center;
-            gap: 8px;
-            margin: 8px 0 4px 0;
+        .announcement-details p {
+            font-size: 18px;
+            line-height: 1.5;
+            color: #555;
+            hyphens: auto;
+            word-wrap: break-word;
+            white-space: normal;
         }
 
-        .ad-avatar {
-            width: 48px;
-            height: 48px;
-            border-radius: 50%;
-            object-fit: cover;
-            cursor: pointer;
-        }
-
-        .join-btn {
-            width: 48px;
-            height: 48px;
-            background: #987eeb;
-            color: #fff;
-            border: none;
-            border-radius: 50%;
+        .announcement-details p:nth-child(2) {
             font-size: 12px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-            transition: width 0.3s ease;
-        }
-
-        .join-btn .participant-count {
-            font-size: 12px;
-            color: #fff;
-            position: relative;
-            z-index: 10;
-        }
-
-        .join-btn .participant-avatars {
-            display: flex;
-            flex-direction: row;
-            position: absolute;
-            right: 8px;
-            height: 24px;
-            align-items: center;
-        }
-
-        .join-btn .participant-avatar {
-            width: 24px;
-            height: 24px;
-            border-radius: 50%;
-            object-fit: cover;
-            border: 1px solid #f6e1bc;
-        }
-
-        .ad-item .user {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-top: auto;
-            gap: 12px;
-        }
-
-        .ad-item .user .user-info {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .ad-item .user .name {
-            font-size: 16px;
-            font-weight: 500;
-            color: #007bff;
-            cursor: pointer;
-        }
-
-        .ad-item .user .age {
-            font-size: 14px;
             color: #555;
         }
 
-        .ad-actions {
+        .creator-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 8px 0 4px;
+        }
+
+        .creator-container img {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .buttons {
             display: flex;
             align-items: center;
             gap: 12px;
+            justify-content: space-between;
         }
 
-        .ad-actions .action {
-            cursor: pointer;
-            position: relative;
+        .buttons span {
+            font-size: 16px;
+            color: #555;
         }
 
-        .ad-actions .action img {
-            width: 24px;
-            height: 24px;
-            object-fit: contain;
-        }
-
-        .ad-actions .liked::after,
-        .ad-actions .disliked::after {
-            content: '';
-            position: absolute;
-            top: calc(50% - 2px);
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 32px;
-            height: 32px;
-            background: #987eeb;
-            border-radius: 50%;
-            z-index: -1;
-        }
-
-        .ad-actions .action.share,
-        .ad-actions .action.favorite,
-        .ad-actions .action.like,
-        .ad-actions .action.dislike {
-            position: relative;
-            top: 4px;
-        }
-
-        .menu {
-            cursor: pointer;
-            font-size: 20px;
-        }
-
-        .menu-options {
-            display: none;
-            position: absolute;
-            top: 40px;
-            right: 12px;
-            background: #fff;
-            border: 1px solid #E6E6E6;
+        .buttons button {
+            padding: 5px 10px;
+            font-size: 16px;
             border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            z-index: 10;
-        }
-
-        .menu-options button {
-            display: block;
-            width: 100%;
-            padding: 8px 16px;
-            border: none;
-            background: none;
-            color: #000;
-            text-align: left;
-            font-size: 14px;
             cursor: pointer;
+            background: #987eeb;
+            color: #fff;
+            border: none;
         }
 
-        .menu-options button:hover {
-            background: #f1d299;
-        }
-
-        .floating-btn {
+        .create-btn,
+        .account-btn {
             position: fixed;
             bottom: 20px;
-            right: 20px;
             width: 60px;
             height: 60px;
             background: #987eeb;
@@ -483,99 +290,26 @@
             cursor: pointer;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
             z-index: 1000;
+            transition: transform 0.3s ease;
         }
 
-        .floating-btn.hidden {
-            display: none;
+        .create-btn:hover,
+        .account-btn:hover {
+            transform: scale(1.1);
         }
 
-        .floating-btn::before {
-            content: '←';
+        .create-btn {
+            right: 20px;
+        }
+
+        .account-btn {
+            left: 20px;
+            font-size: 16px;
+        }
+
+        .account-btn::before {
+            content: '👤';
             font-size: 24px;
-        }
-
-        .profile {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 20px;
-            padding: 8px;
-            background: #f1d299;
-            border-radius: 8px;
-            cursor: pointer;
-            text-decoration: none;
-            color: inherit;
-        }
-
-        .profile img {
-            width: 48px;
-            height: 48px;
-            border-radius: 50%;
-            object-fit: cover;
-        }
-
-        .profile .info {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .profile .info .name {
-            font-size: 16px;
-            font-weight: 500;
-        }
-
-        .profile .info .age {
-            font-size: 14px;
-            color: #555;
-        }
-
-        .age-picker {
-            display: flex;
-            gap: 8px;
-            margin-top: 8px;
-        }
-
-        .age-picker input {
-            width: 60px;
-            padding: 4px;
-            font-size: 16px;
-            text-align: center;
-            background: #f1d299;
-            border: none;
-            border-radius: 8px;
-            -webkit-appearance: none;
-            -moz-appearance: textfield;
-        }
-
-        .age-picker input::-webkit-inner-spin-button,
-        .age-picker input::-webkit-outer-spin-button {
-            -webkit-appearance: none;
-            margin: 0;
-        }
-
-        .favorites-list {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .favorites-list .favorite-item {
-            background: #f1d299;
-            padding: 8px;
-            border-radius: 8px;
-            font-size: 14px;
-        }
-
-        .reset-btn {
-            background: #987eeb;
-            color: #fff;
-            border: none;
-            border-radius: 8px;
-            padding: 10px;
-            font-size: 16px;
-            cursor: pointer;
-            width: 100%;
-            margin-top: 16px;
         }
 
         .notification {
@@ -597,1091 +331,313 @@
             opacity: 1;
             transform: translateX(-50%) translateY(0);
         }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
     </style>
 </head>
 <body>
-    <main class="container">
-        <div class="image-container">
-            <img class="header-image" src="https://uno5512.github.io/FrendsHub/3.png" alt="Логотип FriendsHub">
-        </div>
-
-        <section class="search-filter-container">
-            <form id="filter-form">
-                <input type="text" id="search" placeholder="Поиск" aria-label="Поиск объявлений">
-                <div class="filters">
-                    <select id="city" name="city" aria-label="Выберите город">
-                        <option value="">Город</option>
-                        <option value="Москва">Москва</option>
-                        <option value="Санкт-Петербург">Санкт-Петербург</option>
-                        <option value="Казань">Казань</option>
-                    </select>
-                    <select id="type" name="type" aria-label="Выберите вид активности">
-                        <option value="">Вид</option>
-                        <option value="Встреча">Встреча</option>
-                        <option value="Чат">Чат</option>
-                        <option value="Событие">Событие</option>
-                    </select>
-                    <select id="date" name="date" aria-label="Выберите дату">
-                        <option value="">Дата</option>
-                        <option value="Сегодня">Сегодня</option>
-                        <option value="Завтра">Завтра</option>
-                        <option value="На неделе">На неделе</option>
-                    </select>
-                    <select id="gender" name="gender" aria-label="Выберите пол">
-                        <option value="">Пол</option>
-                        <option value="Мужской">Мужской</option>
-                        <option value="Женский">Женский</option>
-                        <option value="Любой">Любой</option>
-                    </select>
-                    <select id="sort" name="sort" aria-label="Сортировка">
-                        <option value="rating">По рейтингу</option>
-                        <option value="newest">Новые</option>
-                        <option value="oldest">Старые</option>
-                    </select>
-                </div>
-            </form>
-            <div class="refresh-loader" id="refreshLoader">
-                <span class="dot"></span>
-                <span class="dot"></span>
-                <span class="dot"></span>
+    <!-- Модальное окно входа -->
+    <div id="loginModal" class="modal">
+        <div class="modal-content">
+            <h2>Вход</h2>
+            <button onclick="telegramConnect()">Telegram Connect</button>
+            <p id="syncError" class="notification" style="display: none;">Синхронизация Telegram не удалась, войдите обычным путем</p>
+            <button id="registerBtn" onclick="showRegistration()" style="display: none;">Зарегистрироваться</button>
+            <div id="registrationForm" style="display: none; margin-top: 20px;">
+                <img src="https://uno5512.github.io/FrendsHub/3.png" style="width: 50px; height: 50px; border-radius: 50%; float: left; margin-right: 10px;">
+                <input type="text" placeholder="Имя" id="name" style="width: 150px; margin-bottom: 10px;">
+                <input type="date" id="birthdate" style="width: 150px; margin-bottom: 10px;">
+                <select id="gender" style="width: 150px; margin-bottom: 10px;">
+                    <option value="male">Мужской</option>
+                    <option value="female">Женский</option>
+                    <option value="other">Не важно</option>
+                </select>
+                <textarea placeholder="О себе" id="about" style="width: 100%; height: 60px; margin-bottom: 10px;"></textarea>
+                <button onclick="cancelRegistration()">Отмена</button>
+                <button id="nextBtn" onclick="submitRegistration()" disabled>Далее</button>
             </div>
-        </section>
+        </div>
+    </div>
 
-        <section class="ad-list" id="adList" aria-label="Список объявлений"></section>
-
-        <button type="button" data-modal-open="createDialog" aria-label="Создать объявление">+ Создать</button>
-
-        <button class="floating-btn" onclick="openFavoritesDialog()" aria-label="Открыть избранное"></button>
-    </main>
-
-    <dialog id="createDialog" aria-labelledby="dialogTitle">
-        <form method="dialog" id="create-ad-form">
-            <h2 id="dialogTitle">Создать объявление</h2>
-            <input type="text" id="adTitle" placeholder="Заголовок" maxlength="63" aria-label="Заголовок объявления">
-            <span class="counter" id="titleCounter">63/63</span>
-            <textarea id="adDescription" placeholder="Описание" maxlength="500" aria-label="Описание объявления"></textarea>
-            <span class="counter" id="descriptionCounter">500/500</span>
-            <fieldset>
-                <legend>Город</legend>
-                <select id="adCity" name="city" aria-label="Выберите город">
+    <!-- Главная страница -->
+    <div id="main">
+        <img src="https://uno5512.github.io/FrendsHub/3.png" class="logo">
+        <div class="search-bar">
+            <input type="text" placeholder="Поиск" oninput="searchAnnouncements(this.value)">
+            <div class="filters">
+                <select id="cityFilter">
+                    <option value="">Город: Все</option>
                     <option value="Москва">Москва</option>
-                    <option value="Санкт-Петербург">Санкт-Петербург</option>
                     <option value="Казань">Казань</option>
+                    <option value="Санкт-Петербург">Санкт-Петербург</option>
                 </select>
-            </fieldset>
-            <fieldset>
-                <legend>Вид</legend>
-                <select id="adType" name="type" aria-label="Выберите вид активности">
-                    <option value="Встреча">Встреча</option>
-                    <option value="Чат">Чат</option>
-                    <option value="Событие">Событие</option>
+                <select id="typeFilter">
+                    <option value="">Вид: Все</option>
+                    <option value="Прогулка">Прогулка</option>
+                    <option value="Общение">Общение</option>
+                    <option value="Игры">Игры</option>
                 </select>
-            </fieldset>
-            <fieldset>
-                <legend>Дата</legend>
-                <select id="adDate" name="date" aria-label="Выберите дату">
+                <select id="dateFilter">
+                    <option value="">Дата: Все</option>
                     <option value="Сегодня">Сегодня</option>
                     <option value="Завтра">Завтра</option>
                     <option value="На неделе">На неделе</option>
                 </select>
-            </fieldset>
-            <fieldset>
-                <legend>Пол</legend>
-                <select id="adGender" name="gender" aria-label="Выберите пол">
+                <select id="genderFilter">
+                    <option value="">Пол: Все</option>
                     <option value="Мужской">Мужской</option>
                     <option value="Женский">Женский</option>
-                    <option value="Любой">Любой</option>
+                    <option value="Не важно">Не важно</option>
                 </select>
-            </fieldset>
-            <fieldset>
-                <legend>Возраст</legend>
-                <input type="number" id="adAge" min="1" max="120" placeholder="Возраст" aria-label="Укажите возраст">
-            </fieldset>
-            <button type="button" onclick="document.getElementById('createDialog').close()" aria-label="Закрыть диалог">Закрыть</button>
-            <button type="submit">Опубликовать</button>
-        </form>
-    </dialog>
-
-    <dialog id="complaintDialog" aria-labelledby="complaintTitle">
-        <form method="dialog" id="complaint-form">
-            <h2 id="complaintTitle">Пожаловаться</h2>
-            <textarea id="complaintText" placeholder="Опишите причину жалобы" aria-label="Причина жалобы"></textarea>
-            <button type="button" onclick="document.getElementById('complaintDialog').close()" aria-label="Отменить жалобу">Отменить</button>
-            <button type="submit">Отправить</button>
-        </form>
-    </dialog>
-
-    <dialog id="cityDialog" aria-labelledby="cityTitle">
-        <form method="dialog" id="city-form">
-            <h2 id="cityTitle">Выберите город</h2>
-            <div class="select-options">
-                <label><input type="radio" name="cityOption" value="Москва"> Москва</label>
-                <label><input type="radio" name="cityOption" value="Санкт-Петербург"> Санкт-Петербург</label>
-                <label><input type="radio" name="cityOption" value="Казань"> Казань</label>
+                <select id="sortFilter" onchange="sortAnnouncements()">
+                    <option value="rating">Сортировка: По рейтингу</option>
+                    <option value="verified">Верифицированные</option>
+                    <option value="newest">Новые</option>
+                    <option value="oldest">Старые</option>
+                </select>
             </div>
-            <button type="button" onclick="document.getElementById('cityDialog').close()" aria-label="Отменить выбор города">Отменить</button>
-            <button type="submit">Применить</button>
-        </form>
-    </dialog>
-
-    <dialog id="typeDialog" aria-labelledby="typeTitle">
-        <form method="dialog" id="type-form">
-            <h2 id="typeTitle">Выберите вид</h2>
-            <div class="select-options">
-                <label><input type="radio" name="typeOption" value="Встреча"> Встреча</label>
-                <label><input type="radio" name="typeOption" value="Чат"> Чат</label>
-                <label><input type="radio" name="typeOption" value="Событие"> Событие</label>
-            </div>
-            <button type="button" onclick="document.getElementById('typeDialog').close()" aria-label="Отменить выбор вида">Отменить</button>
-            <button type="submit">Применить</button>
-        </form>
-    </dialog>
-
-    <dialog id="dateDialog" aria-labelledby="dateTitle">
-        <form method="dialog" id="date-form">
-            <h2 id="dateTitle">Выберите дату</h2>
-            <div class="select-options">
-                <label><input type="radio" name="dateOption" value="Сегодня"> Сегодня</label>
-                <label><input type="radio" name="dateOption" value="Завтра"> Завтра</label>
-                <label><input type="radio" name="dateOption" value="На неделе"> На неделе</label>
-            </div>
-            <button type="button" onclick="document.getElementById('cityDialog').close()" aria-label="Отменить выбор даты">Отменить</button>
-            <button type="submit">Применить</button>
-        </form>
-    </dialog>
-
-    <dialog id="genderDialog" aria-labelledby="genderTitle">
-        <form method="dialog" id="gender-form">
-            <h2 id="genderTitle">Выберите пол</h2>
-            <div class="select-options">
-                <label><input type="radio" name="genderOption" value="Мужской"> Мужской</label>
-                <label><input type="radio" name="genderOption" value="Женский"> Женский</label>
-                <label><input type="radio" name="genderOption" value="Любой"> Любой</label>
-            </div>
-            <button type="button" onclick="document.getElementById('genderDialog').close()" aria-label="Отменить выбор пола">Отменить</button>
-            <button type="submit">Применить</button>
-        </form>
-    </dialog>
-
-    <dialog id="favoritesDialog" aria-labelledby="favoritesTitle">
-        <div class="modal-content">
-            <h2 id="favoritesTitle">Избранное</h2>
-            <div class="profile" onclick="openTelegramProfile('user-1')" aria-label="Профиль TONI">
-                <img src="https://mir-s3-cdn-cf.behance.net/project_modules/fs_webp/51174a180992325.6514258f750ff.jpg" alt="Аватар TONI">
-                <div class="info">
-                    <span class="name">TONI</span>
-                    <span class="age" id="profileAge">15 лет</span>
-                    <div class="age-picker">
-                        <input type="number" id="birthDay" min="1" max="31" placeholder="День" aria-label="День рождения">
-                        <input type="number" id="birthMonth" min="1" max="12" placeholder="Месяц" aria-label="Месяц рождения">
-                        <input type="number" id="birthYear" min="1900" max="2025" placeholder="Год" aria-label="Год рождения">
-                    </div>
-                </div>
-            </div>
-            <input type="text" id="favoritesSearch" placeholder="Поиск по избранному" aria-label="Поиск по избранным объявлениям">
-            <div class="favorites-list" id="favoritesList"></div>
-            <button class="reset-btn" onclick="resetApp()">Сбросить</button>
-            <button class="close-btn" onclick="document.getElementById('favoritesDialog').close()">Закрыть</button>
         </div>
-    </dialog>
+        <div id="announcements"></div>
+        <button class="create-btn" onclick="showCreateModal()">+</button>
+        <button class="account-btn" onclick="showAccount()">👤</button>
+    </div>
 
-    <div class="notification" id="notification"></div>
+    <!-- Модальное окно создания объявления -->
+    <div id="createModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <h2>Создать объявление</h2>
+            <input type="text" placeholder="Заголовок" id="createTitle" maxlength="40">
+            <textarea placeholder="Описание" id="createDescription" style="height: 80px;"></textarea>
+            <select id="createCity">
+                <option value="Москва">Москва</option>
+                <option value="Казань">Казань</option>
+                <option value="Санкт-Петербург">Санкт-Петербург</option>
+            </select>
+            <select id="createType">
+                <option value="Прогулка">Прогулка</option>
+                <option value="Общение">Общение</option>
+                <option value="Игры">Игры</option>
+            </select>
+            <select id="createDate">
+                <option value="Сегодня">Сегодня</option>
+                <option value="Завтра">Завтра</option>
+                <option value="На неделе">На неделе</option>
+            </select>
+            <select id="createGender">
+                <option value="Мужской">Мужской</option>
+                <option value="Женский">Женский</option>
+                <option value="Не важно">Не важно</option>
+            </select>
+            <button onclick="cancelCreate()">Отмена</button>
+            <button onclick="submitCreate()">Отправить</button>
+        </div>
+    </div>
+
+    <!-- Модальное окно аккаунта -->
+    <div id="accountModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <h2>Аккаунт</h2>
+            <p><strong>Избранное:</strong> <span id="favoritesList">(пусто)</span></p>
+            <p><strong>Заявки:</strong> <span id="applicationsList">(пусто)</span></p>
+            <button onclick="closeAccount()">Закрыть</button>
+        </div>
+    </div>
 
     <script>
-        // Проверка доступности Telegram
-        function isTelegramAvailable() {
-            try {
-                return window.Telegram?.WebApp && typeof Telegram.WebApp.ready === 'function';
-            } catch (e) {
-                console.error('Telegram WebApp check failed:', e);
-                return false;
-            }
-        }
-
-        // Инициализация пользователя
-        let userId = 'user-1';
-        let userName = 'TONI';
-        let isTelegramMode = isTelegramAvailable();
-        if (isTelegramMode) {
-            try {
-                Telegram.WebApp.ready();
-                const user = Telegram.WebApp.initDataUnsafe?.user;
-                if (user?.id) {
-                    userId = user.id;
-                    userName = user.username || user.first_name || 'TONI';
-                } else {
-                    isTelegramMode = false;
-                }
-            } catch (e) {
-                console.error('Telegram initialization failed:', e);
-                isTelegramMode = false;
-            }
-        }
-
-        // Начальные данные
-        const defaultAds = [
-            {
-                id: 'ad-1',
-                userId: 'user-1',
-                userName: 'TONI',
-                title: 'Встреча в Москве',
-                description: 'Присоединяйтесь к нашей встрече в центре города!',
-                city: 'Москва',
-                type: 'Встреча',
-                date: 'Сегодня',
-                gender: 'Любой',
-                age: '15 лет',
-                createdAt: '2025-05-17T00:00:00Z'
-            },
-            {
-                id: 'ad-2',
-                userId: 'user-2',
-                userName: 'Алексей',
-                title: 'Чат по интересам',
-                description: 'Обсудим книги и фильмы в Telegram!',
-                city: 'Санкт-Петербург',
-                type: 'Чат',
-                date: 'Завтра',
-                gender: 'Любой',
-                age: '30 лет',
-                createdAt: '2025-05-16T00:00:00Z'
-            }
+        let announcements = [
+            { id: 1, title: "Прогулка по Москве", desc: "Гуляем в парке Горького", city: "Москва", type: "Прогулка", date: "Сегодня", gender: "Не важно", creator: "Я", age: 25, likes: 10, dislikes: 2, participants: 5, isOwn: true, created: Date.now() },
+            { id: 2, title: "Игры в Казани", desc: "Настолки и веселье", city: "Казань", type: "Игры", date: "Завтра", gender: "Не важно", creator: "Алексей", age: 25, likes: 15, dislikes: 1, participants: 3, isOwn: false, created: Date.now() - 86400000 }
         ];
-        let ads = [...defaultAds];
-        let hiddenAds = [];
         let favorites = [];
-        let likesDislikes = { 'ad-1': { likes: [], dislikes: [] }, 'ad-2': { likes: [], dislikes: [] } };
-        let participants = { 'ad-1': [], 'ad-2': [] };
-        let editAdId = null;
-        let renderedAdsCount = 0;
-        const lazyLoadBatchSize = 10;
-        let previousAdPositions = {};
+        let applications = [];
 
-        // Сброс приложения
-        function resetApp() {
-            document.getElementById('search').value = '';
-            document.getElementById('city').value = '';
-            document.getElementById('type').value = '';
-            document.getElementById('date').value = '';
-            document.getElementById('gender').value = '';
-            document.getElementById('sort').value = 'rating';
-            localStorage.clear();
-            if (isTelegramMode) {
-                Telegram.WebApp.CloudStorage.removeItems(['ads', 'hiddenAds', 'favorites', 'likesDislikes', 'participants'], (error) => {
-                    if (error) console.error('Failed to clear CloudStorage:', error);
-                });
-            }
-            ads = [...defaultAds];
-            hiddenAds = [];
-            favorites = [];
-            likesDislikes = { 'ad-1': { likes: [], dislikes: [] }, 'ad-2': { likes: [], dislikes: [] } };
-            participants = { 'ad-1': [], 'ad-2': [] };
-            showNotification('Настройки сброшены');
-            renderAds();
+        // Логика входа
+        function telegramConnect() {
+            document.getElementById('syncError').style.display = 'block';
+            document.getElementById('registerBtn').style.display = 'block';
         }
 
-        // Загрузка данных
-        function loadCloudData() {
-            if (isTelegramMode) {
-                try {
-                    return Promise.all([
-                        new Promise((resolve) => {
-                            Telegram.WebApp.CloudStorage.getItems(['ads'], (error, result) => {
-                                resolve(error || !result.ads ? JSON.parse(localStorage.getItem('ads')) || ads : JSON.parse(result.ads));
-                            });
-                        }),
-                        new Promise((resolve) => {
-                            Telegram.WebApp.CloudStorage.getItems(['hiddenAds'], (error, result) => {
-                                resolve(error || !result.hiddenAds ? JSON.parse(localStorage.getItem('hiddenAds')) || [] : JSON.parse(result.hiddenAds));
-                            });
-                        }),
-                        new Promise((resolve) => {
-                            Telegram.WebApp.CloudStorage.getItems(['favorites'], (error, result) => {
-                                resolve(error || !result.favorites ? JSON.parse(localStorage.getItem('favorites')) || [] : JSON.parse(result.favorites));
-                            });
-                        }),
-                        new Promise((resolve) => {
-                            Telegram.WebApp.CloudStorage.getItems(['likesDislikes'], (error, result) => {
-                                resolve(error || !result.likesDislikes ? JSON.parse(localStorage.getItem('likesDislikes')) || likesDislikes : JSON.parse(result.likesDislikes));
-                            });
-                        }),
-                        new Promise((resolve) => {
-                            Telegram.WebApp.CloudStorage.getItems(['participants'], (error, result) => {
-                                resolve(error || !result.participants ? JSON.parse(localStorage.getItem('participants')) || participants : JSON.parse(result.participants));
-                            });
-                        })
-                    ]).then(([loadedAds, loadedHiddenAds, loadedFavorites, loadedLikesDislikes, loadedParticipants]) => {
-                        ads = loadedAds;
-                        hiddenAds = loadedHiddenAds;
-                        favorites = loadedFavorites;
-                        likesDislikes = loadedLikesDislikes;
-                        participants = loadedParticipants;
-                    }).catch((e) => {
-                        console.error('Cloud storage failed:', e);
-                        ads = JSON.parse(localStorage.getItem('ads')) || ads;
-                        hiddenAds = JSON.parse(localStorage.getItem('hiddenAds')) || [];
-                        favorites = JSON.parse(localStorage.getItem('favorites')) || [];
-                        likesDislikes = JSON.parse(localStorage.getItem('likesDislikes')) || likesDislikes;
-                        participants = JSON.parse(localStorage.getItem('participants')) || participants;
-                    });
-                } catch (e) {
-                    console.error('Cloud storage initialization failed:', e);
-                }
-            }
-            ads = JSON.parse(localStorage.getItem('ads')) || ads;
-            hiddenAds = JSON.parse(localStorage.getItem('hiddenAds')) || [];
-            favorites = JSON.parse(localStorage.getItem('favorites')) || [];
-            likesDislikes = JSON.parse(localStorage.getItem('likesDislikes')) || likesDislikes;
-            participants = JSON.parse(localStorage.getItem('participants')) || participants;
-            return Promise.resolve();
+        function showRegistration() {
+            document.getElementById('registrationForm').style.display = 'block';
+            checkRegistrationFields();
         }
 
-        // Вычисление возраста
-        function calculateAge(day, month, year) {
-            const today = new Date();
-            const currentYear = today.getFullYear();
-            const currentMonth = today.getMonth() + 1;
-            const currentDay = today.getDate();
-            let age = currentYear - year;
-            if (month > currentMonth || (month === currentMonth && day > currentDay)) {
-                age--;
-            }
-            return age >= 0 ? `${age} лет` : 'Некорректная дата';
+        function cancelRegistration() {
+            document.getElementById('registrationForm').style.display = 'none';
         }
 
-        // Обновление возраста в профиле
-        function updateProfileAge() {
-            const day = parseInt(document.getElementById('birthDay').value) || 1;
-            const month = parseInt(document.getElementById('birthMonth').value) || 1;
-            const year = parseInt(document.getElementById('birthYear').value) || 2025;
-            const age = calculateAge(day, month, year);
-            document.getElementById('profileAge').textContent = age;
+        function checkRegistrationFields() {
+            const name = document.getElementById('name').value;
+            const birthdate = document.getElementById('birthdate').value;
+            const gender = document.getElementById('gender').value;
+            const about = document.getElementById('about').value;
+            document.getElementById('nextBtn').disabled = !(name && birthdate && gender && about);
         }
 
-        // Обновление счётчиков символов
-        function updateCounters() {
-            const titleInput = document.getElementById('adTitle');
-            const descriptionInput = document.getElementById('adDescription');
-            const titleCounter = document.getElementById('titleCounter');
-            const descriptionCounter = document.getElementById('descriptionCounter');
-            titleCounter.textContent = `${63 - (titleInput.value.length || 0)}/63`;
-            descriptionCounter.textContent = `${500 - (descriptionInput.value.length || 0)}/500`;
-        }
+        document.querySelectorAll('#registrationForm input, #registrationForm textarea, #registrationForm select').forEach(el => {
+            el.oninput = checkRegistrationFields;
+        });
 
-        // Поиск и фильтрация
-        function filterAds(adsToFilter) {
-            const searchQuery = document.getElementById('search').value.toLowerCase().trim();
-            const cityFilter = document.getElementById('city').value;
-            const typeFilter = document.getElementById('type').value;
-            const dateFilter = document.getElementById('date').value;
-            const genderFilter = document.getElementById('gender').value;
-            const sortOption = document.getElementById('sort').value || 'rating';
-
-            let filtered = adsToFilter.filter(ad => {
-                if (!searchQuery) return true;
-                const searchTerms = searchQuery.split(/\s+/);
-                const searchableText = [
-                    ad.title.toLowerCase(),
-                    ad.description.toLowerCase(),
-                    ad.city.toLowerCase(),
-                    ad.type.toLowerCase(),
-                    ad.date.toLowerCase(),
-                    ad.gender.toLowerCase()
-                ].join(' ');
-                return searchTerms.every(term => searchableText.includes(term));
-            });
-
-            if (cityFilter) filtered = filtered.filter(ad => ad.city === cityFilter);
-            if (typeFilter) filtered = filtered.filter(ad => ad.type === typeFilter);
-            if (dateFilter) filtered = filtered.filter(ad => ad.date === dateFilter);
-            if (genderFilter) filtered = filtered.filter(ad => ad.gender === genderFilter);
-
-            switch (sortOption) {
-                case 'rating':
-                    filtered.sort((a, b) => {
-                        const ratingA = (likesDislikes[a.id]?.likes?.length || 0) - (likesDislikes[a.id]?.dislikes?.length || 0);
-                        const ratingB = (likesDislikes[b.id]?.likes?.length || 0) - (likesDislikes[b.id]?.dislikes?.length || 0);
-                        return ratingB - ratingA;
-                    });
-                    break;
-                case 'newest':
-                    filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-                    break;
-                case 'oldest':
-                    filtered.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
-                    break;
-            }
-
-            return filtered;
+        function submitRegistration() {
+            document.getElementById('loginModal').style.display = 'none';
+            document.getElementById('main').style.display = 'block';
+            renderAnnouncements();
         }
 
         // Рендеринг объявлений
-        function renderAds() {
-            const adList = document.getElementById('adList');
-            const filteredAds = filterAds(ads.filter(ad => !hiddenAds.includes(ad.id)));
-            renderedAdsCount = 0;
-            const currentAdElements = Array.from(adList.children).filter(el => el.classList.contains('ad-item'));
-            const adHeights = currentAdElements.map(el => el.offsetHeight + 16);
-            adList.innerHTML = '';
-            renderAdBatch(filteredAds, adList);
-            const newAdElements = Array.from(adList.children).filter(el => el.classList.contains('ad-item'));
-            newAdElements.forEach((el, newIndex) => {
-                const adId = el.dataset.adId;
-                const oldIndex = previousAdPositions[adId] !== undefined ? previousAdPositions[adId] : newIndex;
-                if (oldIndex !== newIndex) {
-                    const oldY = adHeights.slice(0, oldIndex).reduce((sum, h) => sum + h, 0);
-                    const newY = adHeights.slice(0, newIndex).reduce((sum, h) => sum + h, 0);
-                    const deltaY = oldY - newY;
-                    el.style.transform = `translateY(${deltaY}px)`;
-                    setTimeout(() => {
-                        el.style.transform = `translateY(0)`;
-                    }, 0);
-                }
-            });
-            previousAdPositions = {};
-            newAdElements.forEach((el, index) => {
-                previousAdPositions[el.dataset.adId] = index;
-            });
-            if (filteredAds.length > lazyLoadBatchSize) {
-                const observer = new IntersectionObserver((entries, observer) => {
-                    entries.forEach(entry => {
-                        if (entry.isIntersecting) {
-                            renderAdBatch(filteredAds, adList);
-                            if (renderedAdsCount >= filteredAds.length) {
-                                observer.disconnect();
-                            }
-                        }
-                    });
-                }, { root: null, rootMargin: '100px', threshold: 0.1 });
-                const sentinel = document.createElement('div');
-                sentinel.id = 'sentinel';
-                adList.appendChild(sentinel);
-                observer.observe(sentinel);
-            }
-            renderFavorites();
-        }
-
-        // Рендеринг партии объявлений
-        function renderAdBatch(filteredAds, adList) {
-            const start = renderedAdsCount;
-            const end = Math.min(start + lazyLoadBatchSize, filteredAds.length);
-            const batch = filteredAds.slice(start, end);
-            batch.forEach((ad, index) => {
-                const adItem = document.createElement('article');
-                adItem.className = `ad-item ${ad.userId === userId ? 'own' : ''}`;
-                adItem.setAttribute('aria-label', `Объявление от ${ad.userName}`);
-                adItem.dataset.adId = ad.id;
-                adItem.style.opacity = '0';
-                adItem.style.transform = 'translateY(50px)';
-                const isLiked = likesDislikes[ad.id]?.likes.includes(userId);
-                const isDisliked = likesDislikes[ad.id]?.dislikes.includes(userId);
-                const isFavorited = favorites.includes(ad.id);
-                const avatarSrc = ad.userId === 'user-1' ? 'https://mir-s3-cdn-cf.behance.net/project_modules/fs_webp/51174a180992325.6514258f750ff.jpg' : 'https://mir-s3-cdn-cf.behance.net/project_modules/fs/90e60f125956251.6123f46744b17.jpg';
-                const participantCount = participants[ad.id]?.length || 0;
-                const rating = (likesDislikes[ad.id]?.likes?.length || 0) - (likesDislikes[ad.id]?.dislikes?.length || 0);
-                let participantAvatarsHtml = '';
-                participants[ad.id]?.forEach((pUserId, pIndex) => {
-                    const pAvatarSrc = pUserId === 'user-1' ? 'https://mir-s3-cdn-cf.behance.net/project_modules/fs_webp/51174a180992325.6514258f750ff.jpg' : 'https://mir-s3-cdn-cf.behance.net/project_modules/fs/90e60f125956251.6123f46744b17.jpg';
-                    participantAvatarsHtml += `<img class="participant-avatar" src="${pAvatarSrc}" alt="Аватар участника ${pUserId}" style="z-index: ${pIndex}; transform: translateX(${pIndex * -8}px);">`;
-                });
-
-            <article class="ad-item" data-ad-id="ad-1" aria-label="Объявление от TONI">
-                <h3 onclick="toggleAdExpansion('ad-1')">Встреча в Москве</h3>
-                <div class="ad-content">
-                    <p class="description" onclick="toggleAdExpansion('ad-1')">Присоединяйтесь к нашей встрече в центре города!</p>
-                    <p class="tags"><small>Город: Москва | Вид: Встреча | Дата: Сегодня | Пол: Любой | 17.05.2025</small></p>
-                    <div class="creator-container">
-                        <img class="ad-avatar" src="https://mir-s3-cdn-cf.behance.net/project_modules/fs_webp/51174a180992325.6514258f750ff.jpg" alt="Аватар TONI" onclick="openTelegramProfile('user-1')">
-                        <div class="join-btn" onclick="joinEvent('ad-1')" style="width: 48px;">
-                            <span class="participant-count">0</span>
+        function renderAnnouncements(filtered = announcements) {
+            const container = document.getElementById('announcements');
+            container.innerHTML = '';
+            filtered.forEach(ann => {
+                const div = document.createElement('div');
+                div.className = `announcement ${ann.isOwn ? 'own' : ''} ${ann.expanded ? 'expanded' : ''}`;
+                div.innerHTML = `
+                    <div class="announcement-header">
+                        <h3>${ann.title}</h3>
+                        <div class="buttons">
+                            <span>${ann.creator}, ${ann.age} лет</span>
+                            <span>Участники: ${ann.participants}</span>
+                            <button onclick="likeAnnouncement(${ann.id}); event.stopPropagation();">Лайк (${ann.likes})</button>
+                            <button onclick="dislikeAnnouncement(${ann.id}); event.stopPropagation();">Дизлайк (${ann.dislikes})</button>
+                            <button onclick="showOptions(${ann.id}); event.stopPropagation();">...</button>
                         </div>
                     </div>
-                </div>
-                <div class="user">
-                    <div class="user-info">
-                        <span class="name" onclick="openTelegramProfile('user-1')">TONI</span>
-                        <span class="age">15 лет</span>
+                    <div class="announcement-details">
+                        <p>${ann.desc}</p>
+                        <p style="font-size: 12px; color: #666;">${ann.city} | ${ann.type} | ${ann.date} | ${ann.gender}</p>
+                        <div style="display: flex; align-items: center; margin-top: 10px;">
+                            <img src="https://uno5512.github.io/FrendsHub/3.png" style="width: 40px; height: 40px; border-radius: 50%; margin-right: 10px;">
+                            <button onclick="participate(${ann.id}); event.stopPropagation();">Участвовать (${ann.participants})</button>
+                        </div>
                     </div>
-                    <div class="ad-actions">
-                        <span class="action share" onclick="shareAd('ad-1')"><img src="https://uno5512.github.io/FrendsHub/5.png" alt="Поделиться"></span>
-                        <span class="action favorite" onclick="toggleFavorite('ad-1')"><img src="https://uno5512.github.io/FrendsHub/4.png" alt="Избранное"></span>
-                        <span class="action like" onclick="toggleLike('ad-1')"><img src="https://uno5512.github.io/FrendsHub/2.png" alt="Лайк"></span>
-                        <span class="action dislike" onclick="toggleDislike('ad-1')"><img src="https://uno5512.github.io/FrendsHub/1.png" alt="Дизлайк"></span>
-                        <span class="menu" onclick="toggleMenu('ad-1')">•••</span>
-                    </div>
-                </div>
-                <div class="menu-options" id="menu-ad-1">
-                    <button onclick="editAd('ad-1')">Редактировать</button>
-                    <button onclick="deleteAd('ad-1')">Удалить</button>
-                    <button onclick="hideAd('ad-1')">Не показывать</button>
-                    <button onclick="openComplaintDialog('ad-1')">Пожаловаться</button>
-                </div>
-            </article>
-
                 `;
-                adList.appendChild(adItem);
-                adItem.addEventListener('click', (e) => {
-                    if (!e.target.closest('h3') && !e.target.closest('.description')) {
-                        hideAd(ad.id);
+                div.onclick = (e) => {
+                    if (!e.target.closest('.buttons') && !e.target.closest('button')) {
+                        ann.expanded = !ann.expanded;
+                        renderAnnouncements(filtered);
                     }
+                };
+                container.appendChild(div);
+            });
+        }
+
+        // Интеракции
+        function likeAnnouncement(id) {
+            const ann = announcements.find(a => a.id === id);
+            ann.likes++;
+            sortAnnouncements();
+        }
+
+        function dislikeAnnouncement(id) {
+            const ann = announcements.find(a => a.id === id);
+            ann.dislikes++;
+            sortAnnouncements();
+        }
+
+        function participate(id) {
+            const ann = announcements.find(a => a.id === id);
+            ann.participants++;
+            if (!ann.isOwn) applications.push(ann);
+            renderAnnouncements();
+            updateAccount();
+        }
+
+        function showOptions(id) {
+            const ann = announcements.find(a => a.id === id);
+            if (ann.isOwn) {
+                alert('Опции: Поделиться, Редактировать, Удалить');
+            } else {
+                const action = prompt('Опции: Поделиться, В избранное, Не показывать, Пожаловаться');
+                if (action === 'В избранное') favorites.push(ann);
+                updateAccount();
+            }
+        }
+
+        // Поиск и фильтрация
+        function searchAnnouncements(query) {
+            const filtered = announcements.filter(ann => {
+                const searchStr = `${ann.title} ${ann.desc} ${ann.city} ${ann.type} ${ann.date} ${ann.gender}`.toLowerCase();
+                return searchStr.includes(query.toLowerCase());
+            });
+            applyFilters(filtered);
+        }
+
+        function applyFilters(list) {
+            const city = document.getElementById('cityFilter').value;
+            const type = document.getElementById('typeFilter').value;
+            const date = document.getElementById('dateFilter').value;
+            const gender = document.getElementById('genderFilter').value;
+            let filtered = list;
+            if (city) filtered = filtered.filter(ann => ann.city === city);
+            if (type) filtered = filtered.filter(ann => ann.type === type);
+            if (date) filtered = filtered.filter(ann => ann.date === date);
+            if (gender) filtered = filtered.filter(ann => ann.gender === gender);
+            renderAnnouncements(filtered);
+        }
+
+        function sortAnnouncements() {
+            const sort = document.getElementById('sortFilter').value;
+            if (sort === 'rating') announcements.sort((a, b) => (b.likes - b.dislikes) - (a.likes - a.dislikes));
+            if (sort === 'newest') announcements.sort((a, b) => b.created - a.created);
+            if (sort === 'oldest') announcements.sort((a, b) => a.created - b.created);
+            renderAnnouncements();
+        }
+
+        // Создание объявления
+        function showCreateModal() {
+            document.getElementById('createModal').style.display = 'flex';
+        }
+
+        function cancelCreate() {
+            document.getElementById('createModal').style.display = 'none';
+        }
+
+        function submitCreate() {
+            const title = document.getElementById('createTitle').value;
+            const desc = document.getElementById('createDescription').value;
+            if (title && desc) {
+                announcements.push({
+                    id: announcements.length + 1,
+                    title,
+                    desc,
+                    city: document.getElementById('createCity').value,
+                    type: document.getElementById('createType').value,
+                    date: document.getElementById('createDate').value,
+                    gender: document.getElementById('createGender').value,
+                    creator: "Я",
+                    age: 25,
+                    likes: 0,
+                    dislikes: 0,
+                    participants: 0,
+                    isOwn: true,
+                    created: Date.now()
                 });
-                setTimeout(() => {
-                    adItem.style.opacity = '1';
-                    adItem.style.transform = 'translateY(0)';
-                }, index * 100);
-                handleSwipe(ad.id, adItem);
-            });
-            renderedAdsCount = end;
-        }
-
-    	// Обновленная функция для обработки кликов на объявлении
-    	function handleAdClick(event, adId) {
-        	if (event.target.closest('.action') || event.target.closest('.menu') || event.target.closest('.join-btn')) {
-            	// Если клик был по кнопке, ничего не делать
-            	return;
-        	}
-        	toggleAdExpansion(adId);
-    	}
-
-    	// Функция для раскрытия/сворачивания объявления
-    	function toggleAdExpansion(adId) {
-       	 const adItem = document.querySelector(`.ad-item[data-ad-id="${adId}"]`);
-       	 adItem.classList.toggle('expanded');
-   	 }
-
-    	// Добавляем обработчик событий на каждый контейнер объявления
-    	document.querySelectorAll('.ad-item').forEach(item => {
-      	  item.addEventListener('click', (event) => handleAdClick(event, item.dataset.adId));
-   	 });
-
-
-        // Участие в событии
-        function joinEvent(adId) {
-            if (!participants[adId]) participants[adId] = [];
-            if (!participants[adId].includes(userId)) {
-                participants[adId].push(userId);
-                localStorage.setItem('participants', JSON.stringify(participants));
-                if (isTelegramMode) {
-                    Telegram.WebApp.CloudStorage.setItem('participants', JSON.stringify(participants));
-                }
-                const adItem = document.querySelector(`.ad-item[data-ad-id="${adId}"]`);
-                if (adItem) {
-                    const joinBtn = adItem.querySelector('.join-btn');
-                    const participantCount = participants[adId].length;
-                    joinBtn.style.width = `calc(48px + ${participantCount * 24}px)`;
-                    joinBtn.querySelector('.participant-count').textContent = participantCount;
-                    const participantAvatars = joinBtn.querySelector('.participant-avatars');
-                    const newAvatar = document.createElement('img');
-                    newAvatar.className = 'participant-avatar';
-                    newAvatar.src = userId === 'user-1' ? 'https://mir-s3-cdn-cf.behance.net/project_modules/fs_webp/51174a180992325.6514258f750ff.jpg' : 'https://mir-s3-cdn-cf.behance.net/project_modules/fs/90e60f125956251.6123f46744b17.jpg';
-                    newAvatar.alt = `Аватар участника ${userId}`;
-                    newAvatar.style.zIndex = participantCount - 1;
-                    newAvatar.style.transform = `translateX(${(participantCount - 1) * -8}px)`;
-                    participantAvatars.appendChild(newAvatar);
-                }
-                showNotification('Вы участвуете в событии. Если вас выберут, вам будет доступен контакт.');
+                sortAnnouncements();
+                cancelCreate();
             } else {
-                showNotification('Вы уже участвуете в этом событии');
+                alert('Заполните заголовок и описание');
             }
         }
 
-        // Раскрытие/сворачивание объявления
-        function toggleAdExpansion(adId) {
-            const adItem = document.querySelector(`.ad-item[data-ad-id="${adId}"]`);
-            adItem.classList.toggle('expanded');
+        // Аккаунт
+        function showAccount() {
+            updateAccount();
+            document.getElementById('accountModal').style.display = 'flex';
         }
 
-        // Рендеринг избранного
-        function renderFavorites() {
-            const favoritesList = document.getElementById('favoritesList');
-            const searchQuery = document.getElementById('favoritesSearch')?.value.toLowerCase().trim() || '';
-            favoritesList.innerHTML = '';
-            let favoriteAds = ads.filter(ad => favorites.includes(ad.id));
-            if (searchQuery) {
-                favoriteAds = favoriteAds.filter(ad => {
-                    const searchableText = [
-                        ad.title.toLowerCase(),
-                        ad.description.toLowerCase()
-                    ].join(' ');
-                    return searchableText.includes(searchQuery);
-                });
-            }
-            if (favoriteAds.length === 0) {
-                favoritesList.innerHTML = '<p>Нет избранных объявлений</p>';
-                return;
-            }
-            favoriteAds.forEach(ad => {
-                const item = document.createElement('div');
-                item.className = 'favorite-item';
-                item.innerHTML = `<strong>${ad.title}</strong> (${ad.city}, ${ad.type})`;
-                favoritesList.appendChild(item);
-            });
+        function updateAccount() {
+            document.getElementById('favoritesList').textContent = favorites.length ? favorites.map(f => f.title).join(', ') : '(пусто)';
+            document.getElementById('applicationsList').textContent = applications.length ? applications.map(a => a.title).join(', ') : '(пусто)';
         }
 
-        // Переключение меню
-        function toggleMenu(adId) {
-            const menu = document.getElementById(`menu-${adId}`);
-            const isVisible = menu.style.display === 'block';
-            document.querySelectorAll('.menu-options').forEach(m => m.style.display = 'none');
-            menu.style.display = isVisible ? 'none' : 'block';
+        function closeAccount() {
+            document.getElementById('accountModal').style.display = 'none';
         }
 
-        // Закрытие меню при клике вне
-        function closeMenus(event) {
-            const menuOptions = document.querySelectorAll('.menu-options');
-            const menuButtons = document.querySelectorAll('.menu');
-            if (!event.target.closest('.menu-options') && !event.target.closest('.menu')) {
-                menuOptions.forEach(menu => menu.style.display = 'none');
-            }
-        }
-
-        // Вибрация при клике
-        function triggerVibration(event) {
-            if (navigator.vibrate && (event.target.tagName === 'BUTTON' || event.target.closest('.action') || event.target.closest('.join-btn'))) {
-                navigator.vibrate(50);
-            }
-        }
-
-        // Обновление состояния кнопок
-        function updateAdActions(adId) {
-            const adItem = document.querySelector(`.ad-item[data-ad-id="${adId}"]`);
-            if (!adItem) return;
-            const isLiked = likesDislikes[adId]?.likes.includes(userId);
-            const isDisliked = likesDislikes[adId]?.dislikes.includes(userId);
-            const isFavorited = favorites.includes(adId);
-            const likeButton = adItem.querySelector('.action.like');
-            const dislikeButton = adItem.querySelector('.action.dislike');
-            const favoriteButton = adItem.querySelector('.action.favorite');
-            const counter = adItem.querySelector('.counter');
-            likeButton.classList.toggle('liked', isLiked);
-            dislikeButton.classList.toggle('disliked', isDisliked);
-            favoriteButton.classList.toggle('favorited', isFavorited);
-            counter.textContent = (likesDislikes[adId]?.likes?.length || 0) - (likesDislikes[adId]?.dislikes?.length || 0);
-            if (document.getElementById('sort').value === 'rating') {
-                animateAdOrder();
-            }
-        }
-
-        // Анимация перестановки
-        function animateAdOrder() {
-            const adList = document.getElementById('adList');
-            const filteredAds = filterAds(ads.filter(ad => !hiddenAds.includes(ad.id)));
-            const adElements = Array.from(adList.children).filter(el => el.classList.contains('ad-item'));
-            const adHeights = adElements.map(el => el.offsetHeight + 16);
-            adElements.forEach((el, newIndex) => {
-                const adId = el.dataset.adId;
-                const oldIndex = previousAdPositions[adId] !== undefined ? previousAdPositions[adId] : newIndex;
-                if (oldIndex !== newIndex) {
-                    const oldY = adHeights.slice(0, oldIndex).reduce((sum, h) => sum + h, 0);
-                    const newY = adHeights.slice(0, newIndex).reduce((sum, h) => sum + h, 0);
-                    const deltaY = oldY - newY;
-                    el.style.transform = `translateY(${deltaY}px)`;
-                    setTimeout(() => {
-                        el.style.transform = `translateY(0)`;
-                    }, 0);
-                }
-            });
-            previousAdPositions = {};
-            adElements.forEach((el, index) => {
-                previousAdPositions[el.dataset.adId] = index;
-            });
-            adList.innerHTML = '';
-            filteredAds.forEach(ad => {
-                const adElement = adElements.find(el => el.dataset.adId === ad.id);
-                if (adElement) {
-                    adList.appendChild(adElement);
-                }
-            });
-        }
-
-        // Избранное
-        function toggleFavorite(adId) {
-            const wasFavorited = favorites.includes(adId);
-            if (wasFavorited) {
-                favorites = favorites.filter(id => id !== adId);
-                showNotification('Удалено из избранного');
-            } else {
-                favorites.push(adId);
-                showNotification('Добавлено в избранное');
-            }
-            localStorage.setItem('favorites', JSON.stringify(favorites));
-            if (isTelegramMode) {
-                Telegram.WebApp.CloudStorage.setItem('favorites', JSON.stringify(favorites));
-            }
-            updateAdActions(adId);
-            renderFavorites();
-        }
-
-        // Уведомления
-        function showNotification(message) {
-            const notification = document.getElementById('notification');
-            notification.textContent = message;
-            notification.classList.add('show');
-            setTimeout(() => {
-                notification.classList.remove('show');
-            }, 2000);
-        }
-
-        // Открытие профиля
-        function openTelegramProfile(userId) {
-            if (isTelegramMode) {
-                const user = ads.find(ad => ad.userId === userId)?.userName || 'TONI';
-                window.open(`https://t.me/${user.startsWith('@') ? user : '@' + user}`, '_blank');
-            } else {
-                console.log(`Открыть профиль: ${userId}`);
-                alert(`Открытие профиля ${userId} (имитация)`);
-            }
-        }
-
-        // Шаринг
-        async function shareAd(adId) {
-            const ad = ads.find(a => a.id === adId);
-            if (!ad) return;
-            const shareText = `${ad.title}\n${ad.description}\nГород: ${ad.city} | Вид: ${ad.type} | Дата: ${ad.date} | Пол: ${ad.gender}`;
-            const shareUrl = `${window.location.origin}/?ad=${adId}`;
-            if (isTelegramMode) {
-                Telegram.WebApp.openLink(`https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(shareText)}`);
-            } else if (navigator.share) {
-                try {
-                    await navigator.share({
-                        title: ad.title,
-                        text: shareText,
-                        url: shareUrl
-                    });
-                } catch (e) {
-                    console.error('Ошибка шаринга:', e);
-                }
-            } else {
-                try {
-                    await navigator.clipboard.writeText(shareUrl);
-                    alert('Ссылка на объявление скопирована в буфер обмена');
-                } catch (e) {
-                    console.error('Ошибка копирования:', e);
-                    alert('Ошибка при копировании ссылки');
-                }
-            }
-        }
-
-        // Лайк
-        function toggleLike(adId) {
-            if (!likesDislikes[adId]) likesDislikes[adId] = { likes: [], dislikes: [] };
-            const likes = likesDislikes[adId].likes;
-            const dislikes = likesDislikes[adId].dislikes;
-            if (likes.includes(userId)) {
-                likes.splice(likes.indexOf(userId), 1);
-            } else {
-                likes.push(userId);
-                if (dislikes.includes(userId)) {
-                    dislikes.splice(dislikes.indexOf(userId), 1);
-                }
-            }
-            localStorage.setItem('likesDislikes', JSON.stringify(likesDislikes));
-            if (isTelegramMode) {
-                Telegram.WebApp.CloudStorage.setItem('likesDislikes', JSON.stringify(likesDislikes));
-            }
-            updateAdActions(adId);
-        }
-
-        // Дизлайк
-        function toggleDislike(adId) {
-            if (!likesDislikes[adId]) likesDislikes[adId] = { likes: [], dislikes: [] };
-            const likes = likesDislikes[adId].likes;
-            const dislikes = likesDislikes[adId].dislikes;
-            if (dislikes.includes(userId)) {
-                dislikes.splice(dislikes.indexOf(userId), 1);
-            } else {
-                dislikes.push(userId);
-                if (likes.includes(userId)) {
-                    likes.splice(likes.indexOf(userId), 1);
-                }
-            }
-            localStorage.setItem('likesDislikes', JSON.stringify(likesDislikes));
-            if (isTelegramMode) {
-                Telegram.WebApp.CloudStorage.setItem('likesDislikes', JSON.stringify(likesDislikes));
-            }
-            updateAdActions(adId);
-        }
-
-        // Открытие диалога создания
-        function openCreateDialog(adId = null) {
-            editAdId = adId;
-            const dialog = document.getElementById('createDialog');
-            const title = document.getElementById('dialogTitle');
-            if (adId) {
-                const ad = ads.find(a => a.id === adId);
-                if (!ad) {
-                    console.error('Ad not found:', adId);
-                    return;
-                }
-                document.getElementById('adTitle').value = ad.title;
-                document.getElementById('adDescription').value = ad.description;
-                document.getElementById('adCity').value = ad.city;
-                document.getElementById('adType').value = ad.type;
-                document.getElementById('adDate').value = ad.date;
-                document.getElementById('adGender').value = ad.gender;
-                document.getElementById('adAge').value = ad.age ? ad.age.replace(' лет', '') : '';
-                title.textContent = 'Редактировать объявление';
-            } else {
-                document.getElementById('adTitle').value = '';
-                document.getElementById('adDescription').value = '';
-                document.getElementById('adCity').value = 'Москва';
-                document.getElementById('adType').value = 'Встреча';
-                document.getElementById('adDate').value = 'Сегодня';
-                document.getElementById('adGender').value = 'Любой';
-                document.getElementById('adAge').value = '';
-                title.textContent = 'Создать объявление';
-            }
-            updateCounters();
-            dialog.showModal();
-        }
-
-        // Редактирование
-        function editAd(adId) {
-            openCreateDialog(adId);
-        }
-
-        // Удаление
-        function deleteAd(adId) {
-            const adItem = document.querySelector(`.ad-item[data-ad-id="${adId}"]`);
-            if (!adItem) return;
-            adItem.classList.add('removing');
-            const adItems = Array.from(document.querySelectorAll('.ad-item'));
-            const adIndex = adItems.findIndex(item => item.dataset.adId === adId);
-            const adHeight = adItem.offsetHeight + 16;
-            adItems.slice(adIndex + 1).forEach(item => {
-                item.style.transition = 'transform 0.5s ease';
-                item.style.transform = `translateY(-${adHeight}px)`;
-            });
-            setTimeout(() => {
-                ads = ads.filter(ad => ad.id !== adId);
-                favorites = favorites.filter(id => id !== adId);
-                delete likesDislikes[adId];
-                delete participants[adId];
-                localStorage.setItem('ads', JSON.stringify(ads));
-                localStorage.setItem('favorites', JSON.stringify(favorites));
-                localStorage.setItem('likesDislikes', JSON.stringify(likesDislikes));
-                localStorage.setItem('participants', JSON.stringify(participants));
-                if (isTelegramMode) {
-                    Telegram.WebApp.CloudStorage.setItem('ads', JSON.stringify(ads));
-                    Telegram.WebApp.CloudStorage.setItem('favorites', JSON.stringify(favorites));
-                    Telegram.WebApp.CloudStorage.setItem('likesDislikes', JSON.stringify(likesDislikes));
-                    Telegram.WebApp.CloudStorage.setItem('participants', JSON.stringify(participants));
-                }
-                renderAds();
-            }, 500);
-        }
-
-        // Скрытие
-        function hideAd(adId) {
-            const adItem = document.querySelector(`.ad-item[data-ad-id="${adId}"]`);
-            if (!adItem) return;
-            adItem.classList.add('removing');
-            const adItems = Array.from(document.querySelectorAll('.ad-item'));
-            const adIndex = adItems.findIndex(item => item.dataset.adId === adId);
-            const adHeight = adItem.offsetHeight + 16;
-            adItems.slice(adIndex + 1).forEach(item => {
-                item.style.transition = 'transform 0.5s ease';
-                item.style.transform = `translateY(-${adHeight}px)`;
-            });
-            setTimeout(() => {
-                hiddenAds.push(adId);
-                localStorage.setItem('hiddenAds', JSON.stringify(hiddenAds));
-                if (isTelegramMode) {
-                    Telegram.WebApp.CloudStorage.setItem('hiddenAds', JSON.stringify(hiddenAds));
-                }
-                renderAds();
-                adItems.slice(adIndex + 1).forEach(item => {
-                    item.style.transition = 'none';
-                    item.style.transform = 'translateY(0)';
-                });
-            }, 500);
-        }
-
-        // Жалоба
-        function openComplaintDialog(adId) {
-            const dialog = document.getElementById('complaintDialog');
-            document.getElementById('complaint-form').onsubmit = (e) => {
-                e.preventDefault();
-                const complaintText = document.getElementById('complaintText').value;
-                if (complaintText.trim()) {
-                    console.log(`Жалоба на объявление ${adId}: ${complaintText}`);
-                    showNotification('Жалоба отправлена');
-                    dialog.close();
-                } else {
-                    showNotification('Пожалуйста, опишите причину жалобы');
-                }
-            };
-            dialog.showModal();
-        }
-
-        // Избранное
-        function openFavoritesDialog() {
-            const dialog = document.getElementById('favoritesDialog');
-            renderFavorites();
-            dialog.showModal();
-        }
-
-        // Фильтры
-        function openFilterDialog(filterId) {
-            const dialog = document.getElementById(`${filterId}Dialog`);
-            const form = document.getElementById(`${filterId}-form`);
-            form.onsubmit = (e) => {
-                e.preventDefault();
-                const selectedOption = form.querySelector('input[name="' + filterId + 'Option"]:checked')?.value;
-                if (selectedOption) {
-                    document.getElementById(filterId).value = selectedOption;
-                    renderAds();
-                }
-                dialog.close();
-            };
-            dialog.showModal();
-        }
-
-        // Создание/редактирование
-        document.getElementById('create-ad-form').addEventListener('submit', (e) => {
-            e.preventDefault();
-            const title = document.getElementById('adTitle').value.trim();
-            const description = document.getElementById('adDescription').value.trim();
-            const city = document.getElementById('adCity').value;
-            const type = document.getElementById('adType').value;
-            const date = document.getElementById('adDate').value;
-            const gender = document.getElementById('adGender').value;
-            const age = document.getElementById('adAge').value ? `${document.getElementById('adAge').value} лет` : '';
-
-            if (!title || !description) {
-                showNotification('Заполните заголовок и описание');
-                return;
-            }
-
-            const adData = {
-                id: editAdId || `ad-${Date.now()}`,
-                userId,
-                userName,
-                title,
-                description,
-                city,
-                type,
-                date,
-                gender,
-                age,
-                createdAt: editAdId ? ads.find(ad => ad.id === editAdId)?.createdAt || new Date().toISOString() : new Date().toISOString()
-            };
-
-            if (editAdId) {
-                ads = ads.map(ad => ad.id === editAdId ? adData : ad);
-                showNotification('Объявление обновлено');
-            } else {
-                ads.push(adData);
-                likesDislikes[adData.id] = { likes: [], dislikes: [] };
-                participants[adData.id] = [];
-                showNotification('Объявление создано');
-            }
-
-            localStorage.setItem('ads', JSON.stringify(ads));
-            localStorage.setItem('likesDislikes', JSON.stringify(likesDislikes));
-            localStorage.setItem('participants', JSON.stringify(participants));
-            if (isTelegramMode) {
-                Telegram.WebApp.CloudStorage.setItem('ads', JSON.stringify(ads));
-                Telegram.WebApp.CloudStorage.setItem('likesDislikes', JSON.stringify(likesDislikes));
-                Telegram.WebApp.CloudStorage.setItem('participants', JSON.stringify(participants));
-            }
-            renderAds();
-            document.getElementById('createDialog').close();
-            editAdId = null;
-        });
-
-        // Свайпы
-        function handleSwipe(adId, element) {
-            let startX = 0;
-            let currentX = 0;
-            let isSwiping = false;
-
-            element.addEventListener('touchstart', (e) => {
-                startX = e.touches[0].clientX;
-                isSwiping = true;
-                element.style.transition = 'none';
-            });
-
-            element.addEventListener('touchmove', (e) => {
-                if (!isSwiping) return;
-                currentX = e.touches[0].clientX;
-                const deltaX = currentX - startX;
-                if (deltaX < 0) {
-                    element.style.transform = `translateX(${deltaX}px)`;
-                }
-            });
-
-            element.addEventListener('touchend', () => {
-                if (!isSwiping) return;
-                isSwiping = false;
-                const deltaX = currentX - startX;
-                element.style.transition = 'transform 0.5s ease';
-                if (deltaX < -100) {
-                    hideAd(adId);
-                } else {
-                    element.style.transform = 'translateX(0)';
-                }
-                setTimeout(() => {
-                    element.style.transition = 'transform 0.5s ease, opacity 0.5s ease';
-                }, 500);
-            });
-        }
-
-        // Скрытие кнопок при поиске
-        function toggleSearchButtons() {
-            const searchInput = document.getElementById('search');
-            const createButton = document.querySelector('button[data-modal-open="createDialog"]');
-            const floatingButton = document.querySelector('.floating-btn');
-            if (searchInput.value.trim()) {
-                createButton.classList.add('hidden');
-                floatingButton.classList.add('hidden');
-            } else {
-                createButton.classList.remove('hidden');
-                floatingButton.classList.remove('hidden');
-            }
-        }
-
-        // Кнопка создания
-        document.querySelector('button[data-modal-open="createDialog"]').addEventListener('click', () => {
-            const createButton = document.querySelector('button[data-modal-open="createDialog"]');
-            if (createButton.classList.contains('hidden')) {
-                createButton.classList.remove('hidden');
-            } else {
-                createButton.classList.add('hidden');
-                setTimeout(() => openCreateDialog(), 300);
-            }
-        });
-
-        // Инициализация
-        async function init() {
-            await loadCloudData();
-            renderAds();
-
-            document.getElementById('search').addEventListener('input', () => {
-                renderAds();
-                toggleSearchButtons();
-            });
-
-            document.getElementById('city').addEventListener('click', () => openFilterDialog('city'));
-            document.getElementById('type').addEventListener('click', () => openFilterDialog('type'));
-            document.getElementById('date').addEventListener('click', () => openFilterDialog('date'));
-            document.getElementById('gender').addEventListener('click', () => openFilterDialog('gender'));
-            document.getElementById('sort').addEventListener('change', renderAds);
-
-            document.getElementById('adTitle').addEventListener('input', updateCounters);
-            document.getElementById('adDescription').addEventListener('input', updateCounters);
-
-            document.getElementById('favoritesSearch').addEventListener('input', renderFavorites);
-
-            document.getElementById('birthDay').addEventListener('input', updateProfileAge);
-            document.getElementById('birthMonth').addEventListener('input', updateProfileAge);
-            document.getElementById('birthYear').addEventListener('input', updateProfileAge);
-
-            document.addEventListener('click', closeMenus);
-            document.addEventListener('click', triggerVibration);
-        }
-
-        init();
+        renderAnnouncements();
     </script>
 </body>
 </html>
