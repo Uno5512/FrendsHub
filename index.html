@@ -15,15 +15,16 @@
         body {
             font-family: 'Rubik', sans-serif;
             background: #eedfc8;
-            color: #2f5f7b;
-            line-height: 1.5;
+            color: #1A2A44;
             padding: 16px;
-            margin-top: 25px
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
         }
 
         .container {
             max-width: 600px;
-            width: 0 auto;
+            width: 100%;
         }
 
         .image-container {
@@ -40,7 +41,6 @@
 
         .search-filter-container {
             background: #f1d299;
-            border: 2px solid #f6e1bc;
             border-radius: 22px;
             padding: 8px;
             margin-bottom: 16px;
@@ -63,25 +63,34 @@
             font-size: 22px;
             border-radius: 8px;
             background: #f1d299;
+            border: none;
             width: 100%;
+        }
+
+        .search-filter-container input:focus {
+            outline: none;
         }
 
         .filters {
             display: flex;
             flex-wrap: wrap;
             gap: 2px;
-            margin-top: 4px
+            margin-top: 4px;
         }
 
         .filters select {
             padding: 4px;
             font-size: 18px;
             background: #f1d299;
-            border: 1px solid #f6e1bc;
+            border: none;
             border-radius: 22px;
             cursor: pointer;
             flex: 1;
             min-width: 60px;
+        }
+
+        .filters select:focus {
+            outline: none;
         }
 
         button[data-modal-open="createDialog"] {
@@ -95,22 +104,21 @@
             color: #fff;
             border: none;
             border-radius: 24px;
-            font-size: 24px;
-            font-weight: 400;
+            font-size: 16px;
             cursor: pointer;
             z-index: 1002;
         }
 
         dialog {
             border: none;
-            border-radius: 22px;
-            background: #efefef;
+            border-radius: 8px;
+            background: #fff;
             padding: 16px;
             max-width: 400px;
-            width: 60%;
+            width: 90%;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
             position: fixed;
-            top: 80%;
+            top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
             z-index: 1003;
@@ -137,8 +145,14 @@
             padding: 8px;
             font-size: 16px;
             background: #f1d299;
-            border: 1px solid #f6e1bc;
+            border: none;
             border-radius: 8px;
+        }
+
+        dialog select:focus,
+        dialog input:focus,
+        dialog textarea:focus {
+            outline: none;
         }
 
         dialog textarea {
@@ -187,24 +201,16 @@
             gap: 16px;
             margin-bottom: 80px;
             scroll-behavior: smooth;
+            position: relative;
         }
 
         .ad-item {
             background: #efefef;
-            padding: 14px;
+            padding: 16px;
             border-radius: 22px;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
             position: relative;
-            opacity: 0;
-            transform: translateY(10px);
-            animation: fadeIn 0.3s ease forwards;
-        }
-
-        @keyframes fadeIn {
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            transition: transform 0.5s ease;
         }
 
         .ad-item.own {
@@ -213,12 +219,14 @@
 
         .ad-item h3 {
             font-size: 18px;
-            margin-bottom: 4px;
+            margin-bottom: 8px;
+            color: #2f5f7b;
         }
 
         .ad-item p {
             font-size: 14px;
-            color: #555;
+            color: #2f5f7b;
+            line-height: 60pt;
         }
 
         .ad-item .user {
@@ -529,7 +537,7 @@
                 <label><input type="radio" name="dateOption" value="Завтра"> Завтра</label>
                 <label><input type="radio" name="dateOption" value="На неделе"> На неделе</label>
             </div>
-            <button type="button" onclick="document.getElementById('dateDialog').close()" aria-label="Отменить выбор даты">Отменить</button>
+            <button type="button" onclick="document.getElementById('cityDialog').close()" aria-label="Отменить выбор даты">Отменить</button>
             <button type="submit">Применить</button>
         </form>
     </dialog>
@@ -629,6 +637,7 @@
         let editAdId = null;
         let renderedAdsCount = 0;
         const lazyLoadBatchSize = 10;
+        let previousAdPositions = {};
 
         // Загрузка данных
         function loadCloudData() {
@@ -725,15 +734,43 @@
             return filtered;
         }
 
-        // Рендеринг объявлений с lazy-loading
+        // Рендеринг объявлений с lazy-loading и анимацией тасовки
         function renderAds() {
             const adList = document.getElementById('adList');
-            adList.innerHTML = '';
             const filteredAds = filterAds(ads.filter(ad => !hiddenAds.includes(ad.id)));
             renderedAdsCount = 0;
 
+            // Сохраняем текущие позиции объявлений
+            const currentAdElements = Array.from(adList.children).filter(el => el.classList.contains('ad-item'));
+            const newAdOrder = filteredAds.map(ad => ad.id);
+            const adHeights = currentAdElements.map(el => el.offsetHeight + 16); // Высота + gap
+
+            // Очищаем список перед рендерингом
+            adList.innerHTML = '';
             console.log(`[Lazy-Loading Test] Filtered ads count: ${filteredAds.length}`);
             renderAdBatch(filteredAds, adList);
+
+            // Анимация тасовки
+            const newAdElements = Array.from(adList.children).filter(el => el.classList.contains('ad-item'));
+            newAdElements.forEach((el, newIndex) => {
+                const adId = el.dataset.adId;
+                const oldIndex = previousAdPositions[adId] !== undefined ? previousAdPositions[adId] : newIndex;
+                if (oldIndex !== newIndex) {
+                    const oldY = adHeights.slice(0, oldIndex).reduce((sum, h) => sum + h, 0);
+                    const newY = adHeights.slice(0, newIndex).reduce((sum, h) => sum + h, 0);
+                    const deltaY = oldY - newY;
+                    el.style.transform = `translateY(${deltaY}px)`;
+                    setTimeout(() => {
+                        el.style.transform = `translateY(0)`;
+                    }, 0);
+                }
+            });
+
+            // Обновляем позиции для следующего рендера
+            previousAdPositions = {};
+            newAdElements.forEach((el, index) => {
+                previousAdPositions[el.dataset.adId] = index;
+            });
 
             if (filteredAds.length > lazyLoadBatchSize) {
                 const observer = new IntersectionObserver((entries, observer) => {
@@ -770,6 +807,7 @@
                 const adItem = document.createElement('article');
                 adItem.className = `ad-item ${ad.userId === userId ? 'own' : ''}`;
                 adItem.setAttribute('aria-label', `Объявление от ${ad.userName}`);
+                adItem.dataset.adId = ad.id;
                 const isLiked = likesDislikes[ad.id]?.likes.includes(userId);
                 const isDisliked = likesDislikes[ad.id]?.dislikes.includes(userId);
                 const isFavorited = favorites.includes(ad.id);
@@ -1185,6 +1223,22 @@
 
         // Управление видимостью поиска при прокрутке
         let lastScrollY = window.scrollY;
+        function setupSearchContainerObserver() {
+            const searchContainer = document.querySelector('.search-filter-container');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        searchContainer.classList.remove('hidden');
+                    } else {
+                        // Скрываем только при прокрутке вниз
+                        window.addEventListener('scroll', handleScroll);
+                    }
+                });
+            }, { root: null, threshold: 0 });
+
+            observer.observe(searchContainer);
+        }
+
         function handleScroll() {
             const searchContainer = document.querySelector('.search-filter-container');
             const currentScrollY = window.scrollY;
@@ -1259,11 +1313,11 @@
 
         document.addEventListener('click', closeMenus);
         document.addEventListener('click', triggerVibration);
-        window.addEventListener('scroll', handleScroll);
 
         // Инициализация
         loadCloudData().then(() => {
             setupDialogBackdropClose();
+            setupSearchContainerObserver();
             renderAds();
         });
     </script>
