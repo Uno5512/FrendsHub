@@ -30,8 +30,7 @@
         .image-container {
             display: flex;
             justify-content: center;
-            margin-top: 16px;
-            margin-bottom: 10px;
+            margin: 16px 0 10px;
         }
 
         .header-image {
@@ -626,182 +625,174 @@
                         <option value="Сегодня">Сегодня</option>
                         <option value="Завтра">Завтра</option>
                         <option value="На неделе">На неделе</option>
-                    </select>
-                    <select id="gender" name="gender" aria-label="Выберите пол">
-                        <option value="">Пол</option>
-                        <option value="Мужской">Мужской</option>
-                        <option value="Женский">Женский</option>
-                        <option value="Любой">Любой</option>
-                    </select>
-                    <select id="sort" name="sort" aria-label="Сортировка">
-                        <option value="rating">По рейтингу</option>
-                        <option value="newest">Новые</option>
-                        <option value="oldest">Старые</option>
-                    </select>
-                </div>
+                    <option value="Любой">Любой</option>
+                    <option value="Мужской">Мужской</option>
+                    <option value="Женский">Женский</option>
+                </select>
+                <select id="sort" name="sort" aria-label="Сортировка">
+                    <option value="rating">По рейтингу</option>
+                    <option value="newest">Сначала новые</option>
+                    <option value="oldest">Сначала старые</option>
+                </select>
             </form>
-            <div class="refresh-loader" id="refreshLoader">
-                <span class="dot"></span>
-                <span class="dot"></span>
-                <span class="dot"></span>
-            </div>
         </section>
 
-        <section class="ad-list" id="adList" aria-label="Список объявлений"></section>
+        <div class="refresh-loader" id="refresh-loader">
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+        </div>
 
-        <button type="button" data-modal-open="createDialog" aria-label="Создать объявление">+ Создать</button>
+        <section class="ad-list" id="ad-list"></section>
 
         <button class="floating-btn" onclick="openFavoritesDialog()" aria-label="Открыть избранное"></button>
-    </main>
 
-    <dialog id="createDialog" aria-labelledby="dialogTitle">
-        <form method="dialog" id="create-ad-form">
+        <dialog id="createDialog">
             <h2 id="dialogTitle">Создать объявление</h2>
-            <input type="text" id="adTitle" placeholder="Заголовок" maxlength="63" aria-label="Заголовок объявления">
-            <span class="counter" id="titleCounter">63/63</span>
-            <textarea id="adDescription" placeholder="Описание" maxlength="500" aria-label="Описание объявления"></textarea>
-            <span class="counter" id="descriptionCounter">500/500</span>
-            <fieldset>
-                <legend>Город</legend>
+            <form id="ad-form">
+                <input type="text" id="adTitle" placeholder="Заголовок" maxlength="63" aria-label="Заголовок объявления">
+                <textarea id="adDescription" placeholder="Описание" maxlength="500" aria-label="Описание объявления"></textarea>
                 <select id="adCity" name="city" aria-label="Выберите город">
+                    <option value="">Город</option>
                     <option value="Москва">Москва</option>
                     <option value="Санкт-Петербург">Санкт-Петербург</option>
                     <option value="Казань">Казань</option>
                 </select>
-            </fieldset>
-            <fieldset>
-                <legend>Вид</legend>
                 <select id="adType" name="type" aria-label="Выберите вид активности">
+                    <option value="">Вид</option>
                     <option value="Встреча">Встреча</option>
                     <option value="Чат">Чат</option>
                     <option value="Событие">Событие</option>
                 </select>
-            </fieldset>
-            <fieldset>
-                <legend>Дата</legend>
                 <select id="adDate" name="date" aria-label="Выберите дату">
+                    <option value="">Дата</option>
                     <option value="Сегодня">Сегодня</option>
                     <option value="Завтра">Завтра</option>
                     <option value="На неделе">На неделе</option>
-                </select>
-            </fieldset>
-            <fieldset>
-                <legend>Пол</legend>
-                <select id="adGender" name="gender" aria-label="Выберите пол">
+                    <option value="">Пол</option>
+                    <option value="Любой">Любой</option>
                     <option value="Мужской">Мужской</option>
                     <option value="Женский">Женский</option>
-                    <option value="Любой">Любой</option>
                 </select>
-            </fieldset>
-            <fieldset>
-                <legend>Возраст</legend>
                 <input type="number" id="adAge" min="1" max="120" placeholder="Возраст" aria-label="Укажите возраст">
-            </fieldset>
-            <button type="button" onclick="document.getElementById('createDialog').close()" aria-label="Закрыть диалог">Закрыть</button>
-            <button type="submit">Опубликовать</button>
-        </form>
-    </dialog>
+                <button type="button" onclick="document.getElementById('createDialog').close()" aria-label="Закрыть диалог">Закрыть</button>
+                <button type="submit">Опубликовать</button>
+            </form>
+        </dialog>
 
-    <dialog id="complaintDialog" aria-labelledby="complaintTitle">
-        <form method="dialog" id="complaint-form">
+        <dialog id="complaintDialog">
             <h2 id="complaintTitle">Пожаловаться</h2>
-            <textarea id="complaintText" placeholder="Опишите причину жалобы" aria-label="Причина жалобы"></textarea>
-            <button type="button" onclick="document.getElementById('complaintDialog').close()" aria-label="Отменить жалобу">Отменить</button>
-            <button type="submit">Отправить</button>
-        </form>
-    </dialog>
+            <form id="complaint-form">
+                <textarea id="complaintText" placeholder="Опишите причину жалобы" aria-label="Причина жалобы"></textarea>
+                <button type="button" onclick="document.getElementById('complaintDialog').close()" aria-label="Отменить жалобу">Отменить</button>
+                <button type="submit">Отправить</button>
+            </form>
+        </dialog>
 
-    <dialog id="cityDialog" aria-labelledby="cityTitle">
-        <form method="dialog" id="city-form">
+        <dialog id="cityDialog">
             <h2 id="cityTitle">Выберите город</h2>
-            <div class="select-options">
-                <label><input type="radio" name="cityOption" value="Москва"> Москва</label>
-                <label><input type="radio" name="cityOption" value="Санкт-Петербург"> Санкт-Петербург</label>
-                <label><input type="radio" name="cityOption" value="Казань"> Казань</label>
-            </div>
-            <button type="button" onclick="document.getElementById('cityDialog').close()" aria-label="Отменить выбор города">Отменить</button>
-            <button type="submit">Применить</button>
-        </form>
-    </dialog>
-
-    <dialog id="typeDialog" aria-labelledby="typeTitle">
-        <form method="dialog" id="type-form">
-            <h2 id="typeTitle">Выберите вид</h2>
-            <div class="select-options">
-                <label><input type="radio" name="typeOption" value="Встреча"> Встреча</label>
-                <label><input type="radio" name="typeOption" value="Чат"> Чат</label>
-                <label><input type="radio" name="typeOption" value="Событие"> Событие</label>
-            </div>
-            <button type="button" onclick="document.getElementById('typeDialog').close()" aria-label="Отменить выбор вида">Отменить</button>
-            <button type="submit">Применить</button>
-        </form>
-    </dialog>
-
-    <dialog id="dateDialog" aria-labelledby="dateTitle">
-        <form method="dialog" id="date-form">
-            <h2 id="dateTitle">Выберите дату</h2>
-            <div class="select-options">
-                <label><input type="radio" name="dateOption" value="Сегодня"> Сегодня</label>
-                <label><input type="radio" name="dateOption" value="Завтра"> Завтра</label>
-                <label><input type="radio" name="dateOption" value="На неделе"> На неделе</label>
-            </div>
-            <button type="button" onclick="document.getElementById('cityDialog').close()" aria-label="Отменить выбор даты">Отменить</button>
-            <button type="submit">Применить</button>
-        </form>
-    </dialog>
-
-    <dialog id="genderDialog" aria-labelledby="genderTitle">
-        <form method="dialog" id="gender-form">
-            <h2 id="genderTitle">Выберите пол</h2>
-            <div class="select-options">
-                <label><input type="radio" name="genderOption" value="Мужской"> Мужской</label>
-                <label><input type="radio" name="genderOption" value="Женский"> Женский</label>
-                <label><input type="radio" name="genderOption" value="Любой"> Любой</label>
-            </div>
-            <button type="button" onclick="document.getElementById('genderDialog').close()" aria-label="Отменить выбор пола">Отменить</button>
-            <button type="submit">Применить</button>
-        </form>
-    </dialog>
-
-    <dialog id="favoritesDialog" aria-labelledby="favoritesTitle">
-        <div class="modal-content">
-            <h2 id="favoritesTitle">Избранное</h2>
-            <div class="profile" onclick="openTelegramProfile('user-1')" aria-label="Профиль TONI">
-                <img src="https://mir-s3-cdn-cf.behance.net/project_modules/fs_webp/51174a180992325.6514258f750ff.jpg" alt="Аватар TONI">
-                <div class="info">
-                    <span class="name">TONI</span>
-                    <span class="age" id="profileAge">15 лет</span>
-                    <div class="age-picker">
-                        <input type="number" id="birthDay" min="1" max="31" placeholder="День" aria-label="День рождения">
-                        <input type="number" id="birthMonth" min="1" max="12" placeholder="Месяц" aria-label="Месяц рождения">
-                        <input type="number" id="birthYear" min="1900" max="2025" placeholder="Год" aria-label="Год рождения">
-                    </div>
+            <form id="city-form">
+                <div class="select-options">
+                    <label>
+                        <input type="radio" name="city" value="Москва">
+                        Москва
+                    </label>
+                    <label>
+                        <input type="radio" name="city" value="Санкт-Петербург">
+                        Санкт-Петербург
+                    </label>
+                    <label>
+                        <input type="radio" name="city" value="Казань">
+                        Казань
+                    </label>
                 </div>
-            </div>
+                <button type="button" onclick="document.getElementById('cityDialog').close()" aria-label="Отменить выбор города">Отменить</button>
+                <button type="submit">Применить</button>
+            </form>
+        </dialog>
+
+        <dialog id="typeDialog">
+            <h2 id="typeTitle">Выберите вид</h2>
+            <form id="type-form">
+                <div class="select-options">
+                    <label>
+                        <input type="radio" name="type" value="Встреча">
+                        Встреча
+                    </label>
+                    <label>
+                        <input type="radio" name="type" value="Чат">
+                        Чат
+                    </label>
+                    <label>
+                        <input type="radio" name="type" value="Событие">
+                        Событие
+                    </label>
+                </div>
+                <button type="button" onclick="document.getElementById('typeDialog').close()" aria-label="Отменить выбор вида">Отменить</button>
+                <button type="submit">Применить</button>
+            </form>
+        </dialog>
+
+        <dialog id="dateDialog">
+            <h2 id="dateTitle">Выберите дату</h2>
+            <form id="date-form">
+                <div class="select-options">
+                    <label>
+                        <input type="radio" name="date" value="Сегодня">
+                        Сегодня
+                    </label>
+                    <label>
+                        <input type="radio" name="date" value="Завтра">
+                        Завтра
+                    </label>
+                    <label>
+                        <input type="radio" name="date" value="На неделе">
+                        На неделе
+                    </label>
+                </div>
+                <button type="button" onclick="document.getElementById('dateDialog').close()" aria-label="Отменить выбор даты">Отменить</button>
+                <button type="submit">Применить</button>
+            </form>
+        </dialog>
+
+        <dialog id="genderDialog">
+            <h2 id="genderTitle">Выберите пол</h2>
+            <form id="gender-form">
+                <div class="select-options">
+                    <label>
+                        <input type="radio" name="gender" value="Любой">
+                        Любой
+                    </label>
+                    <label>
+                        <input type="radio" name="gender" value="Мужской">
+                        Мужской
+                    </label>
+                    <label>
+                        <input type="radio" name="gender" value="Женский">
+                        Женский
+                    </label>
+                </div>
+                <button type="button" onclick="document.getElementById('genderDialog').close()" aria-label="Отменить выбор пола">Отменить</button>
+                <button type="submit">Применить</button>
+            </form>
+        </dialog>
+
+        <dialog id="favoritesDialog">
+            <h2 id="favoritesTitle">Избранное</h2>
             <input type="text" id="favoritesSearch" placeholder="Поиск по избранному" aria-label="Поиск по избранным объявлениям">
-            <div class="favorites-list" id="favoritesList"></div>
+            <div class="favorites-list" id="favorites-list"></div>
             <button class="reset-btn" onclick="resetApp()">Сбросить</button>
             <button class="close-btn" onclick="document.getElementById('favoritesDialog').close()">Закрыть</button>
-        </div>
-    </dialog>
+        </dialog>
 
-    <div class="notification" id="notification"></div>
+        <div class="notification" id="notification"></div>
+    </main>
 
     <script>
-        // Проверка доступности Telegram
-        function isTelegramAvailable() {
-            try {
-                return window.Telegram?.WebApp && typeof Telegram.WebApp.ready === 'function';
-            } catch (e) {
-                console.error('Telegram WebApp check failed:', e);
-                return false;
-            }
-        }
+        const userId = 'user-1';
+        const userName = 'TONI';
+        const isTelegramMode = isTelegramAvailable();
 
-        // Инициализация пользователя
-        let userId = 'user-1';
-        let userName = 'TONI';
-        let isTelegramMode = isTelegramAvailable();
         if (isTelegramMode) {
             try {
                 Telegram.WebApp.ready();
@@ -818,7 +809,6 @@
             }
         }
 
-        // Начальные данные
         const defaultAds = [
             {
                 id: 'ad-1',
@@ -857,7 +847,15 @@
         const lazyLoadBatchSize = 10;
         let previousAdPositions = {};
 
-        // Сброс приложения
+        function isTelegramAvailable() {
+            try {
+                return window.Telegram?.WebApp && typeof Telegram.WebApp.ready === 'function';
+            } catch (e) {
+                console.error('Telegram WebApp check failed:', e);
+                return false;
+            }
+        }
+
         function resetApp() {
             document.getElementById('search').value = '';
             document.getElementById('city').value = '';
@@ -880,7 +878,6 @@
             renderAds();
         }
 
-        // Загрузка данных
         function loadCloudData() {
             if (isTelegramMode) {
                 try {
@@ -936,7 +933,6 @@
             return Promise.resolve();
         }
 
-        // Вычисление возраста
         function calculateAge(day, month, year) {
             const today = new Date();
             const currentYear = today.getFullYear();
@@ -949,7 +945,6 @@
             return age >= 0 ? `${age} лет` : 'Некорректная дата';
         }
 
-        // Обновление возраста в профиле
         function updateProfileAge() {
             const day = parseInt(document.getElementById('birthDay').value) || 1;
             const month = parseInt(document.getElementById('birthMonth').value) || 1;
@@ -958,584 +953,218 @@
             document.getElementById('profileAge').textContent = age;
         }
 
-        // Обновление счётчиков символов
         function updateCounters() {
             const titleInput = document.getElementById('adTitle');
             const descriptionInput = document.getElementById('adDescription');
-            const titleCounter = document.getElementById('titleCounter');
-            const descriptionCounter = document.getElementById('descriptionCounter');
-            titleCounter.textContent = `${63 - (titleInput.value.length || 0)}/63`;
-            descriptionCounter.textContent = `${500 - (descriptionInput.value.length || 0)}/500`;
+            const titleCounter = document.querySelector('#ad-form .counter.title');
+            const descriptionCounter = document.querySelector('#ad-form .counter.description');
+            titleCounter.textContent = `${titleInput.value.length}/63`;
+            descriptionCounter.textContent = `${descriptionInput.value.length}/500`;
         }
 
-        // Поиск и фильтрация
-        function filterAds(adsToFilter) {
-            const searchQuery = document.getElementById('search').value.toLowerCase().trim();
-            const cityFilter = document.getElementById('city').value;
-            const typeFilter = document.getElementById('type').value;
-            const dateFilter = document.getElementById('date').value;
-            const genderFilter = document.getElementById('gender').value;
-            const sortOption = document.getElementById('sort').value || 'rating';
-
-            let filtered = adsToFilter.filter(ad => {
-                if (!searchQuery) return true;
-                const searchTerms = searchQuery.split(/\s+/);
-                const searchableText = [
-                    ad.title.toLowerCase(),
-                    ad.description.toLowerCase(),
-                    ad.city.toLowerCase(),
-                    ad.type.toLowerCase(),
-                    ad.date.toLowerCase(),
-                    ad.gender.toLowerCase()
-                ].join(' ');
-                return searchTerms.every(term => searchableText.includes(term));
-            });
-
-            if (cityFilter) filtered = filtered.filter(ad => ad.city === cityFilter);
-            if (typeFilter) filtered = filtered.filter(ad => ad.type === typeFilter);
-            if (dateFilter) filtered = filtered.filter(ad => ad.date === dateFilter);
-            if (genderFilter) filtered = filtered.filter(ad => ad.gender === genderFilter);
-
-            switch (sortOption) {
-                case 'rating':
-                    filtered.sort((a, b) => {
-                        const ratingA = (likesDislikes[a.id]?.likes?.length || 0) - (likesDislikes[a.id]?.dislikes?.length || 0);
-                        const ratingB = (likesDislikes[b.id]?.likes?.length || 0) - (likesDislikes[b.id]?.dislikes?.length || 0);
-                        return ratingB - ratingA;
-                    });
-                    break;
-                case 'newest':
-                    filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-                    break;
-                case 'oldest':
-                    filtered.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
-                    break;
-            }
-
-            return filtered;
-        }
-
-        // Рендеринг объявлений
         function renderAds() {
-            const adList = document.getElementById('adList');
-            const filteredAds = filterAds(ads.filter(ad => !hiddenAds.includes(ad.id)));
-            renderedAdsCount = 0;
-            const currentAdElements = Array.from(adList.children).filter(el => el.classList.contains('ad-item'));
-            const adHeights = currentAdElements.map(el => el.offsetHeight + 16);
+            const adList = document.getElementById('ad-list');
             adList.innerHTML = '';
-            renderAdBatch(filteredAds, adList);
-            const newAdElements = Array.from(adList.children).filter(el => el.classList.contains('ad-item'));
-            newAdElements.forEach((el, newIndex) => {
-                const adId = el.dataset.adId;
-                const oldIndex = previousAdPositions[adId] !== undefined ? previousAdPositions[adId] : newIndex;
-                if (oldIndex !== newIndex) {
-                    const oldY = adHeights.slice(0, oldIndex).reduce((sum, h) => sum + h, 0);
-                    const newY = adHeights.slice(0, newIndex).reduce((sum, h) => sum + h, 0);
-                    const deltaY = oldY - newY;
-                    el.style.transform = `translateY(${deltaY}px)`;
-                    setTimeout(() => {
-                        el.style.transform = `translateY(0)`;
-                    }, 0);
-                }
-            });
-            previousAdPositions = {};
-            newAdElements.forEach((el, index) => {
-                previousAdPositions[el.dataset.adId] = index;
-            });
-            if (filteredAds.length > lazyLoadBatchSize) {
-                const observer = new IntersectionObserver((entries, observer) => {
-                    entries.forEach(entry => {
-                        if (entry.isIntersecting) {
-                            renderAdBatch(filteredAds, adList);
-                            if (renderedAdsCount >= filteredAds.length) {
-                                observer.disconnect();
-                            }
-                        }
-                    });
-                }, { root: null, rootMargin: '100px', threshold: 0.1 });
-                const sentinel = document.createElement('div');
-                sentinel.id = 'sentinel';
-                adList.appendChild(sentinel);
-                observer.observe(sentinel);
-            }
-            renderFavorites();
-        }
-
-        // Рендеринг партии объявлений
-        function renderAdBatch(filteredAds, adList) {
-            const start = renderedAdsCount;
-            const end = Math.min(start + lazyLoadBatchSize, filteredAds.length);
-            const batch = filteredAds.slice(start, end);
-            batch.forEach((ad, index) => {
-                const adItem = document.createElement('article');
-                adItem.className = `ad-item ${ad.userId === userId ? 'own' : ''}`;
-                adItem.setAttribute('aria-label', `Объявление от ${ad.userName}`);
-                adItem.dataset.adId = ad.id;
-                adItem.style.opacity = '0';
-                adItem.style.transform = 'translateY(50px)';
-                const isLiked = likesDislikes[ad.id]?.likes.includes(userId);
-                const isDisliked = likesDislikes[ad.id]?.dislikes.includes(userId);
-                const isFavorited = favorites.includes(ad.id);
-                const avatarSrc = ad.userId === 'user-1' ? 'https://mir-s3-cdn-cf.behance.net/project_modules/fs_webp/51174a180992325.6514258f750ff.jpg' : 'https://mir-s3-cdn-cf.behance.net/project_modules/fs/90e60f125956251.6123f46744b17.jpg';
-                const participantCount = participants[ad.id]?.length || 0;
-                const rating = (likesDislikes[ad.id]?.likes?.length || 0) - (likesDislikes[ad.id]?.dislikes?.length || 0);
-                let participantAvatarsHtml = '';
-                participants[ad.id]?.forEach((pUserId, pIndex) => {
-                    const pAvatarSrc = pUserId === 'user-1' ? 'https://mir-s3-cdn-cf.behance.net/project_modules/fs_webp/51174a180992325.6514258f750ff.jpg' : 'https://mir-s3-cdn-cf.behance.net/project_modules/fs/90e60f125956251.6123f46744b17.jpg';
-                    participantAvatarsHtml += `<img class="participant-avatar" src="${pAvatarSrc}" alt="Аватар участника ${pUserId}" style="z-index: ${pIndex}; transform: translateX(${pIndex * -8}px);">`;
-                });
-                adItem.innerHTML = `
-                    <h3 onclick="toggleAdExpansion('${ad.id}')">${ad.title}</h3>
+            ads.forEach((ad, index) => {
+                if (index >= renderedAdsCount + lazyLoadBatchSize) return;
+                const adElement = document.createElement('div');
+                adElement.classList.add('ad-item');
+                adElement.innerHTML = `
                     <div class="ad-content">
-                        <p class="description" onclick="toggleAdExpansion('${ad.id}')">${ad.description}</p>
-                        <p class="tags"><small>Город: ${ad.city} | Вид: ${ad.type} | Дата: ${ad.date} | Пол: ${ad.gender} | ${new Date(ad.createdAt).toLocaleDateString()}</small></p>
+                        <h3>${ad.title}</h3>
+                        <p class="description">${ad.description}</p>
+                        <p class="tags">${ad.city}, ${ad.type}, ${ad.date}</p>
                         <div class="creator-container">
-                            <img class="ad-avatar" src="${avatarSrc}" alt="Аватар ${ad.userName}" onclick="openTelegramProfile('${ad.userId}')">
-                            <div class="join-btn" onclick="joinEvent('${ad.id}')" style="width: calc(48px + ${participantCount * 24}px)">
-                                <span class="participant-count">${participantCount}</span>
-                                <div class="participant-avatars">${participantAvatarsHtml}</div>
+                            <img class="ad-avatar" src="https://via.placeholder.com/48" alt="Avatar">
+                            <div class="user-info">
+                                <span class="name">${ad.userName}</span>
+                                <span class="age">${ad.age}</span>
+                            </div>
+                        </div>
+                        <div class="user">
+                            <div class="user-info">
+                                <span class="name">${ad.userName}</span>
+                                <span class="age">${ad.age}</span>
+                            </div>
+                            <div class="ad-actions">
+                                <div class="action like ${likesDislikes[ad.id]?.likes.includes(userId) ? 'liked' : ''}" data-ad-id="${ad.id}" data-type="like">
+                                    <img src="https://via.placeholder.com/24" alt="Like">
+                                </div>
+                                <div class="action dislike ${likesDislikes[ad.id]?.dislikes.includes(userId) ? 'disliked' : ''}" data-ad-id="${ad.id}" data-type="dislike">
+                                    <img src="https://via.placeholder.com/24" alt="Dislike">
+                                </div>
+                                <div class="action share" data-ad-id="${ad.id}">
+                                    <img src="https://via.placeholder.com/24" alt="Share">
+                                </div>
+                                <div class="action favorite ${favorites.includes(ad.id) ? 'favorited' : ''}" data-ad-id="${ad.id}">
+                                    <img src="https://via.placeholder.com/24" alt="Favorite">
+                                </div>
+                                <div class="action menu">
+                                    <img src="https://via.placeholder.com/24" alt="Menu">
+                                    <div class="menu-options">
+                                        <button data-ad-id="${ad.id}" data-action="edit">Редактировать</button>
+                                        <button data-ad-id="${ad.id}" data-action="delete">Удалить</button>
+                                        <button data-ad-id="${ad.id}" data-action="complaint">Пожаловаться</button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
-                    <div class="user">
-                        <div class="user-info">
-                            <span class="name" onclick="openTelegramProfile('${ad.userId}')">${ad.userName}</span>
-                            <span class="age">${ad.age || 'Не указан'}</span>
-                        </div>
-                        <div class="ad-actions">
-                            <span class="counter">${rating}</span>
-                            <span class="action share" onclick="shareAd('${ad.id}')"><img src="https://uno5512.github.io/FrendsHub/5.png" alt="Поделиться"></span>
-                            <span class="action favorite ${isFavorited ? 'favorited' : ''}" onclick="toggleFavorite('${ad.id}')"><img src="https://uno5512.github.io/FrendsHub/4.png" alt="Избранное"></span>
-                            <span class="action like ${isLiked ? 'liked' : ''}" onclick="toggleLike('${ad.id}')"><img src="https://uno5512.github.io/FrendsHub/2.png" alt="Лайк"></span>
-                            <span class="action dislike ${isDisliked ? 'disliked' : ''}" onclick="toggleDislike('${ad.id}')"><img src="https://uno5512.github.io/FrendsHub/1.png" alt="Дизлайк"></span>
-                            <span class="menu" onclick="toggleMenu('${ad.id}')">•••</span>
-                        </div>
-                    </div>
-                    <div class="menu-options" id="menu-${ad.id}">
-                        ${ad.userId === userId ? `
-                            <button onclick="editAd('${ad.id}')">Редактировать</button>
-                            <button onclick="deleteAd('${ad.id}')">Удалить</button>
-                        ` : `
-                            <button onclick="hideAd('${ad.id}')">Не показывать</button>
-                            <button onclick="openComplaintDialog('${ad.id}')">Пожаловаться</button>
-                        `}
-                    </div>
                 `;
-                adList.appendChild(adItem);
-                adItem.addEventListener('click', (e) => {
-                    if (!e.target.closest('h3') && !e.target.closest('.description')) {
-                        hideAd(ad.id);
+                adElement.querySelector('.ad-content').style.maxHeight = '0';
+                adElement.querySelector('.ad-content').style.opacity = '0';
+                adList.appendChild(adElement);
+            });
+            renderedAdsCount = ads.length;
+            addEventListeners();
+        }
+
+        function addEventListeners() {
+            document.querySelectorAll('.ad-item .menu').forEach(menu => {
+                menu.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const menuOptions = menu.querySelector('.menu-options');
+                    menuOptions.style.display = menuOptions.style.display === 'block' ? 'none' : 'block';
+                });
+            });
+
+            document.querySelectorAll('.ad-item .menu-options button').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const adId = button.getAttribute('data-ad-id');
+                    const action = button.getAttribute('data-action');
+                    if (action === 'edit') {
+                        openEditDialog(adId);
+                    } else if (action === 'delete') {
+                        deleteAd(adId);
+                    } else if (action === 'complaint') {
+                        openComplaintDialog(adId);
+                    }
+                    document.querySelectorAll('.menu-options').forEach(options => options.style.display = 'none');
+                });
+            });
+
+            document.querySelectorAll('.ad-item .like, .ad-item .dislike').forEach(action => {
+                action.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const adId = action.getAttribute('data-ad-id');
+                    const type = action.getAttribute('data-type');
+                    toggleLikeDislike(adId, type);
+                });
+            });
+
+            document.querySelectorAll('.ad-item .favorite').forEach(action => {
+                action.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const adId = action.getAttribute('data-ad-id');
+                    toggleFavorite(adId);
+                });
+            });
+
+            document.querySelectorAll('.ad-item .share').forEach(action => {
+                action.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const adId = action.getAttribute('data-ad-id');
+                    shareAd(adId);
+                });
+            });
+
+            document.querySelectorAll('.ad-item h3, .ad-item p.description').forEach(element => {
+                element.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const adItem = element.closest('.ad-item');
+                    const adContent = adItem.querySelector('.ad-content');
+                    if (adContent.style.maxHeight === '0px' || adContent.style.maxHeight === '') {
+                        adContent.style.maxHeight = '1000px';
+                        adContent.style.opacity = '1';
+                    } else {
+                        adContent.style.maxHeight = '0';
+                        adContent.style.opacity = '0';
                     }
                 });
-                setTimeout(() => {
-                    adItem.style.opacity = '1';
-                    adItem.style.transform = 'translateY(0)';
-                }, index * 100);
-                handleSwipe(ad.id, adItem);
             });
-            renderedAdsCount = end;
-        }
 
-        // Участие в событии
-        function joinEvent(adId) {
-            if (!participants[adId]) participants[adId] = [];
-            if (!participants[adId].includes(userId)) {
-                participants[adId].push(userId);
-                localStorage.setItem('participants', JSON.stringify(participants));
-                if (isTelegramMode) {
-                    Telegram.WebApp.CloudStorage.setItem('participants', JSON.stringify(participants));
-                }
-                const adItem = document.querySelector(`.ad-item[data-ad-id="${adId}"]`);
-                if (adItem) {
-                    const joinBtn = adItem.querySelector('.join-btn');
-                    const participantCount = participants[adId].length;
-                    joinBtn.style.width = `calc(48px + ${participantCount * 24}px)`;
-                    joinBtn.querySelector('.participant-count').textContent = participantCount;
-                    const participantAvatars = joinBtn.querySelector('.participant-avatars');
-                    const newAvatar = document.createElement('img');
-                    newAvatar.className = 'participant-avatar';
-                    newAvatar.src = userId === 'user-1' ? 'https://mir-s3-cdn-cf.behance.net/project_modules/fs_webp/51174a180992325.6514258f750ff.jpg' : 'https://mir-s3-cdn-cf.behance.net/project_modules/fs/90e60f125956251.6123f46744b17.jpg';
-                    newAvatar.alt = `Аватар участника ${userId}`;
-                    newAvatar.style.zIndex = participantCount - 1;
-                    newAvatar.style.transform = `translateX(${(participantCount - 1) * -8}px)`;
-                    participantAvatars.appendChild(newAvatar);
-                }
-                showNotification('Вы участвуете в событии. Если вас выберут, вам будет доступен контакт.');
-            } else {
-                showNotification('Вы уже участвуете в этом событии');
-            }
-        }
-
-        // Раскрытие/сворачивание объявления
-        function toggleAdExpansion(adId) {
-            const adItem = document.querySelector(`.ad-item[data-ad-id="${adId}"]`);
-            adItem.classList.toggle('expanded');
-        }
-
-        // Рендеринг избранного
-        function renderFavorites() {
-            const favoritesList = document.getElementById('favoritesList');
-            const searchQuery = document.getElementById('favoritesSearch')?.value.toLowerCase().trim() || '';
-            favoritesList.innerHTML = '';
-            let favoriteAds = ads.filter(ad => favorites.includes(ad.id));
-            if (searchQuery) {
-                favoriteAds = favoriteAds.filter(ad => {
-                    const searchableText = [
-                        ad.title.toLowerCase(),
-                        ad.description.toLowerCase()
-                    ].join(' ');
-                    return searchableText.includes(searchQuery);
-                });
-            }
-            if (favoriteAds.length === 0) {
-                favoritesList.innerHTML = '<p>Нет избранных объявлений</p>';
-                return;
-            }
-            favoriteAds.forEach(ad => {
-                const item = document.createElement('div');
-                item.className = 'favorite-item';
-                item.innerHTML = `<strong>${ad.title}</strong> (${ad.city}, ${ad.type})`;
-                favoritesList.appendChild(item);
+            document.getElementById('filter-form').addEventListener('submit', (e) => {
+                e.preventDefault();
+                filterAds();
             });
-        }
 
-        // Переключение меню
-        function toggleMenu(adId) {
-            const menu = document.getElementById(`menu-${adId}`);
-            const isVisible = menu.style.display === 'block';
-            document.querySelectorAll('.menu-options').forEach(m => m.style.display = 'none');
-            menu.style.display = isVisible ? 'none' : 'block';
-        }
-
-        // Закрытие меню при клике вне
-        function closeMenus(event) {
-            const menuOptions = document.querySelectorAll('.menu-options');
-            const menuButtons = document.querySelectorAll('.menu');
-            if (!event.target.closest('.menu-options') && !event.target.closest('.menu')) {
-                menuOptions.forEach(menu => menu.style.display = 'none');
-            }
-        }
-
-        // Вибрация при клике
-        function triggerVibration(event) {
-            if (navigator.vibrate && (event.target.tagName === 'BUTTON' || event.target.closest('.action') || event.target.closest('.join-btn'))) {
-                navigator.vibrate(50);
-            }
-        }
-
-        // Обновление состояния кнопок
-        function updateAdActions(adId) {
-            const adItem = document.querySelector(`.ad-item[data-ad-id="${adId}"]`);
-            if (!adItem) return;
-            const isLiked = likesDislikes[adId]?.likes.includes(userId);
-            const isDisliked = likesDislikes[adId]?.dislikes.includes(userId);
-            const isFavorited = favorites.includes(adId);
-            const likeButton = adItem.querySelector('.action.like');
-            const dislikeButton = adItem.querySelector('.action.dislike');
-            const favoriteButton = adItem.querySelector('.action.favorite');
-            const counter = adItem.querySelector('.counter');
-            likeButton.classList.toggle('liked', isLiked);
-            dislikeButton.classList.toggle('disliked', isDisliked);
-            favoriteButton.classList.toggle('favorited', isFavorited);
-            counter.textContent = (likesDislikes[adId]?.likes?.length || 0) - (likesDislikes[adId]?.dislikes?.length || 0);
-            if (document.getElementById('sort').value === 'rating') {
-                animateAdOrder();
-            }
-        }
-
-        // Анимация перестановки
-        function animateAdOrder() {
-            const adList = document.getElementById('adList');
-            const filteredAds = filterAds(ads.filter(ad => !hiddenAds.includes(ad.id)));
-            const adElements = Array.from(adList.children).filter(el => el.classList.contains('ad-item'));
-            const adHeights = adElements.map(el => el.offsetHeight + 16);
-            adElements.forEach((el, newIndex) => {
-                const adId = el.dataset.adId;
-                const oldIndex = previousAdPositions[adId] !== undefined ? previousAdPositions[adId] : newIndex;
-                if (oldIndex !== newIndex) {
-                    const oldY = adHeights.slice(0, oldIndex).reduce((sum, h) => sum + h, 0);
-                    const newY = adHeights.slice(0, newIndex).reduce((sum, h) => sum + h, 0);
-                    const deltaY = oldY - newY;
-                    el.style.transform = `translateY(${deltaY}px)`;
-                    setTimeout(() => {
-                        el.style.transform = `translateY(0)`;
-                    }, 0);
-                }
+            document.getElementById('ad-form').addEventListener('submit', (e) => {
+                e.preventDefault();
+                createAd();
             });
-            previousAdPositions = {};
-            adElements.forEach((el, index) => {
-                previousAdPositions[el.dataset.adId] = index;
+
+            document.getElementById('complaint-form').addEventListener('submit', (e) => {
+                e.preventDefault();
+                submitComplaint();
             });
-            adList.innerHTML = '';
-            filteredAds.forEach(ad => {
-                const adElement = adElements.find(el => el.dataset.adId === ad.id);
-                if (adElement) {
-                    adList.appendChild(adElement);
-                }
+
+            document.getElementById('city-form').addEventListener('submit', (e) => {
+                e.preventDefault();
+                applyFilter('city', e.target.city.value);
             });
+
+            document.getElementById('type-form').addEventListener('submit', (e) => {
+                e.preventDefault();
+                applyFilter('type', e.target.type.value);
+            });
+
+            document.getElementById('date-form').addEventListener('submit', (e) => {
+                e.preventDefault();
+                applyFilter('date', e.target.date.value);
+            });
+
+            document.getElementById('gender-form').addEventListener('submit', (e) => {
+                e.preventDefault();
+                applyFilter('gender', e.target.gender.value);
+            });
+
+            document.getElementById('search').addEventListener('input', (e) => {
+                filterAds();
+            });
+
+            document.getElementById('favoritesSearch').addEventListener('input', (e) => {
+                filterFavorites();
+            });
+
+            document.getElementById('adTitle').addEventListener('input', updateCounters);
+            document.getElementById('adDescription').addEventListener('input', updateCounters);
+
+            window.addEventListener('scroll', handleScroll);
         }
 
-        // Избранное
-        function toggleFavorite(adId) {
-            const wasFavorited = favorites.includes(adId);
-            if (wasFavorited) {
-                favorites = favorites.filter(id => id !== adId);
-                showNotification('Удалено из избранного');
-            } else {
-                favorites.push(adId);
-                showNotification('Добавлено в избранное');
-            }
-            localStorage.setItem('favorites', JSON.stringify(favorites));
-            if (isTelegramMode) {
-                Telegram.WebApp.CloudStorage.setItem('favorites', JSON.stringify(favorites));
-            }
-            updateAdActions(adId);
-            renderFavorites();
-        }
-
-        // Уведомления
-        function showNotification(message) {
-            const notification = document.getElementById('notification');
-            notification.textContent = message;
-            notification.classList.add('show');
-            setTimeout(() => {
-                notification.classList.remove('show');
-            }, 2000);
-        }
-
-        // Открытие профиля
-        function openTelegramProfile(userId) {
-            if (isTelegramMode) {
-                const user = ads.find(ad => ad.userId === userId)?.userName || 'TONI';
-                window.open(`https://t.me/${user.startsWith('@') ? user : '@' + user}`, '_blank');
-            } else {
-                console.log(`Открыть профиль: ${userId}`);
-                alert(`Открытие профиля ${userId} (имитация)`);
-            }
-        }
-
-        // Шаринг
-        async function shareAd(adId) {
+        function openEditDialog(adId) {
             const ad = ads.find(a => a.id === adId);
-            if (!ad) return;
-            const shareText = `${ad.title}\n${ad.description}\nГород: ${ad.city} | Вид: ${ad.type} | Дата: ${ad.date} | Пол: ${ad.gender}`;
-            const shareUrl = `${window.location.origin}/?ad=${adId}`;
-            if (isTelegramMode) {
-                Telegram.WebApp.openLink(`https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(shareText)}`);
-            } else if (navigator.share) {
-                try {
-                    await navigator.share({
-                        title: ad.title,
-                        text: shareText,
-                        url: shareUrl
-                    });
-                } catch (e) {
-                    console.error('Ошибка шаринга:', e);
-                }
-            } else {
-                try {
-                    await navigator.clipboard.writeText(shareUrl);
-                    alert('Ссылка на объявление скопирована в буфер обмена');
-                } catch (e) {
-                    console.error('Ошибка копирования:', e);
-                    alert('Ошибка при копировании ссылки');
-                }
-            }
-        }
-
-        // Лайк
-        function toggleLike(adId) {
-            if (!likesDislikes[adId]) likesDislikes[adId] = { likes: [], dislikes: [] };
-            const likes = likesDislikes[adId].likes;
-            const dislikes = likesDislikes[adId].dislikes;
-            if (likes.includes(userId)) {
-                likes.splice(likes.indexOf(userId), 1);
-            } else {
-                likes.push(userId);
-                if (dislikes.includes(userId)) {
-                    dislikes.splice(dislikes.indexOf(userId), 1);
-                }
-            }
-            localStorage.setItem('likesDislikes', JSON.stringify(likesDislikes));
-            if (isTelegramMode) {
-                Telegram.WebApp.CloudStorage.setItem('likesDislikes', JSON.stringify(likesDislikes));
-            }
-            updateAdActions(adId);
-        }
-
-        // Дизлайк
-        function toggleDislike(adId) {
-            if (!likesDislikes[adId]) likesDislikes[adId] = { likes: [], dislikes: [] };
-            const likes = likesDislikes[adId].likes;
-            const dislikes = likesDislikes[adId].dislikes;
-            if (dislikes.includes(userId)) {
-                dislikes.splice(dislikes.indexOf(userId), 1);
-            } else {
-                dislikes.push(userId);
-                if (likes.includes(userId)) {
-                    likes.splice(likes.indexOf(userId), 1);
-                }
-            }
-            localStorage.setItem('likesDislikes', JSON.stringify(likesDislikes));
-            if (isTelegramMode) {
-                Telegram.WebApp.CloudStorage.setItem('likesDislikes', JSON.stringify(likesDislikes));
-            }
-            updateAdActions(adId);
-        }
-
-        // Открытие диалога создания
-        function openCreateDialog(adId = null) {
-            editAdId = adId;
-            const dialog = document.getElementById('createDialog');
-            const title = document.getElementById('dialogTitle');
-            if (adId) {
-                const ad = ads.find(a => a.id === adId);
-                if (!ad) {
-                    console.error('Ad not found:', adId);
-                    return;
-                }
+            if (ad) {
+                editAdId = adId;
                 document.getElementById('adTitle').value = ad.title;
                 document.getElementById('adDescription').value = ad.description;
                 document.getElementById('adCity').value = ad.city;
                 document.getElementById('adType').value = ad.type;
                 document.getElementById('adDate').value = ad.date;
                 document.getElementById('adGender').value = ad.gender;
-                document.getElementById('adAge').value = ad.age ? ad.age.replace(' лет', '') : '';
-                title.textContent = 'Редактировать объявление';
-            } else {
-                document.getElementById('adTitle').value = '';
-                document.getElementById('adDescription').value = '';
-                document.getElementById('adCity').value = 'Москва';
-                document.getElementById('adType').value = 'Встреча';
-                document.getElementById('adDate').value = 'Сегодня';
-                document.getElementById('adGender').value = 'Любой';
-                document.getElementById('adAge').value = '';
-                title.textContent = 'Создать объявление';
+                document.getElementById('adAge').value = ad.age.replace(' лет', '');
+                document.getElementById('dialogTitle').textContent = 'Редактировать объявление';
+                document.getElementById('createDialog').showModal();
             }
-            updateCounters();
-            dialog.showModal();
         }
 
-        // Редактирование
-        function editAd(adId) {
-            openCreateDialog(adId);
-        }
-
-        // Удаление
-        function deleteAd(adId) {
-            const adItem = document.querySelector(`.ad-item[data-ad-id="${adId}"]`);
-            if (!adItem) return;
-            adItem.classList.add('removing');
-            const adItems = Array.from(document.querySelectorAll('.ad-item'));
-            const adIndex = adItems.findIndex(item => item.dataset.adId === adId);
-            const adHeight = adItem.offsetHeight + 16;
-            adItems.slice(adIndex + 1).forEach(item => {
-                item.style.transition = 'transform 0.5s ease';
-                item.style.transform = `translateY(-${adHeight}px)`;
-            });
-            setTimeout(() => {
-                ads = ads.filter(ad => ad.id !== adId);
-                favorites = favorites.filter(id => id !== adId);
-                delete likesDislikes[adId];
-                delete participants[adId];
-                localStorage.setItem('ads', JSON.stringify(ads));
-                localStorage.setItem('favorites', JSON.stringify(favorites));
-                localStorage.setItem('likesDislikes', JSON.stringify(likesDislikes));
-                localStorage.setItem('participants', JSON.stringify(participants));
-                if (isTelegramMode) {
-                    Telegram.WebApp.CloudStorage.setItem('ads', JSON.stringify(ads));
-                    Telegram.WebApp.CloudStorage.setItem('favorites', JSON.stringify(favorites));
-                    Telegram.WebApp.CloudStorage.setItem('likesDislikes', JSON.stringify(likesDislikes));
-                    Telegram.WebApp.CloudStorage.setItem('participants', JSON.stringify(participants));
-                }
-                renderAds();
-            }, 500);
-        }
-
-        // Скрытие
-        function hideAd(adId) {
-            const adItem = document.querySelector(`.ad-item[data-ad-id="${adId}"]`);
-            if (!adItem) return;
-            adItem.classList.add('removing');
-            const adItems = Array.from(document.querySelectorAll('.ad-item'));
-            const adIndex = adItems.findIndex(item => item.dataset.adId === adId);
-            const adHeight = adItem.offsetHeight + 16;
-            adItems.slice(adIndex + 1).forEach(item => {
-                item.style.transition = 'transform 0.5s ease';
-                item.style.transform = `translateY(-${adHeight}px)`;
-            });
-            setTimeout(() => {
-                hiddenAds.push(adId);
-                localStorage.setItem('hiddenAds', JSON.stringify(hiddenAds));
-                if (isTelegramMode) {
-                    Telegram.WebApp.CloudStorage.setItem('hiddenAds', JSON.stringify(hiddenAds));
-                }
-                renderAds();
-                adItems.slice(adIndex + 1).forEach(item => {
-                    item.style.transition = 'none';
-                    item.style.transform = 'translateY(0)';
-                });
-            }, 500);
-        }
-
-        // Жалоба
-        function openComplaintDialog(adId) {
-            const dialog = document.getElementById('complaintDialog');
-            document.getElementById('complaint-form').onsubmit = (e) => {
-                e.preventDefault();
-                const complaintText = document.getElementById('complaintText').value;
-                if (complaintText.trim()) {
-                    console.log(`Жалоба на объявление ${adId}: ${complaintText}`);
-                    showNotification('Жалоба отправлена');
-                    dialog.close();
-                } else {
-                    showNotification('Пожалуйста, опишите причину жалобы');
-                }
-            };
-            dialog.showModal();
-        }
-
-        // Избранное
-        function openFavoritesDialog() {
-            const dialog = document.getElementById('favoritesDialog');
-            renderFavorites();
-            dialog.showModal();
-        }
-
-        // Фильтры
-        function openFilterDialog(filterId) {
-            const dialog = document.getElementById(`${filterId}Dialog`);
-            const form = document.getElementById(`${filterId}-form`);
-            form.onsubmit = (e) => {
-                e.preventDefault();
-                const selectedOption = form.querySelector('input[name="' + filterId + 'Option"]:checked')?.value;
-                if (selectedOption) {
-                    document.getElementById(filterId).value = selectedOption;
-                    renderAds();
-                }
-                dialog.close();
-            };
-            dialog.showModal();
-        }
-
-        // Создание/редактирование
-        document.getElementById('create-ad-form').addEventListener('submit', (e) => {
-            e.preventDefault();
+        function createAd() {
             const title = document.getElementById('adTitle').value.trim();
             const description = document.getElementById('adDescription').value.trim();
             const city = document.getElementById('adCity').value;
             const type = document.getElementById('adType').value;
             const date = document.getElementById('adDate').value;
             const gender = document.getElementById('adGender').value;
-            const age = document.getElementById('adAge').value ? `${document.getElementById('adAge').value} лет` : '';
+            const age = document.getElementById('adAge').value.trim();
 
-            if (!title || !description) {
-                showNotification('Заполните заголовок и описание');
+            if (!title || !description || !city || !type || !date || !gender || !age) {
+                showNotification('Пожалуйста, заполните все поля.');
                 return;
             }
 
-            const adData = {
-                id: editAdId || `ad-${Date.now()}`,
+            const newAd = {
+                id: `ad-${Date.now()}`,
                 userId,
                 userName,
                 title,
@@ -1544,125 +1173,252 @@
                 type,
                 date,
                 gender,
-                age,
-                createdAt: editAdId ? ads.find(ad => ad.id === editAdId)?.createdAt || new Date().toISOString() : new Date().toISOString()
+                age: `${age} лет`,
+                createdAt: new Date().toISOString()
             };
 
-            if (editAdId) {
-                ads = ads.map(ad => ad.id === editAdId ? adData : ad);
-                showNotification('Объявление обновлено');
-            } else {
-                ads.push(adData);
-                likesDislikes[adData.id] = { likes: [], dislikes: [] };
-                participants[adData.id] = [];
-                showNotification('Объявление создано');
-            }
-
-            localStorage.setItem('ads', JSON.stringify(ads));
-            localStorage.setItem('likesDislikes', JSON.stringify(likesDislikes));
-            localStorage.setItem('participants', JSON.stringify(participants));
+            ads.unshift(newAd);
             if (isTelegramMode) {
-                Telegram.WebApp.CloudStorage.setItem('ads', JSON.stringify(ads));
-                Telegram.WebApp.CloudStorage.setItem('likesDislikes', JSON.stringify(likesDislikes));
-                Telegram.WebApp.CloudStorage.setItem('participants', JSON.stringify(participants));
+                Telegram.WebApp.CloudStorage.setItems({ ads: JSON.stringify(ads) }, (error) => {
+                    if (error) console.error('Failed to save ads to CloudStorage:', error);
+                });
             }
-            renderAds();
+            localStorage.setItem('ads', JSON.stringify(ads));
             document.getElementById('createDialog').close();
-            editAdId = null;
-        });
-
-        // Свайпы
-        function handleSwipe(adId, element) {
-            let startX = 0;
-            let currentX = 0;
-            let isSwiping = false;
-
-            element.addEventListener('touchstart', (e) => {
-                startX = e.touches[0].clientX;
-                isSwiping = true;
-                element.style.transition = 'none';
-            });
-
-            element.addEventListener('touchmove', (e) => {
-                if (!isSwiping) return;
-                currentX = e.touches[0].clientX;
-                const deltaX = currentX - startX;
-                if (deltaX < 0) {
-                    element.style.transform = `translateX(${deltaX}px)`;
-                }
-            });
-
-            element.addEventListener('touchend', () => {
-                if (!isSwiping) return;
-                isSwiping = false;
-                const deltaX = currentX - startX;
-                element.style.transition = 'transform 0.5s ease';
-                if (deltaX < -100) {
-                    hideAd(adId);
-                } else {
-                    element.style.transform = 'translateX(0)';
-                }
-                setTimeout(() => {
-                    element.style.transition = 'transform 0.5s ease, opacity 0.5s ease';
-                }, 500);
-            });
-        }
-
-        // Скрытие кнопок при поиске
-        function toggleSearchButtons() {
-            const searchInput = document.getElementById('search');
-            const createButton = document.querySelector('button[data-modal-open="createDialog"]');
-            const floatingButton = document.querySelector('.floating-btn');
-            if (searchInput.value.trim()) {
-                createButton.classList.add('hidden');
-                floatingButton.classList.add('hidden');
-            } else {
-                createButton.classList.remove('hidden');
-                floatingButton.classList.remove('hidden');
-            }
-        }
-
-        // Кнопка создания
-        document.querySelector('button[data-modal-open="createDialog"]').addEventListener('click', () => {
-            const createButton = document.querySelector('button[data-modal-open="createDialog"]');
-            if (createButton.classList.contains('hidden')) {
-                createButton.classList.remove('hidden');
-            } else {
-                createButton.classList.add('hidden');
-                setTimeout(() => openCreateDialog(), 300);
-            }
-        });
-
-        // Инициализация
-        async function init() {
-            await loadCloudData();
+            showNotification('Объявление создано!');
             renderAds();
-
-            document.getElementById('search').addEventListener('input', () => {
-                renderAds();
-                toggleSearchButtons();
-            });
-
-            document.getElementById('city').addEventListener('click', () => openFilterDialog('city'));
-            document.getElementById('type').addEventListener('click', () => openFilterDialog('type'));
-            document.getElementById('date').addEventListener('click', () => openFilterDialog('date'));
-            document.getElementById('gender').addEventListener('click', () => openFilterDialog('gender'));
-            document.getElementById('sort').addEventListener('change', renderAds);
-
-            document.getElementById('adTitle').addEventListener('input', updateCounters);
-            document.getElementById('adDescription').addEventListener('input', updateCounters);
-
-            document.getElementById('favoritesSearch').addEventListener('input', renderFavorites);
-
-            document.getElementById('birthDay').addEventListener('input', updateProfileAge);
-            document.getElementById('birthMonth').addEventListener('input', updateProfileAge);
-            document.getElementById('birthYear').addEventListener('input', updateProfileAge);
-
-            document.addEventListener('click', closeMenus);
-            document.addEventListener('click', triggerVibration);
         }
 
-        init();
+        function deleteAd(adId) {
+            const index = ads.findIndex(ad => ad.id === adId);
+            if (index !== -1) {
+                ads.splice(index, 1);
+                if (isTelegramMode) {
+                    Telegram.WebApp.CloudStorage.setItems({ ads: JSON.stringify(ads) }, (error) => {
+                        if (error) console.error('Failed to save ads to CloudStorage:', error);
+                    });
+                }
+                localStorage.setItem('ads', JSON.stringify(ads));
+                showNotification('Объявление удалено!');
+                renderAds();
+            }
+        }
+
+        function openComplaintDialog(adId) {
+            document.querySelectorAll('.complaint-ad-id').forEach(el => el.dataset.adId = adId);
+            document.getElementById('complaintDialog').showModal();
+        }
+
+        function submitComplaint() {
+            const adId = document.querySelector('.complaint-ad-id').dataset.adId;
+            const complaintText = document.getElementById('complaintText').value.trim();
+            if (!complaintText) {
+                showNotification('Пожалуйста, введите текст жалобы.');
+                return;
+            }
+            // Handle complaint submission
+            document.getElementById('complaintDialog').close();
+            showNotification('Жалоба отправлена!');
+        }
+
+        function applyFilter(type, value) {
+            document.getElementById(`filter-${type}`).value = value;
+            filterAds();
+        }
+
+        function filterAds() {
+            const searchQuery = document.getElementById('search').value.trim().toLowerCase();
+            const city = document.getElementById('city').value;
+            const type = document.getElementById('type').value;
+            const date = document.getElementById('date').value;
+            const gender = document.getElementById('gender').value;
+
+            const filteredAds = ads.filter(ad => {
+                const matchesSearch = ad.title.toLowerCase().includes(searchQuery) || ad.description.toLowerCase().includes(searchQuery);
+                const matchesCity = city ? ad.city === city : true;
+                const matchesType = type ? ad.type === type : true;
+                const matchesDate = date ? ad.date === date : true;
+                const matchesGender = gender ? ad.gender === gender : true;
+                return matchesSearch && matchesCity && matchesType && matchesDate && matchesGender;
+            });
+
+            renderFilteredAds(filteredAds);
+        }
+
+        function renderFilteredAds(filteredAds) {
+            const adList = document.getElementById('ad-list');
+            adList.innerHTML = '';
+            filteredAds.forEach(ad => {
+                const adElement = document.createElement('div');
+                adElement.classList.add('ad-item');
+                adElement.innerHTML = `
+                    <div class="ad-content">
+                        <h3>${ad.title}</h3>
+                        <p class="description">${ad.description}</p>
+                        <p class="tags">${ad.city}, ${ad.type}, ${ad.date}</p>
+                        <div class="creator-container">
+                            <img class="ad-avatar" src="https://via.placeholder.com/48" alt="Avatar">
+                            <div class="user-info">
+                                <span class="name">${ad.userName}</span>
+                                <span class="age">${ad.age}</span>
+                            </div>
+                        </div>
+                        <div class="user">
+                            <div class="user-info">
+                                <span class="name">${ad.userName}</span>
+                                <span class="age">${ad.age}</span>
+                            </div>
+                            <div class="ad-actions">
+                                <div class="action like ${likesDislikes[ad.id]?.likes.includes(userId) ? 'liked' : ''}" data-ad-id="${ad.id}" data-type="like">
+                                    <img src="https://via.placeholder.com/24" alt="Like">
+                                </div>
+                                <div class="action dislike ${likesDislikes[ad.id]?.dislikes.includes(userId) ? 'disliked' : ''}" data-ad-id="${ad.id}" data-type="dislike">
+                                    <img src="https://via.placeholder.com/24" alt="Dislike">
+                                </div>
+                                <div class="action share" data-ad-id="${ad.id}">
+                                    <img src="https://via.placeholder.com/24" alt="Share">
+                                </div>
+                                <div class="action favorite ${favorites.includes(ad.id) ? 'favorited' : ''}" data-ad-id="${ad.id}">
+                                    <img src="https://via.placeholder.com/24" alt="Favorite">
+                                </div>
+                                <div class="action menu">
+                                    <img src="https://via.placeholder.com/24" alt="Menu">
+                                    <div class="menu-options">
+                                        <button data-ad-id="${ad.id}" data-action="edit">Редактировать</button>
+                                        <button data-ad-id="${ad.id}" data-action="delete">Удалить</button>
+                                        <button data-ad-id="${ad.id}" data-action="complaint">Пожаловаться</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                adElement.querySelector('.ad-content').style.maxHeight = '0';
+                adElement.querySelector('.ad-content').style.opacity = '0';
+                adList.appendChild(adElement);
+            });
+            addEventListeners();
+        }
+
+        function toggleLikeDislike(adId, type) {
+            const ad = ads.find(a => a.id === adId);
+            if (ad) {
+                if (type === 'like') {
+                    if (likesDislikes[adId]?.likes.includes(userId)) {
+                        likesDislikes[adId].likes = likesDislikes[adId].likes.filter(id => id !== userId);
+                    } else {
+                        likesDislikes[adId].likes.push(userId);
+                        if (likesDislikes[adId]?.dislikes.includes(userId)) {
+                            likesDislikes[adId].dislikes = likesDislikes[adId].dislikes.filter(id => id !== userId);
+                        }
+                    }
+                } else if (type === 'dislike') {
+                    if (likesDislikes[adId]?.dislikes.includes(userId)) {
+                        likesDislikes[adId].dislikes = likesDislikes[adId].dislikes.filter(id => id !== userId);
+                    } else {
+                        likesDislikes[adId].dislikes.push(userId);
+                        if (likesDislikes[adId]?.likes.includes(userId)) {
+                            likesDislikes[adId].likes = likesDislikes[adId].likes.filter(id => id !== userId);
+                        }
+                    }
+                }
+                if (isTelegramMode) {
+                    Telegram.WebApp.CloudStorage.setItems({ likesDislikes: JSON.stringify(likesDislikes) }, (error) => {
+                        if (error) console.error('Failed to save likes/dislikes to CloudStorage:', error);
+                    });
+                }
+                localStorage.setItem('likesDislikes', JSON.stringify(likesDislikes));
+                renderAds();
+            }
+        }
+
+        function toggleFavorite(adId) {
+            if (favorites.includes(adId)) {
+                favorites = favorites.filter(id => id !== adId);
+            } else {
+                favorites.push(adId);
+            }
+            if (isTelegramMode) {
+                Telegram.WebApp.CloudStorage.setItems({ favorites: JSON.stringify(favorites) }, (error) => {
+                    if (error) console.error('Failed to save favorites to CloudStorage:', error);
+                });
+            }
+            localStorage.setItem('favorites', JSON.stringify(favorites));
+            renderAds();
+        }
+
+        function shareAd(adId) {
+            // Handle share functionality
+        }
+
+        function openFavoritesDialog() {
+            renderFavorites();
+            document.getElementById('favoritesDialog').showModal();
+        }
+
+        function renderFavorites() {
+            const favoritesList = document.getElementById('favorites-list');
+            favoritesList.innerHTML = '';
+            favorites.forEach(adId => {
+                const ad = ads.find(a => a.id === adId);
+                if (ad) {
+                    const favoriteItem = document.createElement('div');
+                    favoriteItem.classList.add('favorite-item');
+                    favoriteItem.textContent = ad.title;
+                    favoritesList.appendChild(favoriteItem);
+                }
+            });
+        }
+
+        function filterFavorites() {
+            const searchQuery = document.getElementById('favoritesSearch').value.trim().toLowerCase();
+            const filteredFavorites = favorites.filter(adId => {
+                const ad = ads.find(a => a.id === adId);
+                return ad ? ad.title.toLowerCase().includes(searchQuery) : false;
+            });
+            renderFilteredFavorites(filteredFavorites);
+        }
+
+        function renderFilteredFavorites(filteredFavorites) {
+            const favoritesList = document.getElementById('favorites-list');
+            favoritesList.innerHTML = '';
+            filteredFavorites.forEach(adId => {
+                const ad = ads.find(a => a.id === adId);
+                if (ad) {
+                    const favoriteItem = document.createElement('div');
+                    favoriteItem.classList.add('favorite-item');
+                    favoriteItem.textContent = ad.title;
+                    favoritesList.appendChild(favoriteItem);
+                }
+            });
+        }
+
+        function showNotification(message) {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.classList.add('show');
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+
+        function handleScroll() {
+            const scrollPosition = window.scrollY + window.innerHeight;
+            const adList = document.getElementById('ad-list');
+            const adItems = adList.querySelectorAll('.ad-item');
+            adItems.forEach((adItem, index) => {
+                if (adItem.offsetTop < scrollPosition && !adItem.classList.contains('loaded')) {
+                    adItem.classList.add('loaded');
+                    adItem.querySelector('.ad-content').style.maxHeight = '1000px';
+                    adItem.querySelector('.ad-content').style.opacity = '1';
+                }
+            });
+        }
+
+        loadCloudData().then(() => {
+            renderAds();
+            addEventListeners();
+        });
     </script>
 </body>
 </html>
