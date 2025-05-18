@@ -1,13 +1,11 @@
 <!DOCTYPE html>
 <html lang="ru">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FriendsHub</title>
     <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500&display=swap" rel="stylesheet">
     <style>
-        /* Ваш CSS остается БЕЗ ИЗМЕНЕНИЙ  */
         * {
             margin: 0;
             padding: 0;
@@ -562,231 +560,232 @@
         }
 
         .favorites-list .favorite-item {
-            display: flex;
-            align-items: center;
-            gap: 8px;
+            background: #f1d299;
             padding: 8px;
-            background: #F5F5F5;
             border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .reset-btn {
+            background: #987eeb;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 10px;
+            font-size: 16px;
             cursor: pointer;
+            width: 100%;
+            margin-top: 16px;
         }
 
-        .favorites-list .favorite-item img {
-            width: 48px;
-            height: 48px;
-            border-radius: 50%;
-            object-fit: cover;
-        }
-
-        #notification {
+        .notification {
             position: fixed;
-            bottom: 20px;
-            left: 20px;
-            background: #4CAF50;
-            color: white;
-            padding: 10px 20px;
-            border-radius: 5px;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-100%);
+            background: #987eeb;
+            color: #fff;
+            padding: 12px 24px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+            z-index: 1004;
             opacity: 0;
-            transition: opacity 0.5s ease-in-out;
-            z-index: 1001;
+            transition: opacity 0.3s ease, transform 0.3s ease;
         }
 
-        #notification.show {
+        .notification.show {
             opacity: 1;
-        }
-
-        #complaintDialog textarea {
-            min-height: 80px;
-            resize: vertical;
-        }
-
-        #complaintDialog button[type="submit"] {
-            background-color: #f44336;
-        }
-
-        @media (max-width: 600px) {
-            .container {
-                width: 100%;
-                padding: 8px;
-            }
-
-            .search-filter-container {
-                position: static;
-            }
-
-            .filters {
-                flex-direction: column;
-                gap: 8px;
-            }
-
-            .filters select {
-                width: 100%;
-            }
-
-            .ad-item {
-                padding: 12px;
-            }
-
-            .ad-item h3 {
-                font-size: 16px;
-            }
-
-            .ad-item p {
-                font-size: 14px;
-            }
-
-            .ad-avatar {
-                width: 40px;
-                height: 40px;
-            }
-
-            .join-btn {
-                width: 40px;
-                height: 40px;
-            }
-
-            .ad-actions {
-                gap: 8px;
-            }
-
-            .ad-actions img {
-                width: 20px;
-                height: 20px;
-            }
-
-            .menu {
-                font-size: 16px;
-            }
-
-            .menu-options {
-                top: 32px;
-                right: 8px;
-            }
-
-            .menu-options button {
-                padding: 6px 12px;
-            }
-
-            .floating-btn {
-                bottom: 10px;
-                right: 10px;
-                width: 50px;
-                height: 50px;
-            }
-
-            .floating-btn::before {
-                font-size: 20px;
-            }
-
-            dialog {
-                width: 95%;
-            }
+            transform: translateX(-50%) translateY(0);
         }
     </style>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
-
 <body>
-
-    <div class="container">
+    <main class="container">
         <div class="image-container">
-            <img src="https://uno5512.github.io/FrendsHub/3.png" alt="FriendsHub" class="header-image">
+            <img class="header-image" src="https://uno5512.github.io/FrendsHub/3.png" alt="Логотип FriendsHub">
         </div>
 
-        <div class="search-filter-container">
-            <input type="text" id="search" placeholder="Поиск...">
-            <div class="filters">
-                <select id="city">
-                    <option value="">Город</option>
-                </select>
-                <select id="type">
-                    <option value="">Вид</option>
-                </select>
-                <select id="date">
-                    <option value="">Дата</option>
-                </select>
-                <select id="gender">
-                    <option value="">Пол</option>
-                </select>
-                <select id="sort">
-                    <option value="date">Сначала новые</option>
-                    <option value="rating">По рейтингу</option>
-                </select>
-            </div>
-        </div>
-
-        <div class="refresh-loader">
-            <div class="dot"></div>
-            <div class="dot"></div>
-            <div class="dot"></div>
-        </div>
-
-        <div class="profile">
-            <img src="https://mir-s3-cdn-cf.behance.net/project_modules/fs_webp/51174a180992325.6514258f750ff.jpg"
-                alt="User Avatar" id="profileAvatar">
-            <div class="info">
-                <span class="name" id="profileName">User Name</span>
-                <div class="age-picker">
-                    <input type="number" id="birthDay" placeholder="ДД" min="1" max="31">
-                    <input type="number" id="birthMonth" placeholder="ММ" min="1" max="12">
-                    <input type="number" id="birthYear" placeholder="ГГГГ" min="1900"
-                        max="2024">
-                </div>
-                <span class="age" id="profileAge">Возраст не указан</span>
-            </div>
-        </div>
-
-        <div class="favorites-list">
-            <h2>Избранное</h2>
-            <input type="text" id="favoritesSearch" placeholder="Поиск в избранном...">
-            <div id="favoritesContainer"></div>
-        </div>
-
-        <div id="adList" class="ad-list"></div>
-
-        <button data-modal-open="createDialog" class="floating-button">
-            <span>+</span>
-        </button>
-
-        <dialog id="createDialog">
-            <form id="adForm">
-                <h2>Создать объявление</h2>
-                <input type="text" id="adTitle" placeholder="Заголовок" maxlength="100" required>
-                <textarea id="adDescription" placeholder="Описание" maxlength="500" required></textarea>
-                <div class="select-options">
-                    <select id="adCity" required>
-                        <option value="">Выберите город</option>
+        <section class="search-filter-container">
+            <form id="filter-form">
+                <input type="text" id="search" placeholder="Поиск" aria-label="Поиск объявлений">
+                <div class="filters">
+                    <select id="city" name="city" aria-label="Выберите город">
+                        <option value="">Город</option>
+                        <option value="Москва">Москва</option>
+                        <option value="Санкт-Петербург">Санкт-Петербург</option>
+                        <option value="Казань">Казань</option>
                     </select>
-                    <select id="adType" required>
-                        <option value="">Выберите вид</option>
+                    <select id="type" name="type" aria-label="Выберите вид активности">
+                        <option value="">Вид</option>
+                        <option value="Встреча">Встреча</option>
+                        <option value="Чат">Чат</option>
+                        <option value="Событие">Событие</option>
                     </select>
-                    <select id="adDate" required>
-                        <option value="">Выберите дату</option>
+                    <select id="date" name="date" aria-label="Выберите дату">
+                        <option value="">Дата</option>
+                        <option value="Сегодня">Сегодня</option>
+                        <option value="Завтра">Завтра</option>
+                        <option value="На неделе">На неделе</option>
                     </select>
-                    <select id="adGender" required>
-                        <option value="">Выберите пол</option>
+                    <select id="gender" name="gender" aria-label="Выберите пол">
+                        <option value="">Пол</option>
+                        <option value="Мужской">Мужской</option>
+                        <option value="Женский">Женский</option>
+                        <option value="Любой">Любой</option>
+                    </select>
+                    <select id="sort" name="sort" aria-label="Сортировка">
+                        <option value="rating">По рейтингу</option>
+                        <option value="newest">Новые</option>
+                        <option value="oldest">Старые</option>
                     </select>
                 </div>
-                <button type="submit">Опубликовать</button>
-                <button type="button" class="close-btn" data-modal-close="createDialog">Отмена</button>
-                <span class="counter" id="titleCounter">0/100</span>
-                <span class="counter" id="descriptionCounter">0/500</span>
             </form>
-        </dialog>
+            <div class="refresh-loader" id="refreshLoader">
+                <span class="dot"></span>
+                <span class="dot"></span>
+                <span class="dot"></span>
+            </div>
+        </section>
 
-        <dialog id="complaintDialog">
-            <form id="complaintForm">
-                <h2>Пожаловаться на объявление</h2>
-                <textarea id="complaintText" placeholder="Причина жалобы" required></textarea>
-                <button type="submit">Отправить жалобу</button>
-                <button type="button" class="close-btn" data-modal-close="complaintDialog">Отмена</button>
-            </form>
-        </dialog>
+        <section class="ad-list" id="adList" aria-label="Список объявлений"></section>
 
-        <div id="notification"></div>
+        <button type="button" data-modal-open="createDialog" aria-label="Создать объявление">+ Создать</button>
 
-    </div>
+        <button class="floating-btn" onclick="openFavoritesDialog()" aria-label="Открыть избранное"></button>
+    </main>
+
+    <dialog id="createDialog" aria-labelledby="dialogTitle">
+        <form method="dialog" id="create-ad-form">
+            <h2 id="dialogTitle">Создать объявление</h2>
+            <input type="text" id="adTitle" placeholder="Заголовок" maxlength="63" aria-label="Заголовок объявления">
+            <span class="counter" id="titleCounter">63/63</span>
+            <textarea id="adDescription" placeholder="Описание" maxlength="500" aria-label="Описание объявления"></textarea>
+            <span class="counter" id="descriptionCounter">500/500</span>
+            <fieldset>
+                <legend>Город</legend>
+                <select id="adCity" name="city" aria-label="Выберите город">
+                    <option value="Москва">Москва</option>
+                    <option value="Санкт-Петербург">Санкт-Петербург</option>
+                    <option value="Казань">Казань</option>
+                </select>
+            </fieldset>
+            <fieldset>
+                <legend>Вид</legend>
+                <select id="adType" name="type" aria-label="Выберите вид активности">
+                    <option value="Встреча">Встреча</option>
+                    <option value="Чат">Чат</option>
+                    <option value="Событие">Событие</option>
+                </select>
+            </fieldset>
+            <fieldset>
+                <legend>Дата</legend>
+                <select id="adDate" name="date" aria-label="Выберите дату">
+                    <option value="Сегодня">Сегодня</option>
+                    <option value="Завтра">Завтра</option>
+                    <option value="На неделе">На неделе</option>
+                </select>
+            </fieldset>
+            <fieldset>
+                <legend>Пол</legend>
+                <select id="adGender" name="gender" aria-label="Выберите пол">
+                    <option value="Мужской">Мужской</option>
+                    <option value="Женский">Женский</option>
+                    <option value="Любой">Любой</option>
+                </select>
+            </fieldset>
+            <fieldset>
+                <legend>Возраст</legend>
+                <input type="number" id="adAge" min="1" max="120" placeholder="Возраст" aria-label="Укажите возраст">
+            </fieldset>
+            <button type="button" onclick="document.getElementById('createDialog').close()" aria-label="Закрыть диалог">Закрыть</button>
+            <button type="submit">Опубликовать</button>
+        </form>
+    </dialog>
+
+    <dialog id="complaintDialog" aria-labelledby="complaintTitle">
+        <form method="dialog" id="complaint-form">
+            <h2 id="complaintTitle">Пожаловаться</h2>
+            <textarea id="complaintText" placeholder="Опишите причину жалобы" aria-label="Причина жалобы"></textarea>
+            <button type="button" onclick="document.getElementById('complaintDialog').close()" aria-label="Отменить жалобу">Отменить</button>
+            <button type="submit">Отправить</button>
+        </form>
+    </dialog>
+
+    <dialog id="cityDialog" aria-labelledby="cityTitle">
+        <form method="dialog" id="city-form">
+            <h2 id="cityTitle">Выберите город</h2>
+            <div class="select-options">
+                <label><input type="radio" name="cityOption" value="Москва"> Москва</label>
+                <label><input type="radio" name="cityOption" value="Санкт-Петербург"> Санкт-Петербург</label>
+                <label><input type="radio" name="cityOption" value="Казань"> Казань</label>
+            </div>
+            <button type="button" onclick="document.getElementById('cityDialog').close()" aria-label="Отменить выбор города">Отменить</button>
+            <button type="submit">Применить</button>
+        </form>
+    </dialog>
+
+    <dialog id="typeDialog" aria-labelledby="typeTitle">
+        <form method="dialog" id="type-form">
+            <h2 id="typeTitle">Выберите вид</h2>
+            <div class="select-options">
+                <label><input type="radio" name="typeOption" value="Встреча"> Встреча</label>
+                <label><input type="radio" name="typeOption" value="Чат"> Чат</label>
+                <label><input type="radio" name="typeOption" value="Событие"> Событие</label>
+            </div>
+            <button type="button" onclick="document.getElementById('typeDialog').close()" aria-label="Отменить выбор вида">Отменить</button>
+            <button type="submit">Применить</button>
+        </form>
+    </dialog>
+
+    <dialog id="dateDialog" aria-labelledby="dateTitle">
+        <form method="dialog" id="date-form">
+            <h2 id="dateTitle">Выберите дату</h2>
+            <div class="select-options">
+                <label><input type="radio" name="dateOption" value="Сегодня"> Сегодня</label>
+                <label><input type="radio" name="dateOption" value="Завтра"> Завтра</label>
+                <label><input type="radio" name="dateOption" value="На неделе"> На неделе</label>
+            </div>
+            <button type="button" onclick="document.getElementById('cityDialog').close()" aria-label="Отменить выбор даты">Отменить</button>
+            <button type="submit">Применить</button>
+        </form>
+    </dialog>
+
+    <dialog id="genderDialog" aria-labelledby="genderTitle">
+        <form method="dialog" id="gender-form">
+            <h2 id="genderTitle">Выберите пол</h2>
+            <div class="select-options">
+                <label><input type="radio" name="genderOption" value="Мужской"> Мужской</label>
+                <label><input type="radio" name="genderOption" value="Женский"> Женский</label>
+                <label><input type="radio" name="genderOption" value="Любой"> Любой</label>
+            </div>
+            <button type="button" onclick="document.getElementById('genderDialog').close()" aria-label="Отменить выбор пола">Отменить</button>
+            <button type="submit">Применить</button>
+        </form>
+    </dialog>
+
+    <dialog id="favoritesDialog" aria-labelledby="favoritesTitle">
+        <div class="modal-content">
+            <h2 id="favoritesTitle">Избранное</h2>
+            <div class="profile" onclick="openTelegramProfile('user-1')" aria-label="Профиль TONI">
+                <img src="https://mir-s3-cdn-cf.behance.net/project_modules/fs_webp/51174a180992325.6514258f750ff.jpg" alt="Аватар TONI">
+                <div class="info">
+                    <span class="name">TONI</span>
+                    <span class="age" id="profileAge">15 лет</span>
+                    <div class="age-picker">
+                        <input type="number" id="birthDay" min="1" max="31" placeholder="День" aria-label="День рождения">
+                        <input type="number" id="birthMonth" min="1" max="12" placeholder="Месяц" aria-label="Месяц рождения">
+                        <input type="number" id="birthYear" min="1900" max="2025" placeholder="Год" aria-label="Год рождения">
+                    </div>
+                </div>
+            </div>
+            <input type="text" id="favoritesSearch" placeholder="Поиск по избранному" aria-label="Поиск по избранным объявлениям">
+            <div class="favorites-list" id="favoritesList"></div>
+            <button class="reset-btn" onclick="resetApp()">Сбросить</button>
+            <button class="close-btn" onclick="document.getElementById('favoritesDialog').close()">Закрыть</button>
+        </div>
+    </dialog>
+
+    <div class="notification" id="notification"></div>
 
     <script>
         // utils.js (вспомогательные функции)
