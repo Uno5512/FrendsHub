@@ -140,7 +140,7 @@
       );
     }
 
-    // Search Bar Component (Updated)
+    // Search Bar Component
     function SearchBar({ onSearch }) {
       const [query, setQuery] = useState('');
       const [filters, setFilters] = useState({
@@ -295,34 +295,75 @@
       );
     }
 
-    // Account Modal
-    function AccountModal({ user, announcements, applications, onClose }) {
+    // Participants Modal (New)
+    function ParticipantsModal({ announcementTitle, participants, onClose }) {
       return (
         <Modal onClose={onClose}>
-          <h2 className="text-xl font-bold mb-4">Аккаунт</h2>
-          <div className="flex flex-col gap-4">
-            <img src={user.avatar} alt="Аватар" className="w-16 h-16 rounded-full" loading="lazy" />
-            <p><strong>Имя:</strong> {user.name}</p>
-            <p><strong>Дата рождения:</strong> {user.birthdate}</p>
-            <p><strong>Пол:</strong> {user.gender}</p>
-            <p><strong>О себе:</strong> {user.about}</p>
-            <h3 className="font-bold">Избранное</h3>
-            <ul>{/* Placeholder for favorites */}</ul>
-            <h3 className="font-bold">Заявки</h3>
-            {applications.map(app => (
-              <div key={app.id}>
-                <p>{app.announcementTitle}</p>
-                {app.participants.map(p => (
-                  <div key={p.id} className="flex items-center gap-2">
-                    <img src={p.avatar} alt="Участник" className="w-8 h-8 rounded-full" loading="lazy" />
-                    <a href="#" className="text-blue-500">{p.name}</a>
-                    <button className="bg-blue-500 text-white px-2 py-1 rounded">Выбрать</button>
-                  </div>
-                ))}
-              </div>
-            ))}
+          <h2 className="text-xl font-bold mb-4">Участники: {announcementTitle}</h2>
+          <div className="max-h-64 overflow-y-auto space-y-2">
+            {participants.length > 0 ? (
+              participants.map(p => (
+                <div key={p.id} className="flex items-center gap-2 p-2 border-b">
+                  <img src={p.avatar} alt="Участник" className="w-8 h-8 rounded-full" loading="lazy" />
+                  <a href="#" className="text-blue-500">{p.name}</a>
+                  <button className="bg-blue-500 text-white px-2 py-1 rounded ml-auto">Выбрать</button>
+                </div>
+              ))
+            ) : (
+              <p className="text-gray-500">Нет участников</p>
+            )}
           </div>
         </Modal>
+      );
+    }
+
+    // Account Modal (Updated)
+    function AccountModal({ user, announcements, applications, onClose }) {
+      const [showParticipantsModal, setShowParticipantsModal] = useState(null);
+      const ownAnnouncements = announcements.filter(a => a.creatorName === user.name);
+
+      return (
+        <>
+          <Modal onClose={onClose}>
+            <h2 className="text-xl font-bold mb-4">Аккаунт</h2>
+            <div className="flex flex-col gap-4">
+              <img src={user.avatar} alt="Аватар" className="w-16 h-16 rounded-full" loading="lazy" />
+              <p><strong>Имя:</strong> {user.name}</p>
+              <p><strong>Дата рождения:</strong> {user.birthdate}</p>
+              <p><strong>Пол:</strong> {user.gender}</p>
+              <p><strong>О себе:</strong> {user.about}</p>
+              <h3 className="font-bold">Избранное</h3>
+              <ul>{/* Placeholder for favorites */}</ul>
+              <h3 className="font-bold">Заявки</h3>
+              <div className="space-y-2">
+                {ownAnnouncements.length > 0 ? (
+                  ownAnnouncements.map(a => (
+                    <div key={a.id} className="flex items-center gap-2 p-2 border-b">
+                      <span className="font-medium">{a.title}</span>
+                      <button
+                        onClick={() => setShowParticipantsModal(a.title)}
+                        className="bg-blue-500 text-white px-2 py-1 rounded ml-auto"
+                      >
+                        Участники ({a.participants})
+                      </button>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-gray-500">Нет созданных объявлений</p>
+                )}
+              </div>
+            </div>
+          </Modal>
+          {showParticipantsModal && (
+            <ParticipantsModal
+              announcementTitle={showParticipantsModal}
+              participants={
+                applications.find(app => app.announcementTitle === showParticipantsModal)?.participants || []
+              }
+              onClose={() => setShowParticipantsModal(null)}
+            />
+          )}
+        </>
       );
     }
 
@@ -385,7 +426,7 @@
       );
     }
 
-    // Main App Component (Updated)
+    // Main App Component
     function App() {
       const [user, setUser] = useState(null);
       const [isSynced, setIsSynced] = useState(null);
@@ -423,7 +464,6 @@
         setCurrentFilters({ query, filters });
         let result = [...newAnnouncements];
 
-        // Apply search query filter
         if (query.trim()) {
           const lowerQuery = query.toLowerCase();
           result = result.filter(a =>
@@ -433,7 +473,6 @@
           );
         }
 
-        // Apply filters only if they are explicitly set
         if (filters.city) {
           result = result.filter(a => a.metatags.includes(filters.city));
         }
@@ -447,7 +486,6 @@
           result = result.filter(a => a.metatags.includes(filters.gender));
         }
 
-        // Apply sorting
         if (filters.sort === 'По рейтингу') {
           result.sort((a, b) => (b.likes - b.dislikes) - (a.likes - a.dislikes));
         } else if (filters.sort === 'Новые') {
@@ -455,7 +493,6 @@
         } else if (filters.sort === 'Старые') {
           result.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
         } else if (filters.sort === 'Верифицированные') {
-          // Placeholder for verified sorting
           result.sort((a, b) => (b.likes - b.dislikes) - (a.likes - a.dislikes));
         }
 
