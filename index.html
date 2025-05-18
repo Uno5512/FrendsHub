@@ -659,7 +659,7 @@
     </main>
 
     <dialog id="createDialog" aria-labelledby="dialogTitle">
-        <form method="dialog" id="create-ad-form">
+        <form id="create-ad-form">
             <h2 id="dialogTitle">Создать объявление</h2>
             <input type="text" id="adTitle" placeholder="Заголовок" maxlength="63" aria-label="Заголовок объявления">
             <span class="counter" id="titleCounter">63/63</span>
@@ -1433,12 +1433,22 @@
         const createAd = (e) => {
             try {
                 e.preventDefault();
-                const title = document.getElementById('adTitle').value.trim();
-                const description = document.getElementById('adDescription').value.trim();
+                const titleInput = document.getElementById('adTitle');
+                const descriptionInput = document.getElementById('adDescription');
+                
+                if (!titleInput || !descriptionInput) {
+                    utils.showNotification('Ошибка: поля формы не найдены');
+                    return;
+                }
+
+                const title = titleInput.value.trim();
+                const description = descriptionInput.value.trim();
+                
                 if (!title || !description) {
                     utils.showNotification('Заголовок и описание обязательны');
                     return;
                 }
+
                 const newAd = {
                     id: Date.now().toString(),
                     title,
@@ -1452,12 +1462,14 @@
                     userName: appState.userName,
                     createdAt: new Date().toISOString()
                 };
+                
                 appState.ads.push(newAd);
                 localStorage.setItem('ads', JSON.stringify(appState.ads));
-                utils.closeDialog('createDialog');
                 document.getElementById('create-ad-form').reset();
                 updateCounters();
+                utils.closeDialog('createDialog');
                 renderAds();
+                utils.showNotification('Объявление создано');
             } catch (error) {
                 console.error('Ошибка создания объявления:', error);
                 utils.showNotification('Ошибка при создании объявления');
@@ -1470,12 +1482,22 @@
                 e.preventDefault();
                 const adIndex = appState.ads.findIndex(ad => ad.id === adId);
                 if (adIndex === -1) return;
-                const title = document.getElementById('adTitle').value.trim();
-                const description = document.getElementById('adDescription').value.trim();
+                const titleInput = document.getElementById('adTitle');
+                const descriptionInput = document.getElementById('adDescription');
+                
+                if (!titleInput || !descriptionInput) {
+                    utils.showNotification('Ошибка: поля формы не найдены');
+                    return;
+                }
+
+                const title = titleInput.value.trim();
+                const description = descriptionInput.value.trim();
+                
                 if (!title || !description) {
                     utils.showNotification('Заголовок и описание обязательны');
                     return;
                 }
+
                 appState.ads[adIndex] = {
                     ...appState.ads[adIndex],
                     title,
@@ -1488,12 +1510,13 @@
                     createdAt: new Date().toISOString()
                 };
                 localStorage.setItem('ads', JSON.stringify(appState.ads));
-                utils.closeDialog('createDialog');
                 document.getElementById('create-ad-form').reset();
                 updateCounters();
+                utils.closeDialog('createDialog');
                 renderAds();
                 document.getElementById('create-ad-form').onsubmit = createAd;
                 complaintAdId = null;
+                utils.showNotification('Объявление обновлено');
             } catch (error) {
                 console.error(`Ошибка обновления ${adId}:`, error);
                 utils.showNotification('Ошибка при сохранении изменений');
