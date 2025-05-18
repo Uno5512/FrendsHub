@@ -50,10 +50,14 @@
             flex-direction: column;
             gap: 16px;
             position: sticky;
-            top: 0;
+            top: 25px;
             z-index: 100;
             transform: translateY(0);
             transition: transform 0.3s ease;
+        }
+
+        .search-filter-container:not(.hidden) {
+            margin-top: 25px;
         }
 
         .search-filter-container.hidden {
@@ -255,6 +259,7 @@
         .ad-item {
             background: #efefef;
             padding: 16px;
+            padding-bottom: 8px;
             border-radius: 22px;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
             position: relative;
@@ -262,6 +267,8 @@
             cursor: pointer;
             display: flex;
             flex-direction: column;
+            justify-content: space-between;
+            min-height: 100%;
         }
 
         .ad-item.removing {
@@ -308,6 +315,7 @@
             opacity: 0;
             overflow: hidden;
             transition: max-height 0.7s ease-in-out, opacity 0.7s ease-in-out;
+            margin-bottom: 16px;
         }
 
         .ad-item .user {
@@ -315,7 +323,6 @@
             align-items: center;
             justify-content: space-between;
             margin-top: auto;
-            padding-bottom: 2px;
             gap: 3px;
         }
 
@@ -366,7 +373,7 @@
         .ad-actions .disliked::after {
             content: '';
             position: absolute;
-            top: 50%;
+            top: calc(50% - 2px);
             left: 50%;
             transform: translate(-50%, -50%);
             width: 32px;
@@ -1572,7 +1579,7 @@
             if (document.activeElement === searchInput) {
                 createButton.classList.add('hidden');
                 accountButton.classList.add('hidden');
-            } else if (searchInput.value.trim() === '') {
+            } else {
                 createButton.classList.remove('hidden');
                 accountButton.classList.remove('hidden');
             }
