@@ -260,6 +260,8 @@
             position: relative;
             transition: transform 0.5s ease, opacity 0.5s ease;
             cursor: pointer;
+            display: flex;
+            flex-direction: column;
         }
 
         .ad-item.removing {
@@ -280,7 +282,7 @@
             font-size: 18px;
             font-weight: 500;
             margin-bottom: 8px;
-            color: #1A2A44;
+            color: #41494e;
             hyphens: auto;
             word-wrap: break-word;
             white-space: normal;
@@ -312,8 +314,9 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-top: 28px;
+            margin-top: auto;
             padding-bottom: 2px;
+            gap: 3px;
         }
 
         .ad-item .user .user-info {
@@ -1322,6 +1325,13 @@
             const adItem = document.querySelector(`.ad-item[data-ad-id="${adId}"]`);
             if (!adItem) return;
             adItem.classList.add('removing');
+            const adItems = Array.from(document.querySelectorAll('.ad-item'));
+            const adIndex = adItems.findIndex(item => item.dataset.adId === adId);
+            const adHeight = adItem.offsetHeight + 16; // Высота + gap
+            adItems.slice(adIndex + 1).forEach(item => {
+                item.style.transition = 'transform 0.5s ease';
+                item.style.transform = `translateY(-${adHeight}px)`;
+            });
             setTimeout(() => {
                 ads = ads.filter(ad => ad.id !== adId);
                 favorites = favorites.filter(id => id !== adId);
@@ -1334,8 +1344,7 @@
                     Telegram.WebApp.CloudStorage.setItem('favorites', JSON.stringify(favorites));
                     Telegram.WebApp.CloudStorage.setItem('likesDislikes', JSON.stringify(likesDislikes));
                 }
-                adItem.remove();
-                animateAdOrder();
+                renderAds();
             }, 500);
         }
 
@@ -1344,6 +1353,13 @@
             const adItem = document.querySelector(`.ad-item[data-ad-id="${adId}"]`);
             if (!adItem) return;
             adItem.classList.add('removing');
+            const adItems = Array.from(document.querySelectorAll('.ad-item'));
+            const adIndex = adItems.findIndex(item => item.dataset.adId === adId);
+            const adHeight = adItem.offsetHeight + 16; // Высота + gap
+            adItems.slice(adIndex + 1).forEach(item => {
+                item.style.transition = 'transform 0.5s ease';
+                item.style.transform = `translateY(-${adHeight}px)`;
+            });
             setTimeout(() => {
                 hiddenAds.push(adId);
                 favorites = favorites.filter(id => id !== adId);
@@ -1353,8 +1369,7 @@
                     Telegram.WebApp.CloudStorage.setItem('hiddenAds', JSON.stringify(hiddenAds));
                     Telegram.WebApp.CloudStorage.setItem('favorites', JSON.stringify(favorites));
                 }
-                adItem.remove();
-                animateAdOrder();
+                renderAds();
             }, 500);
         }
 
@@ -1447,6 +1462,7 @@
         let touchCurrentY = 0;
         let isPulling = false;
         function handleTouchStart(e) {
+            if (e.target.closest('.ad-item')) return; // Игнорировать клики на объявления
             if (window.scrollY === 0) {
                 touchStartY = e.touches[0].clientY;
                 isPulling = true;
@@ -1553,10 +1569,10 @@
             const searchInput = document.getElementById('search');
             const createButton = document.querySelector('button[data-modal-open="createDialog"]');
             const accountButton = document.querySelector('.floating-btn');
-            if (searchInput.value.trim() !== '') {
+            if (document.activeElement === searchInput) {
                 createButton.classList.add('hidden');
                 accountButton.classList.add('hidden');
-            } else {
+            } else if (searchInput.value.trim() === '') {
                 createButton.classList.remove('hidden');
                 accountButton.classList.remove('hidden');
             }
@@ -1644,8 +1660,8 @@
         document.getElementById('birthYear')?.addEventListener('input', updateProfileAge);
         document.getElementById('adTitle').addEventListener('input', updateCounters);
         document.getElementById('adDescription').addEventListener('input', updateCounters);
-        document.getElementById('search').addEventListener('input', toggleSearchButtons);
         document.getElementById('search').addEventListener('focus', toggleSearchButtons);
+        document.getElementById('search').addEventListener('input', toggleSearchButtons);
         document.getElementById('search').addEventListener('blur', toggleSearchButtons);
         document.addEventListener('click', closeMenus);
         document.addEventListener('click', triggerVibration);
