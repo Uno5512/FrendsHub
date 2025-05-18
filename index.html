@@ -259,7 +259,6 @@
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
             position: relative;
             transition: transform 0.5s ease, opacity 0.5s ease;
-            cursor: pointer;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
@@ -289,6 +288,7 @@
             word-wrap: break-word;
             white-space: normal;
             max-width: 100%;
+            cursor: pointer;
         }
 
         .ad-item p.description {
@@ -298,6 +298,7 @@
             hyphens: auto;
             word-wrap: break-word;
             white-space: normal;
+            cursor: pointer;
         }
 
         .ad-item p.tags {
@@ -315,9 +316,9 @@
 
         .creator-container {
             display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin: 8px 0;
+            flex-direction: column;
+            align-items: flex-start;
+            margin: 8px 0 4px 0;
         }
 
         .ad-avatar {
@@ -326,6 +327,7 @@
             border-radius: 50%;
             object-fit: cover;
             cursor: pointer;
+            margin-bottom: 4px;
         }
 
         .join-btn {
@@ -347,6 +349,8 @@
 
         .join-btn .participant-count {
             font-size: 12px;
+            pointer-events: auto;
+            cursor: pointer;
         }
 
         .join-btn .participant-avatars {
@@ -373,8 +377,8 @@
 
         .ad-item .user .user-info {
             display: flex;
-            flex-direction: column;
-            gap: 4px;
+            align-items: center;
+            gap: 8px;
         }
 
         .ad-item .user .name {
@@ -1066,11 +1070,6 @@
                 adItem.dataset.adId = ad.id;
                 adItem.style.opacity = '0';
                 adItem.style.transform = 'translateY(50px)';
-                adItem.onclick = (e) => {
-                    if (!e.target.closest('.user, .ad-actions, .menu-options, .ad-avatar')) {
-                        toggleAdExpansion(ad.id);
-                    }
-                };
                 const isLiked = likesDislikes[ad.id]?.likes.includes(userId);
                 const isDisliked = likesDislikes[ad.id]?.dislikes.includes(userId);
                 const isFavorited = favorites.includes(ad.id);
@@ -1083,14 +1082,14 @@
                     participantAvatarsHtml += `<img class="participant-avatar" src="${pAvatarSrc}" alt="Аватар участника ${pUserId}" style="z-index: ${pIndex}; transform: translateX(${pIndex * -8}px);">`;
                 });
                 adItem.innerHTML = `
-                    <h3>${ad.title}</h3>
+                    <h3 onclick="toggleAdExpansion('${ad.id}')">${ad.title}</h3>
                     <div class="ad-content">
-                        <p class="description">${ad.description}</p>
+                        <p class="description" onclick="toggleAdExpansion('${ad.id}')">${ad.description}</p>
                         <p class="tags"><small>Город: ${ad.city} | Вид: ${ad.type} | Дата: ${ad.date} | Пол: ${ad.gender} | ${new Date(ad.createdAt).toLocaleDateString()}</small></p>
                         <div class="creator-container">
                             <img class="ad-avatar" src="${avatarSrc}" alt="Аватар ${ad.userName}" onclick="openTelegramProfile('${ad.userId}')">
                             <div class="join-btn" style="width: ${100 + participantCount * 20}px">
-                                <span class="participant-count">${participantCount}</span>
+                                <span class="participant-count" onclick="toggleAdExpansion('${ad.id}')">${participantCount}</span>
                                 <div class="participant-avatars">${participantAvatarsHtml}</div>
                             </div>
                         </div>
@@ -1394,7 +1393,7 @@
                 document.getElementById('adDate').value = ad.date;
                 document.getElementById('adGender').value = ad.gender;
                 document.getElementById('adAge').value = ad.age ? ad.age.replace(' лет', '') : '';
-                title.textContent = 'Редактировать объявление';
+                titleDNAdiT.textContent = 'Редактировать объявление';
             } else {
                 document.getElementById('adTitle').value = '';
                 document.getElementById('adDescription').value = '';
