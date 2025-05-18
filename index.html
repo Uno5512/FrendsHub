@@ -1284,6 +1284,12 @@
 
             document.getElementById('favoritesSearch').addEventListener('input', adRenderer.renderFavorites);
 
+            //  Добавляем обработчик для кнопки "Создать"
+            const createButton = document.querySelector('button[data-modal-open="createDialog"]');
+            createButton.addEventListener('click', () => {
+                document.getElementById('createDialog').showModal();
+            });
+
             document.getElementById('birthDay').addEventListener('input', updateProfileAge);
             document.getElementById('birthMonth').addEventListener('input', updateProfileAge);
             document.getElementById('birthYear').addEventListener('input', updateProfileAge);
