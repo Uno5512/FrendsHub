@@ -188,7 +188,7 @@
               <option value="Женский">Женский</option>
               <option value="Не важно">Не важно</option>
             </select>
-            <select name="sort" onChange={handleFilterChange} className="p-2 rounded-lg border" aria-label="Сортировка">
+            <select name="sort" onChange={handleFilterChange} className="p-2 rounded-lg border" ariaWireless label="Сортировка">
               <option value="По рейтингу">По рейтингу</option>
               <option value="Верифицированные">Верифицированные</option>
               <option value="Новые">Новые</option>
@@ -199,7 +199,7 @@
       );
     }
 
-    // Announcement Component (Updated)
+    // Announcement Component
     function Announcement({ data, isOwn, onLike, onDislike, onParticipate, onEdit, onDelete }) {
       const [expanded, setExpanded] = useState(false);
       const [showOptions, setShowOptions] = useState(false);
@@ -374,7 +374,7 @@
       );
     }
 
-    // Main App Component
+    // Main App Component (Updated)
     function App() {
       const [user, setUser] = useState(null);
       const [isSynced, setIsSynced] = useState(null);
@@ -408,9 +408,9 @@
         setIsSynced(true);
       };
 
-      const handleSearch = (query, filters) => {
+      const handleSearch = (query, filters, newAnnouncements = announcements) => {
         setCurrentFilters({ query, filters });
-        let result = [...announcements];
+        let result = [...newAnnouncements];
         if (query) {
           const lowerQuery = query.toLowerCase();
           result = result.filter(a =>
@@ -438,7 +438,7 @@
       const handleLike = (id) => {
         setAnnouncements(prev => {
           const updated = prev.map(a => (a.id === id ? { ...a, likes: a.likes + 1 } : a));
-          handleSearch(currentFilters.query, currentFilters.filters); // Reapply filters
+          handleSearch(currentFilters.query, currentFilters.filters, updated);
           return updated;
         });
       };
@@ -446,7 +446,7 @@
       const handleDislike = (id) => {
         setAnnouncements(prev => {
           const updated = prev.map(a => (a.id === id ? { ...a, dislikes: a.dislikes + 1 } : a));
-          handleSearch(currentFilters.query, currentFilters.filters); // Reapply filters
+          handleSearch(currentFilters.query, currentFilters.filters, updated);
           return updated;
         });
       };
@@ -486,7 +486,31 @@
         };
         setAnnouncements(prev => {
           const updated = [...prev, newAnnouncement];
-          handleSearch(currentFilters.query, currentFilters.filters); // Reapply filters
+          setFilteredAnnouncements(prevFiltered => {
+            let result = [...prevFiltered, newAnnouncement];
+            if (currentFilters.query) {
+              const lowerQuery = currentFilters.query.toLowerCase();
+              result = result.filter(a =>
+                a.title.toLowerCase().includes(lowerQuery) ||
+                a.description.toLowerCase().includes(lowerQuery) ||
+                a.metatags.some(tag => tag.toLowerCase().includes(lowerQuery))
+              );
+            }
+            result = result.filter(a =>
+              (!currentFilters.filters.city || a.metatags.includes(currentFilters.filters.city)) &&
+              (!currentFilters.filters.type || a.metatags.includes(currentFilters.filters.type)) &&
+              (!currentFilters.filters.date || a.metatags.includes(currentFilters.filters.date)) &&
+              (!currentFilters.filters.gender || a.metatags.includes(currentFilters.filters.gender))
+            );
+            if (currentFilters.filters.sort === 'По рейтингу') {
+              result.sort((a, b) => (b.likes - b.dislikes) - (a.likes - a.dislikes));
+            } else if (currentFilters.filters.sort === 'Новые') {
+              result.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+            } else if (currentFilters.filters.sort === 'Старые') {
+              result.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+            }
+            return result;
+          });
           return updated;
         });
       };
@@ -494,7 +518,7 @@
       const handleDelete = (id) => {
         setAnnouncements(prev => {
           const updated = prev.filter(a => a.id !== id);
-          handleSearch(currentFilters.query, currentFilters.filters); // Reapply filters
+          handleSearch(currentFilters.query, currentFilters.filters, updated);
           return updated;
         });
       };
