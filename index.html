@@ -26,21 +26,25 @@
 <body>
   <div id="root"></div>
   <template id="city-options">
+    <option value="">Любой город</option>
     <option value="Москва">Москва</option>
     <option value="Казань">Казань</option>
     <option value="Санкт-Петербург">Санкт-Петербург</option>
   </template>
   <template id="type-options">
+    <option value="">Любой тип</option>
     <option value="Прогулка">Прогулка</option>
     <option value="Общение">Общение</option>
     <option value="Игры">Игры</option>
   </template>
   <template id="date-options">
+    <option value="">Любая дата</option>
     <option value="Сегодня">Сегодня</option>
     <option value="Завтра">Завтра</option>
     <option value="На неделе">На неделе</option>
   </template>
   <template id="gender-options">
+    <option value="">Любой пол</option>
     <option value="Мужской">Мужской</option>
     <option value="Женский">Женский</option>
     <option value="Не важно">Не важно</option>
@@ -136,14 +140,14 @@
       );
     }
 
-    // Search Bar Component
+    // Search Bar Component (Updated)
     function SearchBar({ onSearch }) {
       const [query, setQuery] = useState('');
       const [filters, setFilters] = useState({
-        city: 'Москва',
-        type: 'Прогулка',
-        date: 'Сегодня',
-        gender: 'Не важно',
+        city: '',
+        type: '',
+        date: '',
+        gender: '',
         sort: 'По рейтингу'
       });
 
@@ -153,42 +157,49 @@
         onSearch(query, { ...filters, [name]: value });
       };
 
+      const handleSearchChange = (e) => {
+        const newQuery = e.target.value;
+        setQuery(newQuery);
+        onSearch(newQuery, filters);
+      };
+
       return (
         <section className="p-4">
           <input
             type="search"
             placeholder="Поиск..."
             value={query}
-            onChange={(e) => {
-              setQuery(e.target.value);
-              onSearch(e.target.value, filters);
-            }}
+            onChange={handleSearchChange}
             className="w-full p-2 mb-4 rounded-[22px] border"
             aria-label="Поиск объявлений"
           />
           <fieldset className="flex flex-wrap gap-2">
             <legend className="sr-only">Фильтры</legend>
-            <select name="city" onChange={handleFilterChange} className="p-2 rounded-lg border" aria-label="Город">
+            <select name="city" value={filters.city} onChange={handleFilterChange} className="p-2 rounded-lg border" aria-label="Город">
+              <option value="">Любой город</option>
               <option value="Москва">Москва</option>
               <option value="Казань">Казань</option>
               <option value="Санкт-Петербург">Санкт-Петербург</option>
             </select>
-            <select name="type" onChange={handleFilterChange} className="p-2 rounded-lg border" aria-label="Вид">
+            <select name="type" value={filters.type} onChange={handleFilterChange} className="p-2 rounded-lg border" aria-label="Вид">
+              <option value="">Любой тип</option>
               <option value="Прогулка">Прогулка</option>
               <option value="Общение">Общение</option>
               <option value="Игры">Игры</option>
             </select>
-            <select name="date" onChange={handleFilterChange} className="p-2 rounded-lg border" aria-label="Дата">
+            <select name="date" value={filters.date} onChange={handleFilterChange} className="p-2 rounded-lg border" aria-label="Дата">
+              <option value="">Любая дата</option>
               <option value="Сегодня">Сегодня</option>
               <option value="Завтра">Завтра</option>
               <option value="На неделе">На неделе</option>
             </select>
-            <select name="gender" onChange={handleFilterChange} className="p-2 rounded-lg border" aria-label="Пол">
+            <select name="gender" value={filters.gender} onChange={handleFilterChange} className="p-2 rounded-lg border" aria-label="Пол">
+              <option value="">Любой пол</option>
               <option value="Мужской">Мужской</option>
               <option value="Женский">Женский</option>
               <option value="Не важно">Не важно</option>
             </select>
-            <select name="sort" onChange={handleFilterChange} className="p-2 rounded-lg border" ariaWireless label="Сортировка">
+            <select name="sort" value={filters.sort} onChange={handleFilterChange} className="p-2 rounded-lg border" aria-label="Сортировка">
               <option value="По рейтингу">По рейтингу</option>
               <option value="Верифицированные">Верифицированные</option>
               <option value="Новые">Новые</option>
@@ -209,8 +220,8 @@
       const handleOptionsClick = (e) => {
         const rect = buttonRef.current.getBoundingClientRect();
         setMenuPosition({
-          top: rect.bottom + window.scrollY + 4, // 4px offset below button
-          left: rect.right + window.scrollX - 120 // 120px width of menu
+          top: rect.bottom + window.scrollY + 4,
+          left: rect.right + window.scrollX - 120
         });
         setShowOptions(!showOptions);
       };
@@ -397,7 +408,7 @@
       const [showAccount, setShowAccount] = useState(false);
       const [showCreate, setShowCreate] = useState(false);
       const [applications, setApplications] = useState([]);
-      const [currentFilters, setCurrentFilters] = useState({ query: '', filters: {} });
+      const [currentFilters, setCurrentFilters] = useState({ query: '', filters: { city: '', type: '', date: '', gender: '', sort: 'По рейтингу' } });
 
       useEffect(() => {
         setTimeout(() => setIsSynced(Math.random() > 0.5), 1000); // Simulate Telegram sync
@@ -411,7 +422,9 @@
       const handleSearch = (query, filters, newAnnouncements = announcements) => {
         setCurrentFilters({ query, filters });
         let result = [...newAnnouncements];
-        if (query) {
+
+        // Apply search query filter
+        if (query.trim()) {
           const lowerQuery = query.toLowerCase();
           result = result.filter(a =>
             a.title.toLowerCase().includes(lowerQuery) ||
@@ -419,19 +432,33 @@
             a.metatags.some(tag => tag.toLowerCase().includes(lowerQuery))
           );
         }
-        result = result.filter(a =>
-          (!filters.city || a.metatags.includes(filters.city)) &&
-          (!filters.type || a.metatags.includes(filters.type)) &&
-          (!filters.date || a.metatags.includes(filters.date)) &&
-          (!filters.gender || a.metatags.includes(filters.gender))
-        );
+
+        // Apply filters only if they are explicitly set
+        if (filters.city) {
+          result = result.filter(a => a.metatags.includes(filters.city));
+        }
+        if (filters.type) {
+          result = result.filter(a => a.metatags.includes(filters.type));
+        }
+        if (filters.date) {
+          result = result.filter(a => a.metatags.includes(filters.date));
+        }
+        if (filters.gender) {
+          result = result.filter(a => a.metatags.includes(filters.gender));
+        }
+
+        // Apply sorting
         if (filters.sort === 'По рейтингу') {
           result.sort((a, b) => (b.likes - b.dislikes) - (a.likes - a.dislikes));
         } else if (filters.sort === 'Новые') {
           result.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
         } else if (filters.sort === 'Старые') {
           result.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+        } else if (filters.sort === 'Верифицированные') {
+          // Placeholder for verified sorting
+          result.sort((a, b) => (b.likes - b.dislikes) - (a.likes - a.dislikes));
         }
+
         setFilteredAnnouncements(result);
       };
 
@@ -488,7 +515,7 @@
           const updated = [...prev, newAnnouncement];
           setFilteredAnnouncements(prevFiltered => {
             let result = [...prevFiltered, newAnnouncement];
-            if (currentFilters.query) {
+            if (currentFilters.query.trim()) {
               const lowerQuery = currentFilters.query.toLowerCase();
               result = result.filter(a =>
                 a.title.toLowerCase().includes(lowerQuery) ||
@@ -496,12 +523,18 @@
                 a.metatags.some(tag => tag.toLowerCase().includes(lowerQuery))
               );
             }
-            result = result.filter(a =>
-              (!currentFilters.filters.city || a.metatags.includes(currentFilters.filters.city)) &&
-              (!currentFilters.filters.type || a.metatags.includes(currentFilters.filters.type)) &&
-              (!currentFilters.filters.date || a.metatags.includes(currentFilters.filters.date)) &&
-              (!currentFilters.filters.gender || a.metatags.includes(currentFilters.filters.gender))
-            );
+            if (currentFilters.filters.city) {
+              result = result.filter(a => a.metatags.includes(currentFilters.filters.city));
+            }
+            if (currentFilters.filters.type) {
+              result = result.filter(a => a.metatags.includes(currentFilters.filters.type));
+            }
+            if (currentFilters.filters.date) {
+              result = result.filter(a => a.metatags.includes(currentFilters.filters.date));
+            }
+            if (currentFilters.filters.gender) {
+              result = result.filter(a => a.metatags.includes(currentFilters.filters.gender));
+            }
             if (currentFilters.filters.sort === 'По рейтингу') {
               result.sort((a, b) => (b.likes - b.dislikes) - (a.likes - a.dislikes));
             } else if (currentFilters.filters.sort === 'Новые') {
