@@ -226,7 +226,7 @@
         }
 
         .ad-item.expanded .ad-content {
-            max-height: 500px;
+            max-height: 600px;
             opacity: 1;
         }
 
@@ -234,11 +234,9 @@
             font-size: 18px;
             margin-bottom: 8px;
             color: #1A2A44;
+            word-wrap: break-word;
             white-space: normal;
-            display: -webkit-box;
-            -webkit-box-orient: vertical;
-            -webkit-line-clamp: 2;
-            overflow: hidden;
+            max-width: 100%;
         }
 
         .ad-item p.description {
@@ -260,20 +258,21 @@
             max-height: 0;
             opacity: 0;
             overflow: hidden;
-            transition: max-height 0.5s ease, opacity 0.5s ease;
+            transition: max-height 0.7s ease-in-out, opacity 0.7s ease-in-out;
         }
 
         .ad-item .user {
             display: flex;
             align-items: center;
-            gap: 8px;
-            margin-bottom: 8px;
             justify-content: space-between;
+            margin-top: 16px;
+            padding-bottom: 8px;
         }
 
         .ad-item .user .user-info {
             display: flex;
-            flex-direction: column;
+            align-items: center;
+            gap: 8px;
         }
 
         .ad-item .user .name {
@@ -447,6 +446,18 @@
             padding: 8px;
             border-radius: 8px;
             font-size: 14px;
+        }
+
+        .reset-btn {
+            background: #987eeb;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 10px;
+            font-size: 16px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 16px;
         }
 
         .notification {
@@ -646,6 +657,7 @@
             </div>
             <input type="text" id="favoritesSearch" placeholder="Поиск по избранному" aria-label="Поиск по избранным объявлениям">
             <div class="favorites-list" id="favoritesList"></div>
+            <button class="reset-btn" onclick="resetApp()">Сбросить</button>
             <button class="close-btn" onclick="document.getElementById('favoritesDialog').close()">Закрыть</button>
         </div>
     </dialog>
@@ -683,8 +695,8 @@
             }
         }
 
-        // Глобальные данные
-        let ads = [
+        // Начальные данные
+        const defaultAds = [
             {
                 id: 'ad-1',
                 userId: 'user-1',
@@ -712,6 +724,7 @@
                 createdAt: '2025-05-16T00:00:00Z'
             }
         ];
+        let ads = [...defaultAds];
         let hiddenAds = [];
         let favorites = [];
         let likesDislikes = { 'ad-1': { likes: [], dislikes: [] }, 'ad-2': { likes: [], dislikes: [] } };
@@ -719,6 +732,35 @@
         let renderedAdsCount = 0;
         const lazyLoadBatchSize = 10;
         let previousAdPositions = {};
+
+        // Сброс приложения
+        function resetApp() {
+            // Сброс фильтров
+            document.getElementById('search').value = '';
+            document.getElementById('city').value = '';
+            document.getElementById('type').value = '';
+            document.getElementById('date').value = '';
+            document.getElementById('gender').value = '';
+            document.getElementById('sort').value = 'rating';
+
+            // Очистка кеша
+            localStorage.clear();
+            if (isTelegramMode) {
+                Telegram.WebApp.CloudStorage.removeItems(['ads', 'hiddenAds', 'favorites', 'likesDislikes'], (error) => {
+                    if (error) console.error('Failed to clear CloudStorage:', error);
+                });
+            }
+
+            // Сброс данных
+            ads = [...defaultAds];
+            hiddenAds = [];
+            favorites = [];
+            likesDislikes = { 'ad-1': { likes: [], dislikes: [] }, 'ad-2': { likes: [], dislikes: [] } };
+
+            // Обновление UI
+            showNotification('Настройки сброшены');
+            renderAds();
+        }
 
         // Загрузка данных
         function loadCloudData() {
@@ -931,6 +973,10 @@
                 const isFavorited = favorites.includes(ad.id);
                 adItem.innerHTML = `
                     <h3>${ad.title}</h3>
+                    <div class="ad-content">
+                        <p class="description">${ad.description}</p>
+                        <p class="tags"><small>Город: ${ad.city} | Вид: ${ad.type} | Дата: ${ad.date} | Пол: ${ad.gender} | ${new Date(ad.createdAt).toLocaleDateString()}</small></p>
+                    </div>
                     <div class="user">
                         <div class="user-info">
                             <span class="name" onclick="openTelegramProfile('${ad.userId}')">${ad.userName}</span>
@@ -944,10 +990,6 @@
                             <span class="action dislike ${isDisliked ? 'disliked' : ''}" onclick="toggleDislike('${ad.id}')" title="Дизлайк">👎</span>
                             <span class="menu" onclick="toggleMenu('${ad.id}')">•••</span>
                         </div>
-                    </div>
-                    <div class="ad-content">
-                        <p class="description">${ad.description}</p>
-                        <p class="tags"><small>Город: ${ad.city} | Вид: ${ad.type} | Дата: ${ad.date} | Пол: ${ad.gender} | ${new Date(ad.createdAt).toLocaleDateString()}</small></p>
                     </div>
                     <div class="menu-options" id="menu-${ad.id}">
                         ${ad.userId === userId ? `
