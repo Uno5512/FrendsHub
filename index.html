@@ -54,20 +54,6 @@
             z-index: 100;
         }
 
-        .participants-avatars {
-            display: flex;
-            flex-direction: row;
-            gap: -8px;
-        }
-
-        .participant-avatar {
-            width: 24px;
-            height: 24px;
-            border-radius: 50%;
-            object-fit: cover;
-            border: 1px solid #f6e1bc;
-        }
-
         .refresh-loader {
             display: none;
             text-align: center;
@@ -327,20 +313,62 @@
             margin-bottom: 16px;
         }
 
-        .ad-item .user {
+        .creator-container {
             display: flex;
-            align-items: flex-start;
             justify-content: space-between;
-            margin-top: auto;
-            gap: 12px;
+            align-items: center;
+            margin: 8px 0;
         }
 
-        .ad-item .user .ad-avatar {
+        .ad-avatar {
             width: 48px;
             height: 48px;
             border-radius: 50%;
             object-fit: cover;
             cursor: pointer;
+        }
+
+        .join-btn {
+            background: #987eeb;
+            color: #fff;
+            border: none;
+            border-radius: 12px;
+            padding: 4px 8px;
+            font-size: 12px;
+            pointer-events: none;
+            min-width: 100px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: width 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .join-btn .participant-count {
+            font-size: 12px;
+        }
+
+        .join-btn .participant-avatars {
+            display: flex;
+            flex-direction: row;
+            gap: -8px;
+        }
+
+        .join-btn .participant-avatar {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 1px solid #f6e1bc;
+        }
+
+        .ad-item .user {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: auto;
+            gap: 12px;
         }
 
         .ad-item .user .user-info {
@@ -365,19 +393,6 @@
             display: flex;
             align-items: center;
             gap: 12px;
-        }
-
-        .join-btn {
-            background: #987eeb;
-            color: #fff;
-            border: none;
-            border-radius: 12px;
-            padding: 4px 8px;
-            font-size: 12px;
-            cursor: pointer;
-            min-width: 100px;
-            transition: width 0.3s ease;
-            white-space: nowrap;
         }
 
         .ad-actions .action {
@@ -618,7 +633,6 @@
                     </select>
                 </div>
             </form>
-            <div class="participants-avatars" id="participantsAvatars"></div>
             <div class="refresh-loader" id="refreshLoader">
                 <span class="dot"></span>
                 <span class="dot"></span>
@@ -761,14 +775,6 @@
             <div class="favorites-list" id="favoritesList"></div>
             <button class="reset-btn" onclick="resetApp()">Сбросить</button>
             <button class="close-btn" onclick="document.getElementById('favoritesDialog').close()">Закрыть</button>
-        </div>
-    </dialog>
-
-    <dialog id="joinDialog" aria-labelledby="joinTitle">
-        <div class="modal-content">
-            <h2 id="joinTitle">Участие в событии</h2>
-            <p>Вы участвуете в событии. Если вас выберут, вам будет доступен контакт.</p>
-            <button class="close-btn" onclick="document.getElementById('joinDialog').close()">Закрыть</button>
         </div>
     </dialog>
 
@@ -1046,25 +1052,6 @@
                 observer.observe(sentinel);
             }
             renderFavorites();
-            renderParticipants();
-        }
-
-        // Рендеринг аватарок участников
-        function renderParticipants() {
-            const participantsAvatars = document.getElementById('participantsAvatars');
-            participantsAvatars.innerHTML = '';
-            const allParticipants = Object.entries(participants).flatMap(([adId, users]) =>
-                users.map((userId, index) => ({ userId, adId, index }))
-            );
-            allParticipants.forEach(({ userId, adId, index }) => {
-                const avatar = document.createElement('img');
-                avatar.className = 'participant-avatar';
-                avatar.src = userId === 'user-1' ? 'https://mir-s3-cdn-cf.behance.net/project_modules/fs_webp/51174a180992325.6514258f750ff.jpg' : 'https://mir-s3-cdn-cf.behance.net/project_modules/fs/90e60f125956251.6123f46744b17.jpg';
-                avatar.alt = `Аватар участника ${userId}`;
-                avatar.style.zIndex = index;
-                avatar.style.transform = `translateX(${index * -8}px)`;
-                participantsAvatars.appendChild(avatar);
-            });
         }
 
         // Рендеринг партии объявлений
@@ -1080,7 +1067,7 @@
                 adItem.style.opacity = '0';
                 adItem.style.transform = 'translateY(50px)';
                 adItem.onclick = (e) => {
-                    if (!e.target.closest('.user, .ad-actions, .menu-options, .ad-avatar, .join-btn')) {
+                    if (!e.target.closest('.user, .ad-actions, .menu-options, .ad-avatar')) {
                         toggleAdExpansion(ad.id);
                     }
                 };
@@ -1089,20 +1076,32 @@
                 const isFavorited = favorites.includes(ad.id);
                 const avatarSrc = ad.userId === 'user-1' ? 'https://mir-s3-cdn-cf.behance.net/project_modules/fs_webp/51174a180992325.6514258f750ff.jpg' : 'https://mir-s3-cdn-cf.behance.net/project_modules/fs/90e60f125956251.6123f46744b17.jpg';
                 const participantCount = participants[ad.id]?.length || 0;
+                const rating = (likesDislikes[ad.id]?.likes?.length || 0) - (likesDislikes[ad.id]?.dislikes?.length || 0);
+                let participantAvatarsHtml = '';
+                participants[ad.id]?.forEach((pUserId, pIndex) => {
+                    const pAvatarSrc = pUserId === 'user-1' ? 'https://mir-s3-cdn-cf.behance.net/project_modules/fs_webp/51174a180992325.6514258f750ff.jpg' : 'https://mir-s3-cdn-cf.behance.net/project_modules/fs/90e60f125956251.6123f46744b17.jpg';
+                    participantAvatarsHtml += `<img class="participant-avatar" src="${pAvatarSrc}" alt="Аватар участника ${pUserId}" style="z-index: ${pIndex}; transform: translateX(${pIndex * -8}px);">`;
+                });
                 adItem.innerHTML = `
                     <h3>${ad.title}</h3>
                     <div class="ad-content">
                         <p class="description">${ad.description}</p>
                         <p class="tags"><small>Город: ${ad.city} | Вид: ${ad.type} | Дата: ${ad.date} | Пол: ${ad.gender} | ${new Date(ad.createdAt).toLocaleDateString()}</small></p>
+                        <div class="creator-container">
+                            <img class="ad-avatar" src="${avatarSrc}" alt="Аватар ${ad.userName}" onclick="openTelegramProfile('${ad.userId}')">
+                            <div class="join-btn" style="width: ${100 + participantCount * 20}px">
+                                <span class="participant-count">${participantCount}</span>
+                                <div class="participant-avatars">${participantAvatarsHtml}</div>
+                            </div>
+                        </div>
                     </div>
                     <div class="user">
-                        <img class="ad-avatar" src="${avatarSrc}" alt="Аватар ${ad.userName}" onclick="openTelegramProfile('${ad.userId}')">
                         <div class="user-info">
                             <span class="name" onclick="openTelegramProfile('${ad.userId}')">${ad.userName}</span>
                             <span class="age">${ad.age || 'Не указан'}</span>
                         </div>
                         <div class="ad-actions">
-                            <button class="join-btn" style="width: ${100 + participantCount * 20}px" onclick="joinEvent('${ad.id}')">${participantCount} участников</button>
+                            <span class="counter">${rating}</span>
                             <span class="action share" onclick="shareAd('${ad.id}')"><img src="https://uno5512.github.io/FrendsHub/5.png" alt="Поделиться"></span>
                             <span class="action favorite ${isFavorited ? 'favorited' : ''}" onclick="toggleFavorite('${ad.id}')"><img src="https://uno5512.github.io/FrendsHub/4.png" alt="Избранное"></span>
                             <span class="action like ${isLiked ? 'liked' : ''}" onclick="toggleLike('${ad.id}')"><img src="https://uno5512.github.io/FrendsHub/2.png" alt="Лайк"></span>
@@ -1139,14 +1138,22 @@
                 if (isTelegramMode) {
                     Telegram.WebApp.CloudStorage.setItem('participants', JSON.stringify(participants));
                 }
-                const joinBtn = document.querySelector(`.ad-item[data-ad-id="${adId}"] .join-btn`);
-                if (joinBtn) {
-                    joinBtn.style.width = `${100 + participants[adId].length * 20}px`;
-                    joinBtn.textContent = `${participants[adId].length} участников`;
+                const adItem = document.querySelector(`.ad-item[data-ad-id="${adId}"]`);
+                if (adItem) {
+                    const joinBtn = adItem.querySelector('.join-btn');
+                    const participantCount = participants[adId].length;
+                    joinBtn.style.width = `${100 + participantCount * 20}px`;
+                    joinBtn.querySelector('.participant-count').textContent = participantCount;
+                    const participantAvatars = joinBtn.querySelector('.participant-avatars');
+                    const newAvatar = document.createElement('img');
+                    newAvatar.className = 'participant-avatar';
+                    newAvatar.src = userId === 'user-1' ? 'https://mir-s3-cdn-cf.behance.net/project_modules/fs_webp/51174a180992325.6514258f750ff.jpg' : 'https://mir-s3-cdn-cf.behance.net/project_modules/fs/90e60f125956251.6123f46744b17.jpg';
+                    newAvatar.alt = `Аватар участника ${userId}`;
+                    newAvatar.style.zIndex = participantCount - 1;
+                    newAvatar.style.transform = `translateX(${(participantCount - 1) * -8}px)`;
+                    participantAvatars.appendChild(newAvatar);
                 }
-                renderParticipants();
-                const dialog = document.getElementById('joinDialog');
-                dialog.showModal();
+                alert('Вы участвуете в событии. Если вас выберут, вам будет доступен контакт.');
             } else {
                 showNotification('Вы уже участвуете в этом событии');
             }
@@ -1204,7 +1211,7 @@
 
         // Вибрация при клике
         function triggerVibration(event) {
-            if (navigator.vibrate && (event.target.tagName === 'BUTTON' || event.target.closest('.action') || event.target.closest('.join-btn'))) {
+            if (navigator.vibrate && (event.target.tagName === 'BUTTON' || event.target.closest('.action'))) {
                 navigator.vibrate(50);
             }
         }
@@ -1219,9 +1226,11 @@
             const likeButton = adItem.querySelector('.action.like');
             const dislikeButton = adItem.querySelector('.action.dislike');
             const favoriteButton = adItem.querySelector('.action.favorite');
+            const counter = adItem.querySelector('.counter');
             likeButton.classList.toggle('liked', isLiked);
             dislikeButton.classList.toggle('disliked', isDisliked);
             favoriteButton.classList.toggle('favorited', isFavorited);
+            counter.textContent = (likesDislikes[adId]?.likes?.length || 0) - (likesDislikes[adId]?.dislikes?.length || 0);
             if (document.getElementById('sort').value === 'rating') {
                 animateAdOrder();
             }
