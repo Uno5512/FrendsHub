@@ -1121,13 +1121,7 @@
                         `}
                     </div>
                 `;
-
                 adList.appendChild(adItem);
-                adItem.addEventListener('click', (e) => {
-                    if (!e.target.closest('h3') && !e.target.closest('.description')) {
-                        hideAd(ad.id);
-                    }
-                });
                 setTimeout(() => {
                     adItem.style.opacity = '1';
                     adItem.style.transform = 'translateY(0)';
@@ -1571,7 +1565,7 @@
             editAdId = null;
         });
 
-        // Свайпы
+// Свайпы
         function handleSwipe(adId, element) {
             let startX = 0;
             let currentX = 0;
@@ -1592,7 +1586,7 @@
                 }
             });
 
-            element.addEventListener('touchend', () => {
+            element.addEventListener('touchend', (e) => {
                 if (!isSwiping) return;
                 isSwiping = false;
                 const deltaX = currentX - startX;
