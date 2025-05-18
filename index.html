@@ -1430,38 +1430,55 @@
         };
 
         // Создание объявления
-        const createAd = (e) => {
-            try {
-                e.preventDefault();
-                const titleInput = document.getElementById('adTitle');
-                const descriptionInput = document.getElementById('adDescription');
-                
-                if (!titleInput || !descriptionInput) {
-                    utils.showNotification('Ошибка: поля формы не найдены');
-                    return;
-                }
+	const createAd = (e) => {
+	    try {
+	        e.preventDefault();
+	        const form = document.getElementById('create-ad-form');
+	        const titleInput = document.getElementById('adTitle');
+	        const descriptionInput = document.getElementById('adDescription');
+	
+	        if (!form || !titleInput || !descriptionInput) {
+	            utils.showNotification('Ошибка: поля формы не найдены');
+	            console.error('Form elements not found:', { form, titleInput, descriptionInput });
+	            return;
+	        }
+	
+	        const title = titleInput.value.trim();
+	        const description = descriptionInput.value.trim();
+	
+	        console.log('Creating ad with:', { title, description }); // Отладочный вывод
+	
+	        if (!title || !description) {
+	            utils.showNotification('Пожалуйста, заполните заголовок и описание');
+	            return;
+	        }
+	
+	        const newAd = {
+	            id: Date.now().toString(),
+	            title,
+	            description,
+	            city: document.getElementById('adCity').value || 'Москва',
+	            type: document.getElementById('adType').value || 'Встреча',
+	            date: document.getElementById('adDate').value || 'Сегодня',
+	            gender: document.getElementById('adGender').value || 'Любой',
+	            age: document.getElementById('adAge').value || '',
+	            userId: appState.userId,
+	            userName: appState.userName,
+	            createdAt: new Date().toISOString()
+	        };
 
-                const title = titleInput.value.trim();
-                const description = descriptionInput.value.trim();
-                
-                if (!title || !description) {
-                    utils.showNotification('Заголовок и описание обязательны');
-                    return;
-                }
-
-                const newAd = {
-                    id: Date.now().toString(),
-                    title,
-                    description,
-                    city: document.getElementById('adCity').value,
-                    type: document.getElementById('adType').value,
-                    date: document.getElementById('adDate').value,
-                    gender: document.getElementById('adGender').value,
-                    age: document.getElementById('adAge').value,
-                    userId: appState.userId,
-                    userName: appState.userName,
-                    createdAt: new Date().toISOString()
-                };
+        appState.ads.push(newAd);
+        localStorage.setItem('ads', JSON.stringify(appState.ads));
+        form.reset();
+        updateCounters();
+        utils.closeDialog('createDialog');
+        renderAds();
+        utils.showNotification('Объявление успешно создано');
+    } catch (error) {
+        console.error('Ошибка при создании объявления:', error);
+        utils.showNotification('Не удалось создать объявление');
+    }
+};
                 
                 appState.ads.push(newAd);
                 localStorage.setItem('ads', JSON.stringify(appState.ads));
