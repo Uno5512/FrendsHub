@@ -41,6 +41,7 @@
 
         .search-filter-container {
             background: #f1d299;
+            border: 2px solid #f6e1bc;
             border-radius: 22px;
             padding: 8px;
             margin-bottom: 16px;
@@ -82,7 +83,7 @@
             padding: 4px;
             font-size: 18px;
             background: #f1d299;
-            border: none;
+            border: 1px solid #f6e1bc;
             border-radius: 22px;
             cursor: pointer;
             flex: 1;
@@ -220,13 +221,13 @@
         .ad-item h3 {
             font-size: 18px;
             margin-bottom: 8px;
-            color: #2f5f7b;
+            color: #1A2A44;
         }
 
         .ad-item p {
             font-size: 14px;
-            color: #2f5f7b;
-            line-height: 60pt;
+            color: #555;
+            line-height: normal;
         }
 
         .ad-item .user {
@@ -236,9 +237,34 @@
             margin-bottom: 8px;
         }
 
-        .ad-item .user span {
+        .ad-item .user img {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .ad-item .user .user-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .ad-item .user .name {
+            font-size: 16px;
+            font-weight: 500;
             color: #007bff;
             cursor: pointer;
+        }
+
+        .ad-item .user .age {
+            font-size: 14px;
+            color: #555;
+        }
+
+        .ad-item hr {
+            border: none;
+            border-top: 1px solid #d7e0aa;
+            margin: 8px 0;
         }
 
         .ad-actions {
@@ -537,7 +563,7 @@
                 <label><input type="radio" name="dateOption" value="Завтра"> Завтра</label>
                 <label><input type="radio" name="dateOption" value="На неделе"> На неделе</label>
             </div>
-            <button type="button" onclick="document.getElementById('cityDialog').close()" aria-label="Отменить выбор даты">Отменить</button>
+            <button type="button" onclick="document.getElementById('dateDialog').close()" aria-label="Отменить выбор даты">Отменить</button>
             <button type="submit">Применить</button>
         </form>
     </dialog>
@@ -616,6 +642,7 @@
                 type: 'Встреча',
                 date: 'Сегодня',
                 gender: 'Любой',
+                age: '15 лет',
                 createdAt: '2025-05-17T00:00:00Z'
             },
             {
@@ -628,6 +655,7 @@
                 type: 'Чат',
                 date: 'Завтра',
                 gender: 'Любой',
+                age: '30 лет',
                 createdAt: '2025-05-16T00:00:00Z'
             }
         ];
@@ -813,8 +841,13 @@
                 const isFavorited = favorites.includes(ad.id);
                 adItem.innerHTML = `
                     <div class="user">
-                        <span onclick="openTelegramProfile('${ad.userId}')">${ad.userName}</span>
+                        <img src="https://via.placeholder.com/48" alt="Аватар ${ad.userName}">
+                        <div class="user-info">
+                            <span class="name" onclick="openTelegramProfile('${ad.userId}')">${ad.userName}</span>
+                            <span class="age">${ad.age || 'Не указан'}</span>
+                        </div>
                     </div>
+                    <hr>
                     <h3>${ad.title}</h3>
                     <p>${ad.description}</p>
                     <p><small>Город: ${ad.city} | Вид: ${ad.type} | Дата: ${ad.date} | Пол: ${ad.gender} | ${new Date(ad.createdAt).toLocaleDateString()}</small></p>
@@ -1136,6 +1169,7 @@
                     type,
                     date,
                     gender,
+                    age: '15 лет',
                     createdAt: new Date().toISOString()
                 });
                 likesDislikes[newAdId] = { likes: [], dislikes: [] };
@@ -1223,27 +1257,12 @@
 
         // Управление видимостью поиска при прокрутке
         let lastScrollY = window.scrollY;
-        function setupSearchContainerObserver() {
-            const searchContainer = document.querySelector('.search-filter-container');
-            const observer = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        searchContainer.classList.remove('hidden');
-                    } else {
-                        // Скрываем только при прокрутке вниз
-                        window.addEventListener('scroll', handleScroll);
-                    }
-                });
-            }, { root: null, threshold: 0 });
-
-            observer.observe(searchContainer);
-        }
-
         function handleScroll() {
             const searchContainer = document.querySelector('.search-filter-container');
             const currentScrollY = window.scrollY;
+            const containerHeight = searchContainer.offsetHeight;
 
-            if (currentScrollY > lastScrollY && currentScrollY > 100) {
+            if (currentScrollY > lastScrollY && currentScrollY > containerHeight) {
                 searchContainer.classList.add('hidden');
             } else if (currentScrollY < lastScrollY) {
                 searchContainer.classList.remove('hidden');
@@ -1313,11 +1332,11 @@
 
         document.addEventListener('click', closeMenus);
         document.addEventListener('click', triggerVibration);
+        window.addEventListener('scroll', handleScroll);
 
         // Инициализация
         loadCloudData().then(() => {
             setupDialogBackdropClose();
-            setupSearchContainerObserver();
             renderAds();
         });
     </script>
