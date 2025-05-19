@@ -8,6 +8,7 @@
   <script src="https://cdn.jsdelivr.net/npm/react@18.3.1/umd/react.production.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.26.9/babel.min.js"></script>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="manifest" href="data:application/manifest+json,{}">
   <style>
@@ -24,6 +25,14 @@
     .like-dislike-img {
       width: 24px;
       height: 24px;
+    }
+    .announcement-title {
+      word-break: break-word;
+      hyphens: auto;
+    }
+    .announcement-description {
+      word-break: break-word;
+      hyphens: auto;
     }
   </style>
 </head>
@@ -144,8 +153,8 @@
       );
     }
 
-    // Search Bar Component
-    function SearchBar({ onSearch }) {
+    // Search Bar Component (Updated)
+    function SearchBar({ onSearch, mode, onModeChange }) {
       const [query, setQuery] = useState('');
       const [filters, setFilters] = useState({
         city: '',
@@ -157,26 +166,54 @@
 
       const handleFilterChange = (e) => {
         const { name, value } = e.target;
-        setFilters(prev => ({ ...prev, [name]: value }));
-        onSearch(query, { ...prev, [name]: value });
+        setFilters(prevFilters => {
+          const updatedFilters = { ...prevFilters, [name]: value };
+          onSearch(query, updatedFilters, mode);
+          return updatedFilters;
+        });
       };
 
       const handleSearchChange = (e) => {
         const newQuery = e.target.value;
         setQuery(newQuery);
-        onSearch(newQuery, filters);
+        onSearch(newQuery, filters, mode);
+      };
+
+      const handleModeChange = (e) => {
+        const newMode = e.target.value;
+        onModeChange(newMode);
+        // Reset inapplicable filters for "friends" mode
+        const updatedFilters = {
+          ...filters,
+          type: newMode === 'friends' ? '' : filters.type,
+          date: newMode === 'friends' ? '' : filters.date
+        };
+        setFilters(updatedFilters);
+        onSearch(query, updatedFilters, newMode);
       };
 
       return (
         <section className="p-4">
           <input
             type="search"
-            placeholder="Поиск..."
+            placeholder={mode === 'events' ? 'Поиск событий...' : 'Поиск друзей...'}
             value={query}
             onChange={handleSearchChange}
             className="w-full p-2 mb-4 rounded-[22px] border"
-            aria-label="Поиск объявлений"
+            aria-label={mode === 'events' ? 'Поиск событий' : 'Поиск друзей'}
           />
+          <div className="flex flex-wrap gap-2 mb-4">
+            <select
+              name="mode"
+              value={mode}
+              onChange={handleModeChange}
+              className="p-2 rounded-lg border"
+              aria-label="Режим"
+            >
+              <option value="events">События</option>
+              <option value="friends">Друзья</option>
+            </select>
+          </div>
           <fieldset className="flex flex-wrap gap-2">
             <legend className="sr-only">Фильтры</legend>
             <select name="city" value={filters.city} onChange={handleFilterChange} className="p-2 rounded-lg border" aria-label="Город">
@@ -185,18 +222,22 @@
               <option value="Казань">Казань</option>
               <option value="Санкт-Петербург">Санкт-Петербург</option>
             </select>
-            <select name="type" value={filters.type} onChange={handleFilterChange} className="p-2 rounded-lg border" aria-label="Вид">
-              <option value="">Любой тип</option>
-              <option value="Прогулка">Прогулка</option>
-              <option value="Общение">Общение</option>
-              <option value="Игры">Игры</option>
-            </select>
-            <select name="date" value={filters.date} onChange={handleFilterChange} className="p-2 rounded-lg border" aria-label="Дата">
-              <option value="">Любая дата</option>
-              <option value="Сегодня">Сегодня</option>
-              <option value="Завтра">Завтра</option>
-              <option value="На неделе">На неделе</option>
-            </select>
+            {mode === 'events' && (
+              <>
+                <select name="type" value={filters.type} onChange={handleFilterChange} className="p-2 rounded-lg border" aria-label="Вид">
+                  <option value="">Любой тип</option>
+                  <option value="Прогулка">Прогулка</option>
+                  <option value="Общение">Общение</option>
+                  <option value="Игры">Игры</option>
+                </select>
+                <select name="date" value={filters.date} onChange={handleFilterChange} className="p-2 rounded-lg border" aria-label="Дата">
+                  <option value="">Любая дата</option>
+                  <option value="Сегодня">Сегодня</option>
+                  <option value="Завтра">Завтра</option>
+                  <option value="На неделе">На неделе</option>
+                </select>
+              </>
+            )}
             <select name="gender" value={filters.gender} onChange={handleFilterChange} className="p-2 rounded-lg border" aria-label="Пол">
               <option value="">Любой пол</option>
               <option value="Мужской">Мужской</option>
@@ -214,8 +255,8 @@
       );
     }
 
-    // Announcement Component (Updated)
-    function Announcement({ data, isOwn, onLike, onDislike, onParticipate, onEdit, onDelete, activeMenuId, openMenu, closeMenu }) {
+    // Announcement Component
+    function Announcement({ data, isOwn, onLike, onDislike, onParticipate, onEdit, onDelete, activeMenuId, openMenu, closeMenu, userActions, onViewProfile }) {
       const [expanded, setExpanded] = useState(false);
       const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0, direction: 'below' });
       const buttonRef = useRef(null);
@@ -224,7 +265,7 @@
       const updateMenuPosition = () => {
         if (buttonRef.current && showOptions) {
           const rect = buttonRef.current.getBoundingClientRect();
-          const menuHeight = 120; // Approximate menu height
+          const menuHeight = 120;
           const viewportHeight = window.innerHeight;
           const spaceBelow = viewportHeight - rect.bottom;
           const direction = spaceBelow < menuHeight ? 'above' : 'below';
@@ -239,9 +280,8 @@
 
       useEffect(() => {
         updateMenuPosition();
-        // Update position during animation
         if (showOptions) {
-          const interval = setInterval(updateMenuPosition, 50); // Update every 50ms during animation
+          const interval = setInterval(updateMenuPosition, 50);
           return () => clearInterval(interval);
         }
       }, [expanded, showOptions]);
@@ -275,13 +315,15 @@
             className={`p-4 rounded-[22px] border ${isOwn ? 'border-blue-500' : 'border-gray-300'} bg-white cursor-pointer announcement-expanded`}
             style={{ maxHeight: expanded ? '500px' : '150px', overflow: 'hidden' }}
           >
-            <h3 className="font-bold">{data.title}</h3>
+            <h3 className="font-bold announcement-title">{data.title}</h3>
             {expanded && (
               <div className="mt-2">
-                <p>{data.description}</p>
+                <p className="announcement-description">{data.description}</p>
                 <div className="text-sm text-gray-500">{data.metatags.join(', ')} • {data.createdAt}</div>
                 <div className="flex items-center gap-2 mt-2">
-                  <img src={data.creatorAvatar} alt="Аватар создателя" className="w-8 h-8 rounded-full" loading="lazy" />
+                  <button onClick={() => onViewProfile(data.creatorId)} className="focus:outline-none">
+                    <img src={data.creatorAvatar} alt="Аватар создателя" className="w-8 h-8 rounded-full" loading="lazy" />
+                  </button>
                   <button
                     onClick={() => onParticipate(data.id)}
                     className="bg-blue-500 text-white px-2 py-1 rounded ml-2"
@@ -293,10 +335,12 @@
               </div>
             )}
             <div className="flex justify-between items-center mt-2">
-              <a href="#" className="text-blue-500">{data.creatorName}</a>
-              <span>{data.age} лет</span>
-              <span>{data.participants}</span>
-              <div className="flex gap-2">
+              <div className="flex items-center gap-1">
+                <button onClick={() => onViewProfile(data.creatorId)} className="text-blue-500 focus:outline-none">{data.creatorName}</button>
+                {data.age && <span className="ml-1">{data.age} лет</span>}
+              </div>
+              <div className="flex gap-2 items-center">
+                <span>{data.participants}</span>
                 <button onClick={() => onLike(data.id)} className="p-1" aria-label="Лайк">
                   <img src="https://raw.githubusercontent.com/Uno5512/FrendsHub/main/2.png" alt="Лайк" className="like-dislike-img" />
                 </button>
@@ -339,6 +383,37 @@
       );
     }
 
+    // Profile Modal
+    function ProfileModal({ user, announcements, onClose }) {
+      const userAnnouncements = announcements.filter(a => a.creatorId === user.id);
+
+      return (
+        <Modal onClose={onClose}>
+          <h2 className="text-xl font-bold mb-4">Профиль: {user.name}</h2>
+          <div className="flex flex-col gap-4">
+            <img src={user.avatar} alt="Аватар" className="w-16 h-16 rounded-full" loading="lazy" />
+            <p><strong>Имя:</strong> {user.name}</p>
+            {user.birthdate && <p><strong>Дата рождения:</strong> {user.birthdate}</p>}
+            <p><strong>Пол:</strong> {user.gender}</p>
+            <p><strong>О себе:</strong> {user.about}</p>
+            <h3 className="font-bold">Объявления</h3>
+            <div className="space-y-2">
+              {userAnnouncements.length > 0 ? (
+                userAnnouncements.map(a => (
+                  <div key={a.id} className="p-2 border-b">
+                    <span className="font-medium">{a.title}</span>
+                    <p className="text-sm text-gray-500">{a.metatags.join(', ')} • {a.createdAt}</p>
+                  </div>
+                ))
+              ) : (
+                <p className="text-gray-500">Нет объявлений</p>
+              )}
+            </div>
+          </div>
+        </Modal>
+      );
+    }
+
     // Participants Modal
     function ParticipantsModal({ announcementTitle, participants, onClose }) {
       return (
@@ -349,8 +424,7 @@
               participants.map(p => (
                 <div key={p.id} className="flex items-center gap-2 p-2 border-b">
                   <img src={p.avatar} alt="Участник" className="w-8 h-8 rounded-full" loading="lazy" />
-                  <a href="#" className="text-blue-500">{p.name}</a>
-                  <button className="bg-blue-500 text-white px-2 py-1 rounded ml-auto">Выбрать</button>
+                  <span>{p.name}</span>
                 </div>
               ))
             ) : (
@@ -364,7 +438,7 @@
     // Account Modal
     function AccountModal({ user, announcements, applications, onClose }) {
       const [showParticipantsModal, setShowParticipantsModal] = useState(null);
-      const ownAnnouncements = announcements.filter(a => a.creatorName === user.name);
+      const ownAnnouncements = announcements.filter(a => a.creatorId === user.id);
 
       return (
         <>
@@ -373,7 +447,7 @@
             <div className="flex flex-col gap-4">
               <img src={user.avatar} alt="Аватар" className="w-16 h-16 rounded-full" loading="lazy" />
               <p><strong>Имя:</strong> {user.name}</p>
-              <p><strong>Дата рождения:</strong> {user.birthdate}</p>
+              {user.birthdate && <p><strong>Дата рождения:</strong> {user.birthdate}</p>}
               <p><strong>Пол:</strong> {user.gender}</p>
               <p><strong>О себе:</strong> {user.about}</p>
               <h3 className="font-bold">Избранное</h3>
@@ -416,30 +490,39 @@
       const [title, setTitle] = useState('');
       const [description, setDescription] = useState('');
       const [filters, setFilters] = useState({ city: 'Москва', type: 'Прогулка', date: 'Сегодня', gender: 'Не важно' });
-
-      const handleCreate = () => {
-        onCreate({ title, description, metatags: Object.values(filters), createdAt: new Date().toLocaleDateString() });
-        onClose();
-      };
+      const titleMaxLength = 64;
+      const descriptionMaxLength = 400;
 
       return (
         <Modal onClose={onClose}>
           <h2 className="text-xl font-bold mb-4">Создать объявление</h2>
-          <input
-            type="text"
-            placeholder="Заголовок"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            className="p-2 rounded-lg border w-full mb-4"
-            aria-label="Заголовок"
-          />
-          <textarea
-            placeholder="Описание"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            className="p-2 rounded-lg border w-full mb-4"
-            aria-label="Описание"
-          />
+          <div className="relative mb-4">
+            <input
+              type="text"
+              placeholder="Заголовок"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              maxLength={titleMaxLength}
+              className="p-2 rounded-lg border w-full"
+              aria-label="Заголовок"
+            />
+            <span className="absolute right-2 top-2 text-sm text-gray-500">
+              {titleMaxLength - title.length}
+            </span>
+          </div>
+          <div className="relative mb-4">
+            <textarea
+              placeholder="Описание"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              maxLength={descriptionMaxLength}
+              className="p-2 rounded-lg border w-full"
+              aria-label="Описание"
+            />
+            <span className="absolute right-2 bottom-2 text-sm text-gray-500">
+              {descriptionMaxLength - description.length}
+            </span>
+          </div>
           <div className="flex flex-wrap gap-2">
             <select name="city" onChange={(e) => setFilters(f => ({ ...f, city: e.target.value }))} className="p-2 rounded-lg border" aria-label="Город">
               <option value="Москва">Москва</option>
@@ -464,9 +547,37 @@
           </div>
           <div className="flex gap-4 mt-4">
             <button onClick={onClose} className="bg-gray-300 px-4 py-2 rounded-lg">Отмена</button>
-            <button onClick={handleCreate} className="bg-blue-500 text-white px-4 py-2 rounded-lg">Отправить</button>
+            <button onClick={() => { onCreate({ title, description, metatags: Object.values(filters) }); onClose(); }} className="bg-blue-500 text-white px-4 py-2 rounded-lg">Отправить</button>
           </div>
         </Modal>
+      );
+    }
+
+    // Profile Card Component
+    function ProfileCard({ user, onViewProfile }) {
+      const age = user.birthdate ? (() => {
+        const today = new Date('2025-05-19');
+        const birth = new Date(user.birthdate);
+        let age = today.getFullYear() - birth.getFullYear();
+        const monthDiff = today.getMonth() - birth.getMonth();
+        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+          age--;
+        }
+        return age >= 6 ? age : null;
+      })() : null;
+
+      return (
+        <article className="p-4 rounded-[22px] border border-gray-300 bg-white">
+          <div className="flex items-center gap-2">
+            <button onClick={() => onViewProfile(user.id)} className="focus:outline-none">
+              <img src={user.avatar} alt="Аватар" className="w-8 h-8 rounded-full" loading="lazy" />
+            </button>
+            <button onClick={() => onViewProfile(user.id)} className="text-blue-500 focus:outline-none">{user.name}</button>
+            {age && <span className="ml-1">{age} лет</span>}
+          </div>
+          <p className="mt-2 announcement-description">{user.about}</p>
+          <div className="text-sm text-gray-500 mt-1">{user.gender}, {user.city || 'Город не указан'}</div>
+        </article>
       );
     }
 
@@ -474,15 +585,27 @@
     function App() {
       const [user, setUser] = useState(null);
       const [isSynced, setIsSynced] = useState(null);
+      const [users, setUsers] = useState([
+        {
+          id: 1,
+          name: 'Алексей',
+          birthdate: '1998-03-15',
+          gender: 'Мужской',
+          about: 'Люблю прогулки и настольные игры.',
+          avatar: 'https://mir-s3-cdn-cf.behance.net/project_modules/fs_webp/cf5343120913219.60bb24ccb2f89.jpg',
+          city: 'Москва'
+        }
+      ]);
       const [announcements, setAnnouncements] = useState([
         {
           id: 1,
           title: 'Прогулка в парке',
           description: 'Присоединяйтесь к прогулке!',
-          metatags: ['Москва', 'Прогулка'],
+          metatags: ['Москва', 'Прогулка', 'Сегодня', 'Не важно'],
+          creatorId: 1,
           creatorName: 'Алексей',
           creatorAvatar: 'https://mir-s3-cdn-cf.behance.net/project_modules/fs_webp/cf5343120913219.60bb24ccb2f89.jpg',
-          age: 25,
+          age: 27,
           participants: 3,
           likes: 5,
           dislikes: 2,
@@ -490,11 +613,15 @@
         }
       ]);
       const [filteredAnnouncements, setFilteredAnnouncements] = useState(announcements);
+      const [filteredUsers, setFilteredUsers] = useState(users);
       const [showAccount, setShowAccount] = useState(false);
       const [showCreate, setShowCreate] = useState(false);
+      const [showProfile, setShowProfile] = useState(null);
       const [applications, setApplications] = useState([]);
       const [currentFilters, setCurrentFilters] = useState({ query: '', filters: { city: '', type: '', date: '', gender: '', sort: 'По рейтингу' } });
       const [activeMenuId, setActiveMenuId] = useState(null);
+      const [userActions, setUserActions] = useState({});
+      const [mode, setMode] = useState('events');
 
       const openMenu = (id) => {
         setActiveMenuId(id);
@@ -505,11 +632,16 @@
       };
 
       useEffect(() => {
-        setTimeout(() => setIsSynced(Math.random() > 0.5), 1000); // Simulate Telegram sync
+        if (window.Telegram && window.Telegram.WebApp) {
+          window.Telegram.WebApp.ready();
+          setIsSynced(window.Telegram.WebApp.isVersionAtLeast('6.0'));
+        } else {
+          setTimeout(() => setIsSynced(false), 1000);
+        }
       }, []);
 
       const calculateAge = (birthdate) => {
-        if (!birthdate) return 25; // Fallback
+        if (!birthdate) return null;
         const today = new Date('2025-05-19');
         const birth = new Date(birthdate);
         let age = today.getFullYear() - birth.getFullYear();
@@ -517,66 +649,143 @@
         if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
           age--;
         }
-        return age;
+        return age >= 6 ? age : null;
       };
 
       const handleRegister = (userData) => {
-        setUser(userData);
+        const newUser = {
+          ...userData,
+          id: Date.now(),
+          city: 'Москва' // Default city
+        };
+        setUser(newUser);
+        setUsers(prev => [...prev, newUser]);
+        setFilteredUsers(prev => [...prev, newUser]);
         setIsSynced(true);
       };
 
-      const handleSearch = (query, filters, newAnnouncements = announcements) => {
+      const handleSearch = (query, filters, searchMode, newAnnouncements = announcements, newUsers = users) => {
         setCurrentFilters({ query, filters });
-        let result = [...newAnnouncements];
+        if (searchMode === 'events') {
+          let result = [...newAnnouncements];
 
-        if (query.trim()) {
-          const lowerQuery = query.toLowerCase();
-          result = result.filter(a =>
-            a.title.toLowerCase().includes(lowerQuery) ||
-            a.description.toLowerCase().includes(lowerQuery) ||
-            a.metatags.some(tag => tag.toLowerCase().includes(lowerQuery))
-          );
-        }
+          if (query.trim()) {
+            const lowerQuery = query.toLowerCase();
+            result = result.filter(a =>
+              a.title.toLowerCase().includes(lowerQuery) ||
+              a.description.toLowerCase().includes(lowerQuery) ||
+              a.metatags.some(tag => tag.toLowerCase().includes(lowerQuery))
+            );
+          }
 
-        if (filters.city) {
-          result = result.filter(a => a.metatags.includes(filters.city));
-        }
-        if (filters.type) {
-          result = result.filter(a => a.metatags.includes(filters.type));
-        }
-        if (filters.date) {
-          result = result.filter(a => a.metatags.includes(filters.date));
-        }
-        if (filters.gender) {
-          result = result.filter(a => a.metatags.includes(filters.gender));
-        }
+          if (filters.city) {
+            result = result.filter(a => a.metatags.includes(filters.city));
+          }
+          if (filters.type) {
+            result = result.filter(a => a.metatags.includes(filters.type));
+          }
+          if (filters.date) {
+            result = result.filter(a => a.metatags.includes(filters.date));
+          }
+          if (filters.gender) {
+            result = result.filter(a => a.metatags.includes(filters.gender));
+          }
 
-        if (filters.sort === 'По рейтингу') {
-          result.sort((a, b) => (b.likes - b.dislikes) - (a.likes - a.dislikes));
-        } else if (filters.sort === 'Новые') {
-          result.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-        } else if (filters.sort === 'Старые') {
-          result.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
-        } else if (filters.sort === 'Верифицированные') {
-          result.sort((a, b) => (b.likes - b.dislikes) - (a.likes - a.dislikes));
-        }
+          if (filters.sort === 'По рейтингу') {
+            result.sort((a, b) => (b.likes - b.dislikes) - (a.likes - a.dislikes));
+          } else if (filters.sort === 'Новые') {
+            result.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+          } else if (filters.sort === 'Старые') {
+            result.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+          } else if (filters.sort === 'Верифицированные') {
+            result.sort((a, b) => (b.likes - b.dislikes) - (a.likes - a.dislikes));
+          }
 
-        setFilteredAnnouncements(result);
+          setFilteredAnnouncements(result);
+        } else {
+          let result = [...newUsers];
+
+          if (query.trim()) {
+            const lowerQuery = query.toLowerCase();
+            result = result.filter(u =>
+              u.name.toLowerCase().includes(lowerQuery) ||
+              u.about.toLowerCase().includes(lowerQuery) ||
+              (u.city && u.city.toLowerCase().includes(lowerQuery))
+            );
+          }
+
+          if (filters.city) {
+            result = result.filter(u => u.city === filters.city);
+          }
+          if (filters.gender) {
+            result = result.filter(u => u.gender === filters.gender);
+          }
+
+          if (filters.sort === 'По рейтингу') {
+            result.sort((a, b) => {
+              const aAnnouncements = announcements.filter(ann => ann.creatorId === a.id);
+              const bAnnouncements = announcements.filter(ann => ann.creatorId === b.id);
+              const aRating = aAnnouncements.reduce((sum, ann) => sum + (ann.likes - ann.dislikes), 0);
+              const bRating = bAnnouncements.reduce((sum, ann) => sum + (ann.likes - ann.dislikes), 0);
+              return bRating - aRating;
+            });
+          } else if (filters.sort === 'Новые') {
+            result.sort((a, b) => b.id - a.id);
+          } else if (filters.sort === 'Старые') {
+            result.sort((a, b) => a.id - b.id);
+          }
+
+          setFilteredUsers(result);
+        }
       };
 
       const handleLike = (id) => {
         setAnnouncements(prev => {
-          const updated = prev.map(a => (a.id === id ? { ...a, likes: a.likes + 1 } : a));
-          handleSearch(currentFilters.query, currentFilters.filters, updated);
-          return updated;
+          const currentAction = userActions[id];
+          let updatedAnnouncements = [...prev];
+
+          if (currentAction === 'like') {
+            return prev;
+          }
+
+          if (currentAction === 'dislike') {
+            updatedAnnouncements = prev.map(a =>
+              a.id === id ? { ...a, dislikes: a.dislikes - 1, likes: a.likes + 1 } : a
+            );
+          } else {
+            updatedAnnouncements = prev.map(a =>
+              a.id === id ? { ...a, likes: a.likes + 1 } : a
+            );
+          }
+
+          setUserActions(prev => ({ ...prev, [id]: 'like' }));
+          handleSearch(currentFilters.query, currentFilters.filters, mode, updatedAnnouncements);
+          return updatedAnnouncements;
         });
       };
 
       const handleDislike = (id) => {
         setAnnouncements(prev => {
-          const updated = prev.map(a => (a.id === id ? { ...a, dislikes: a.dislikes + 1 } : a));
-          handleSearch(currentFilters.query, currentFilters.filters, updated);
-          return updated;
+          const currentAction = userActions[id];
+          let updatedAnnouncements = [...prev];
+
+          if (currentAction === 'dislike') {
+            return prev;
+          }
+
+          if (currentAction === 'like') {
+            updatedAnnouncements = prev.map(a =>
+              a.id === id ? { ...a, likes: a.likes - 1, dislikes: a.dislikes + 1 } : a
+            );
+          } else {
+            updatedAnnouncements = prev.map(a =>
+              a.id === id ? { ...a, dislikes: a.dislikes + 1 } : a
+            );
+          }
+
+          setUserActions(prev => ({ ...prev, [id]: 'dislike' }));
+          handleSearch(currentFilters.query, currentFilters.filters, mode, updatedAnnouncements);
+          return updatedAnnouncements;
         });
       };
 
@@ -595,9 +804,10 @@
             {
               id: Date.now(),
               announcementTitle: updated.find(a => a.id === id).title,
-              participants: [{ id: 1, name: user.name, avatar: user.avatar }]
+              participants: [{ id: user.id, name: user.name, avatar: user.avatar }]
             }
           ]);
+          handleSearch(currentFilters.query, currentFilters.filters, mode, updated);
           return updated;
         });
       };
@@ -606,46 +816,50 @@
         const newAnnouncement = {
           ...data,
           id: Date.now(),
+          creatorId: user.id,
           creatorName: user.name,
           creatorAvatar: user.avatar,
           age: calculateAge(user.birthdate),
           participants: 0,
           likes: 0,
-          dislikes: 0
+          dislikes: 0,
+          createdAt: new Date().toLocaleDateString()
         };
         setAnnouncements(prev => {
           const updated = [...prev, newAnnouncement];
-          setFilteredAnnouncements(prevFiltered => {
-            let result = [...prevFiltered, newAnnouncement];
-            if (currentFilters.query.trim()) {
-              const lowerQuery = currentFilters.query.toLowerCase();
-              result = result.filter(a =>
-                a.title.toLowerCase().includes(lowerQuery) ||
-                a.description.toLowerCase().includes(lowerQuery) ||
-                a.metatags.some(tag => tag.toLowerCase().includes(lowerQuery))
-              );
-            }
-            if (currentFilters.filters.city) {
-              result = result.filter(a => a.metatags.includes(currentFilters.filters.city));
-            }
-            if (currentFilters.filters.type) {
-              result = result.filter(a => a.metatags.includes(currentFilters.filters.type));
-            }
-            if (currentFilters.filters.date) {
-              result = result.filter(a => a.metatags.includes(currentFilters.filters.date));
-            }
-            if (currentFilters.filters.gender) {
-              result = result.filter(a => a.metatags.includes(currentFilters.filters.gender));
-            }
-            if (currentFilters.filters.sort === 'По рейтингу') {
-              result.sort((a, b) => (b.likes - b.dislikes) - (a.likes - a.dislikes));
-            } else if (currentFilters.filters.sort === 'Новые') {
-              result.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-            } else if (currentFilters.filters.sort === 'Старые') {
-              result.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
-            }
-            return result;
-          });
+          if (mode === 'events') {
+            setFilteredAnnouncements(prevFiltered => {
+              let result = [...prevFiltered, newAnnouncement];
+              if (currentFilters.query.trim()) {
+                const lowerQuery = currentFilters.query.toLowerCase();
+                result = result.filter(a =>
+                  a.title.toLowerCase().includes(lowerQuery) ||
+                  a.description.toLowerCase().includes(lowerQuery) ||
+                  a.metatags.some(tag => tag.toLowerCase().includes(lowerQuery))
+                );
+              }
+              if (currentFilters.filters.city) {
+                result = result.filter(a => a.metatags.includes(currentFilters.filters.city));
+              }
+              if (currentFilters.filters.type) {
+                result = result.filter(a => a.metatags.includes(currentFilters.filters.type));
+              }
+              if (currentFilters.filters.date) {
+                result = result.filter(a => a.metatags.includes(currentFilters.filters.date));
+              }
+              if (currentFilters.filters.gender) {
+                result = result.filter(a => a.metatags.includes(currentFilters.filters.gender));
+              }
+              if (currentFilters.filters.sort === 'По рейтингу') {
+                result.sort((a, b) => (b.likes - b.dislikes) - (a.likes - a.dislikes));
+              } else if (currentFilters.filters.sort === 'Новые') {
+                result.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+              } else if (currentFilters.filters.sort === 'Старые') {
+                result.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+              }
+              return result;
+            });
+          }
           return updated;
         });
       };
@@ -653,9 +867,22 @@
       const handleDelete = (id) => {
         setAnnouncements(prev => {
           const updated = prev.filter(a => a.id !== id);
-          handleSearch(currentFilters.query, currentFilters.filters, updated);
+          handleSearch(currentFilters.query, currentFilters.filters, mode, updated);
           return updated;
         });
+        setUserActions(prev => {
+          const updated = { ...prev };
+          delete updated[id];
+          return updated;
+        });
+      };
+
+      const handleViewProfile = (userId) => {
+        if (userId === user?.id) {
+          setShowAccount(true);
+        } else {
+          setShowProfile(userId);
+        }
       };
 
       if (isSynced === null) {
@@ -689,31 +916,64 @@
             <img src="https://uno5512.github.io/FrendsHub/3.png" alt="Логотип" className="w-[100px] h-[100px]" loading="lazy" />
           </header>
           <main className="p-4">
-            <SearchBar onSearch={handleSearch} />
+            <SearchBar
+              onSearch={handleSearch}
+              mode={mode}
+              onModeChange={setMode}
+            />
             <section className="space-y-4">
-              {filteredAnnouncements.map(a => (
-                <Announcement
-                  key={a.id}
-                  data={a}
-                  isOwn={a.creatorName === user.name}
-                  onLike={handleLike}
-                  onDislike={handleDislike}
-                  onParticipate={handleParticipate}
-                  onEdit={() => {}}
-                  onDelete={handleDelete}
-                  activeMenuId={activeMenuId}
-                  openMenu={openMenu}
-                  closeMenu={closeMenu}
-                />
-              ))}
+              {mode === 'events' ? (
+                filteredAnnouncements.length > 0 ? (
+                  filteredAnnouncements.map(a => (
+                    <Announcement
+                      key={a.id}
+                      data={a}
+                      isOwn={a.creatorId === user.id}
+                      onLike={handleLike}
+                      onDislike={handleDislike}
+                      onParticipate={handleParticipate}
+                      onEdit={() => {}}
+                      onDelete={handleDelete}
+                      activeMenuId={activeMenuId}
+                      openMenu={openMenu}
+                      closeMenu={closeMenu}
+                      userActions={userActions}
+                      onViewProfile={handleViewProfile}
+                    />
+                  ))
+                ) : (
+                  <p className="text-gray-500">Нет событий</p>
+                )
+              ) : (
+                filteredUsers.length > 0 ? (
+                  filteredUsers.map(u => (
+                    <ProfileCard
+                      key={u.id}
+                      user={u}
+                      onViewProfile={handleViewProfile}
+                    />
+                  ))
+                ) : (
+                  <p className="text-gray-500">Нет друзей</p>
+                )
+              )}
             </section>
           </main>
           <footer className="fixed bottom-4 right-4 flex gap-4">
-            <button onClick={() => setShowCreate(true)} className="bg-blue-500 text-white w-12 h-12 rounded-full flex items-center justify-center text-2xl" aria-label="Создать объявление">+</button>
+            {mode === 'events' && (
+              <button onClick={() => setShowCreate(true)} className="bg-blue-500 text-white w-12 h-12 rounded-full flex items-center justify-center text-2xl" aria-label="Создать объявление">+</button>
+            )}
             <button onClick={() => setShowAccount(true)} className="bg-gray-500 text-white w-12 h-12 rounded-full flex items-center justify-center" aria-label="Открыть аккаунт">↑</button>
           </footer>
           {showAccount && <AccountModal user={user} announcements={announcements} applications={applications} onClose={() => setShowAccount(false)} />}
           {showCreate && <CreateAnnouncementModal onCreate={handleCreate} onClose={() => setShowCreate(false)} />}
+          {showProfile && (
+            <ProfileModal
+              user={users.find(u => u.id === showProfile)}
+              announcements={announcements}
+              onClose={() => setShowProfile(null)}
+            />
+          )}
         </div>
       );
     }
