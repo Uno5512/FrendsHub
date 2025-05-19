@@ -19,18 +19,18 @@
       backdrop-filter: blur(5px);
       background-color: rgba(0, 0, 0, 0.5);
     }
-    .announcement-expanded {
+    .announcement-expanded, .profile-expanded {
       transition: max-height 0.3s ease-in-out;
     }
     .like-dislike-img {
       width: 24px;
       height: 24px;
     }
-    .announcement-title {
+    .announcement-title, .profile-about {
       word-break: break-word;
       hyphens: auto;
     }
-    .announcement-description {
+    .announcement-description, .profile-description {
       word-break: break-word;
       hyphens: auto;
     }
@@ -157,6 +157,76 @@
       );
     }
 
+    // Edit Profile Modal (New)
+    function EditProfileModal({ user, onSave, onClose }) {
+      const [name, setName] = useState(user.name);
+      const [birthdate, setBirthdate] = useState(user.birthdate);
+      const [gender, setGender] = useState(user.gender);
+      const [about, setAbout] = useState(user.about);
+      const [avatar, setAvatar] = useState(user.avatar);
+      const [error, setError] = useState('');
+
+      const handleSave = () => {
+        if (!name || !birthdate || !about) {
+          setError('Пожалуйста, заполните все обязательные поля');
+          return;
+        }
+        onSave({ ...user, name, birthdate, gender, about, avatar });
+        onClose();
+      };
+
+      return (
+        <Modal onClose={onClose}>
+          <h2 className="text-xl font-bold mb-4">Редактировать профиль</h2>
+          <div className="flex flex-col gap-4">
+            <div className="flex gap-4">
+              <img src={avatar} alt="Аватар" className="w-16 h-16 rounded-full" loading="lazy" />
+              <input
+                type="text"
+                placeholder="Имя *"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="p-2 rounded-lg border"
+                required
+                aria-label="Имя"
+              />
+            </div>
+            <input
+              type="date"
+              value={birthdate}
+              onChange={(e) => setBirthdate(e.target.value)}
+              className="p-2 rounded-lg border"
+              required
+              aria-label="Дата рождения"
+            />
+            <select
+              value={gender}
+              onChange={(e) => setGender(e.target.value)}
+              className="p-2 rounded-lg border"
+              aria-label="Пол"
+            >
+              <option value="Мужской">Мужской</option>
+              <option value="Женский">Женский</option>
+              <option value="Не важно">Не важно</option>
+            </select>
+            <textarea
+              placeholder="О себе *"
+              value={about}
+              onChange={(e) => setAbout(e.target.value)}
+              className="p-2 rounded-lg border w-full"
+              required
+              aria-label="О себе"
+            />
+            {error && <p className="text-red-500">{error}</p>}
+            <div className="flex gap-4">
+              <button onClick={onClose} className="bg-gray-300 px-4 py-2 rounded-lg">Отмена</button>
+              <button onClick={handleSave} className="bg-blue-500 text-white px-4 py-2 rounded-lg">Сохранить</button>
+            </div>
+          </div>
+        </Modal>
+      );
+    }
+
     // Search Bar Component
     function SearchBar({ onSearch, mode, onModeChange }) {
       const [query, setQuery] = useState('');
@@ -258,7 +328,7 @@
       );
     }
 
-    // Announcement Component (Updated)
+    // Announcement Component
     function Announcement({ data, isOwn, isFavorite, isHidden, onLike, onDislike, onShowParticipants, onEdit, onDelete, activeMenuId, openMenu, closeMenu, userActions, onViewProfile, onAddToFavorites, onRemoveFromFavorites, onHide, onShowAgain, onReport }) {
       const [expanded, setExpanded] = useState(false);
       const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0, direction: 'below' });
@@ -450,7 +520,7 @@
       );
     }
 
-    // Send Contacts Modal (New)
+    // Send Contacts Modal
     function SendContactsModal({ onClose, onSubmit, announcementTitle }) {
       const [phone, setPhone] = useState('');
       const [telegram, setTelegram] = useState('');
@@ -488,6 +558,40 @@
               <button onClick={onClose} className="bg-gray-300 px-4 py-2 rounded-lg">Отмена</button>
               <button onClick={handleSubmit} className="bg-blue-500 text-white px-4 py-2 rounded-lg">Отправить</button>
             </div>
+          </div>
+        </Modal>
+      );
+    }
+
+    // Invite Modal (New)
+    function InviteModal({ ownAnnouncements, recipientId, recipientName, onSendContacts, onCreateAnnouncement, onClose }) {
+      return (
+        <Modal onClose={onClose}>
+          <h2 className="text-xl font-bold mb-4">Пригласить: {recipientName}</h2>
+          <div className="max-h-64 overflow-y-auto space-y-2">
+            {ownAnnouncements.length > 0 ? (
+              ownAnnouncements.map(ann => (
+                <div key={ann.id} className="flex justify-between items-center p-2 border-b">
+                  <span>{ann.title}</span>
+                  <button
+                    onClick={() => onSendContacts(ann.id, ann.title, [recipientId])}
+                    className="bg-blue-500 text-white px-2 py-1 rounded"
+                  >
+                    Отправить контакты
+                  </button>
+                </div>
+              ))
+            ) : (
+              <div className="text-gray-500 text-center">
+                <p>Нет созданных объявлений</p>
+                <button
+                  onClick={onCreateAnnouncement}
+                  className="bg-blue-500 text-white px-4 py-2 rounded-lg mt-2"
+                >
+                  Создать объявление
+                </button>
+              </div>
+            )}
           </div>
         </Modal>
       );
@@ -573,33 +677,14 @@
     }
 
     // Participants Modal (Updated)
-    function ParticipantsModal({ announcementId, announcementTitle, participants, isOwn, onParticipate, onSendContacts, currentUser }) {
-      const [selectedParticipants, setSelectedParticipants] = useState([]);
-
-      const handleSelectParticipant = (participantId) => {
-        setSelectedParticipants(prev =>
-          prev.includes(participantId)
-            ? prev.filter(id => id !== participantId)
-            : [...prev, participantId]
-        );
-      };
-
+    function ParticipantsModal({ announcementId, announcementTitle, participants, isOwn, onClose }) {
       return (
-        <Modal onClose={() => {}}>
+        <Modal onClose={onClose}>
           <h2 className="text-xl font-bold mb-4">Участники: {announcementTitle}</h2>
           <div className="max-h-64 overflow-y-auto space-y-2">
             {participants.length > 0 ? (
               participants.map(p => (
                 <div key={p.id} className="flex items-center gap-2 p-2 border-b">
-                  {isOwn && (
-                    <input
-                      type="checkbox"
-                      checked={selectedParticipants.includes(p.id)}
-                      onChange={() => handleSelectParticipant(p.id)}
-                      className="mr-2"
-                      aria-label={`Выбрать ${p.name}`}
-                    />
-                  )}
                   <img src={p.avatar} alt="Участник" className="w-8 h-8 rounded-full" loading="lazy" />
                   <span>{p.name}</span>
                 </div>
@@ -608,31 +693,12 @@
               <p className="text-gray-500">Нет участников</p>
             )}
           </div>
-          <div className="flex gap-4 mt-4">
-            {!isOwn && (
-              <button
-                onClick={() => onParticipate(announcementId)}
-                className="bg-blue-500 text-white px-4 py-2 rounded-lg"
-              >
-                Участвовать
-              </button>
-            )}
-            {isOwn && selectedParticipants.length > 0 && (
-              <button
-                onClick={() => onSendContacts(announcementId, announcementTitle, selectedParticipants)}
-                className="bg-blue-500 text-white px-4 py-2 rounded-lg"
-              >
-                Отправить контакты
-              </button>
-            )}
-            <button className="bg-gray-300 px-4 py-2 rounded-lg">Закрыть</button>
-          </div>
         </Modal>
       );
     }
 
     // Account Modal (Updated)
-    function AccountModal({ user, announcements, applications, favorites, hiddenAnnouncements, invitations, onClose, onLike, onDislike, onShowParticipants, onAddToFavorites, onRemoveFromFavorites, onHide, onShowAgain, onReport, onViewProfile, userActions, activeMenuId, openMenu, closeMenu }) {
+    function AccountModal({ user, announcements, applications, favorites, hiddenAnnouncements, invitations, onClose, onLike, onDislike, onShowParticipants, onAddToFavorites, onRemoveFromFavorites, onHide, onShowAgain, onReport, onViewProfile, userActions, activeMenuId, openMenu, closeMenu, onEditProfile }) {
       const [isFavoritesOpen, setIsFavoritesOpen] = useState(false);
       const [isApplicationsOpen, setIsApplicationsOpen] = useState(false);
       const [isHiddenOpen, setIsHiddenOpen] = useState(false);
@@ -651,6 +717,7 @@
             {user.birthdate && <p><strong>Дата рождения:</strong> {user.birthdate}</p>}
             <p><strong>Пол:</strong> {user.gender}</p>
             <p><strong>О себе:</strong> {user.about}</p>
+            <button onClick={onEditProfile} className="bg-blue-500 text-white px-4 py-2 rounded-lg">Изменить</button>
             <h3
               className="font-bold cursor-pointer flex items-center"
               onClick={() => setIsFavoritesOpen(!isFavoritesOpen)}
@@ -789,7 +856,7 @@
                   userInvitations.map((inv, index) => (
                     <div key={index} className="p-4 rounded-[22px] border border-gray-300 bg-white">
                       <p><strong>От:</strong> {inv.senderName}</p>
-                      <p><strong>Событие:</strong> {inv.announcementTitle}</p>
+                      <p><strong>Событие:</strong> {inv.isPersonal ? 'Личное приглашение' : inv.announcementTitle}</p>
                       <p><strong>Телефон:</strong> {inv.phone}</p>
                       <p><strong>Telegram:</strong> {inv.telegram}</p>
                     </div>
@@ -872,8 +939,13 @@
       );
     }
 
-    // Profile Card Component
-    function ProfileCard({ user, onViewProfile }) {
+    // Profile Card Component (Updated)
+    function ProfileCard({ user, onViewProfile, onLike, onDislike, userActions, activeMenuId, openMenu, closeMenu, onReport, onInvite }) {
+      const [expanded, setExpanded] = useState(false);
+      const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0, direction: 'below' });
+      const buttonRef = useRef(null);
+      const showOptions = activeMenuId === `profile-${user.id}`;
+
       const age = user.birthdate ? (() => {
         const today = new Date('2025-05-19');
         const birth = new Date(user.birthdate);
@@ -885,18 +957,125 @@
         return age >= 6 ? age : null;
       })() : null;
 
+      const updateMenuPosition = () => {
+        if (buttonRef.current && showOptions) {
+          const rect = buttonRef.current.getBoundingClientRect();
+          const menuHeight = 80;
+          const viewportHeight = window.innerHeight;
+          const spaceBelow = viewportHeight - rect.bottom;
+          const direction = spaceBelow < menuHeight ? 'above' : 'below';
+
+          setMenuPosition({
+            top: direction === 'below' ? rect.bottom + window.scrollY + 4 : rect.top + window.scrollY - menuHeight - 4,
+            left: rect.right + window.scrollX - 120,
+            direction
+          });
+        }
+      };
+
+      useEffect(() => {
+        updateMenuPosition();
+        if (showOptions) {
+          const interval = setInterval(updateMenuPosition, 50);
+          return () => clearInterval(interval);
+        }
+      }, [expanded, showOptions]);
+
+      useEffect(() => {
+        const handleOutsideClick = (e) => {
+          if (buttonRef.current && !buttonRef.current.contains(e.target) && !e.target.closest('.options-menu')) {
+            closeMenu();
+          }
+        };
+        document.addEventListener('click', handleOutsideClick);
+        return () => document.removeEventListener('click', handleOutsideClick);
+      }, [closeMenu]);
+
+      const handleOptionsClick = (e) => {
+        e.stopPropagation();
+        if (showOptions) {
+          closeMenu();
+        } else {
+          openMenu(`profile-${user.id}`);
+          updateMenuPosition();
+        }
+      };
+
+      const handleShare = async () => {
+        const shareData = {
+          title: `Профиль ${user.name}`,
+          text: user.about,
+          url: `https://app.example.com/profile/${user.id}`
+        };
+        try {
+          if (navigator.share) {
+            await navigator.share(shareData);
+          } else {
+            await navigator.clipboard.writeText(shareData.url);
+            alert('Ссылка на профиль скопирована в буфер обмена');
+          }
+        } catch (err) {
+          console.error('Ошибка при попытке поделиться:', err);
+        }
+        closeMenu();
+      };
+
       return (
-        <article className="p-4 rounded-[22px] border border-gray-300 bg-white">
-          <div className="flex items-center gap-2">
-            <button onClick={() => onViewProfile(user.id)} className="focus:outline-none">
-              <img src={user.avatar} alt="Аватар" className="w-8 h-8 rounded-full" loading="lazy" />
-            </button>
-            <button onClick={() => onViewProfile(user.id)} className="text-blue-500 focus:outline-none">{user.name}</button>
-            {age && <span className="ml-1">{age} лет</span>}
-          </div>
-          <p className="mt-2 announcement-description">{user.about}</p>
-          <div className="text-sm text-gray-500 mt-1">{user.gender}, {user.city || 'Город не указан'}</div>
-        </article>
+        <>
+          <article
+            onClick={(e) => {
+              if (!e.target.closest('button') && !e.target.closest('a')) setExpanded(!expanded);
+            }}
+            className="p-4 rounded-[22px] border border-gray-300 bg-white cursor-pointer profile-expanded w-full"
+            style={{ maxHeight: expanded ? '300px' : '120px', overflow: 'hidden' }}
+          >
+            <div className="flex justify-between items-center">
+              <div className="flex items-center gap-2">
+                <button onClick={() => onViewProfile(user.id)} className="focus:outline-none">
+                  <img src={user.avatar} alt="Аватар" className="w-8 h-8 rounded-full" loading="lazy" />
+                </button>
+                <button onClick={() => onViewProfile(user.id)} className="text-blue-500 focus:outline-none">{user.name}</button>
+                {age && <span className="ml-1">{age} лет</span>}
+              </div>
+              <div className="flex gap-2 items-center">
+                <button onClick={() => onLike(user.id)} className="p-1" aria-label="Лайк">
+                  <img src="https://raw.githubusercontent.com/Uno5512/FrendsHub/main/2.png" alt="Лайк" className="like-dislike-img" />
+                </button>
+                <button onClick={() => onDislike(user.id)} className="p-1" aria-label="Дизлайк">
+                  <img src="https://raw.githubusercontent.com/Uno5512/FrendsHub/main/1.png" alt="Дизлайк" className="like-dislike-img" />
+                </button>
+                <button
+                  ref={buttonRef}
+                  onClick={handleOptionsClick}
+                  className="text-gray-500"
+                  aria-label="Опции"
+                >
+                  ⋯
+                </button>
+                <button
+                  onClick={() => onInvite(user.id, user.name)}
+                  className="bg-blue-500 text-white px-2 py-1 rounded"
+                  aria-label="Пригласить"
+                >
+                  Пригласить
+                </button>
+              </div>
+            </div>
+            <p className="mt-2 profile-description">{user.about}</p>
+            {expanded && (
+              <div className="text-sm text-gray-500 mt-1">{user.gender}, {user.city || 'Город не указан'}</div>
+            )}
+          </article>
+          {showOptions && (
+            <div
+              className="fixed bg-white border rounded shadow-lg p-2 w-32 z-50 options-menu"
+              style={{ top: `${menuPosition.top}px`, left: `${menuPosition.left}px` }}
+            >
+              <button onClick={handleShare} className="block w-full text-left hover:bg-gray-100 p-1">Поделиться</button>
+              <button onClick={() => { onReport(user.id); closeMenu(); }} className="block w-full text-left hover:bg-gray-100 p-1">Пожаловаться</button>
+            </div>
+          )}
+        </>
       );
     }
 
@@ -914,6 +1093,8 @@
       const [showReportModal, setShowReportModal] = useState(null);
       const [showParticipantsModal, setShowParticipantsModal] = useState(null);
       const [showSendContactsModal, setShowSendContactsModal] = useState(null);
+      const [showEditProfile, setShowEditProfile] = useState(false);
+      const [showInviteModal, setShowInviteModal] = useState(null);
       const [applications, setApplications] = useState([]);
       const [favorites, setFavorites] = useState([]);
       const [hiddenAnnouncements, setHiddenAnnouncements] = useState([]);
@@ -953,7 +1134,9 @@
               gender: 'Мужской',
               about: 'Люблю прогулки и настольные игры.',
               avatar: 'https://mir-s3-cdn-cf.behance.net/project_modules/fs_webp/cf5343120913219.60bb24ccb2f89.jpg',
-              city: 'Москва'
+              city: 'Москва',
+              likes: 0,
+              dislikes: 0
             }
           ];
           const defaultAnnouncements = [
@@ -1025,12 +1208,20 @@
         const newUser = {
           ...userData,
           id: Date.now(),
-          city: 'Москва'
+          city: 'Москва',
+          likes: 0,
+          dislikes: 0
         };
         setUser(newUser);
         setUsers(prev => [...prev, newUser]);
         setFilteredUsers(prev => [...prev, newUser]);
         setIsSynced(true);
+      };
+
+      const handleEditProfile = (updatedUser) => {
+        setUser(updatedUser);
+        setUsers(prev => prev.map(u => u.id === updatedUser.id ? updatedUser : u));
+        setFilteredUsers(prev => prev.map(u => u.id === updatedUser.id ? updatedUser : u));
       };
 
       const handleSearch = (query, filters, searchMode, newAnnouncements = announcements, newUsers = users) => {
@@ -1091,13 +1282,7 @@
           }
 
           if (filters.sort === 'По рейтингу') {
-            result.sort((a, b) => {
-              const aAnnouncements = announcements.filter(ann => ann.creatorId === a.id);
-              const bAnnouncements = announcements.filter(ann => ann.creatorId === b.id);
-              const aRating = aAnnouncements.reduce((sum, ann) => sum + (ann.likes - ann.dislikes), 0);
-              const bRating = bAnnouncements.reduce((sum, ann) => sum + (ann.likes - ann.dislikes), 0);
-              return bRating - aRating;
-            });
+            result.sort((a, b) => (b.likes - b.dislikes) - (a.likes - a.dislikes));
           } else if (filters.sort === 'Новые') {
             result.sort((a, b) => b.id - a.id);
           } else if (filters.sort === 'Старые') {
@@ -1108,54 +1293,106 @@
         }
       };
 
-      const handleLike = (id) => {
-        setAnnouncements(prev => {
-          const currentAction = userActions[id];
-          let updatedAnnouncements = [...prev];
+      const handleLike = (id, isProfile = false) => {
+        if (isProfile) {
+          setUsers(prev => {
+            const currentAction = userActions[`profile-${id}`];
+            let updatedUsers = [...prev];
 
-          if (currentAction === 'like') {
-            return prev;
-          }
+            if (currentAction === 'like') {
+              return prev;
+            }
 
-          if (currentAction === 'dislike') {
-            updatedAnnouncements = prev.map(a =>
-              a.id === id ? { ...a, dislikes: a.dislikes - 1, likes: a.likes + 1 } : a
-            );
-          } else {
-            updatedAnnouncements = prev.map(a =>
-              a.id === id ? { ...a, likes: a.likes + 1 } : a
-            );
-          }
+            if (currentAction === 'dislike') {
+              updatedUsers = prev.map(u =>
+                u.id === id ? { ...u, dislikes: u.dislikes - 1, likes: u.likes + 1 } : u
+              );
+            } else {
+              updatedUsers = prev.map(u =>
+                u.id === id ? { ...u, likes: u.likes + 1 } : u
+              );
+            }
 
-          setUserActions(prev => ({ ...prev, [id]: 'like' }));
-          handleSearch(currentFilters.query, currentFilters.filters, mode, updatedAnnouncements);
-          return updatedAnnouncements;
-        });
+            setUserActions(prev => ({ ...prev, [`profile-${id}`]: 'like' }));
+            setFilteredUsers(updatedUsers);
+            if (user.id === id) setUser(updatedUsers.find(u => u.id === id));
+            return updatedUsers;
+          });
+        } else {
+          setAnnouncements(prev => {
+            const currentAction = userActions[id];
+            let updatedAnnouncements = [...prev];
+
+            if (currentAction === 'like') {
+              return prev;
+            }
+
+            if (currentAction === 'dislike') {
+              updatedAnnouncements = prev.map(a =>
+                a.id === id ? { ...a, dislikes: a.dislikes - 1, likes: a.likes + 1 } : a
+              );
+            } else {
+              updatedAnnouncements = prev.map(a =>
+                a.id === id ? { ...a, likes: a.likes + 1 } : a
+              );
+            }
+
+            setUserActions(prev => ({ ...prev, [id]: 'like' }));
+            handleSearch(currentFilters.query, currentFilters.filters, mode, updatedAnnouncements);
+            return updatedAnnouncements;
+          });
+        }
       };
 
-      const handleDislike = (id) => {
-        setAnnouncements(prev => {
-          const currentAction = userActions[id];
-          let updatedAnnouncements = [...prev];
+      const handleDislike = (id, isProfile = false) => {
+        if (isProfile) {
+          setUsers(prev => {
+            const currentAction = userActions[`profile-${id}`];
+            let updatedUsers = [...prev];
 
-          if (currentAction === 'dislike') {
-            return prev;
-          }
+            if (currentAction === 'dislike') {
+              return prev;
+            }
 
-          if (currentAction === 'like') {
-            updatedAnnouncements = prev.map(a =>
-              a.id === id ? { ...a, likes: a.likes - 1, dislikes: a.dislikes + 1 } : a
-            );
-          } else {
-            updatedAnnouncements = prev.map(a =>
-              a.id === id ? { ...a, dislikes: a.dislikes + 1 } : a
-            );
-          }
+            if (currentAction === 'like') {
+              updatedUsers = prev.map(u =>
+                u.id === id ? { ...u, likes: u.likes - 1, dislikes: u.dislikes + 1 } : u
+              );
+            } else {
+              updatedUsers = prev.map(u =>
+                u.id === id ? { ...u, dislikes: u.dislikes + 1 } : u
+              );
+            }
 
-          setUserActions(prev => ({ ...prev, [id]: 'dislike' }));
-          handleSearch(currentFilters.query, currentFilters.filters, mode, updatedAnnouncements);
-          return updatedAnnouncements;
-        });
+            setUserActions(prev => ({ ...prev, [`profile-${id}`]: 'dislike' }));
+            setFilteredUsers(updatedUsers);
+            if (user.id === id) setUser(updatedUsers.find(u => u.id === id));
+            return updatedUsers;
+          });
+        } else {
+          setAnnouncements(prev => {
+            const currentAction = userActions[id];
+            let updatedAnnouncements = [...prev];
+
+            if (currentAction === 'dislike') {
+              return prev;
+            }
+
+            if (currentAction === 'like') {
+              updatedAnnouncements = prev.map(a =>
+                a.id === id ? { ...a, likes: a.likes - 1, dislikes: a.dislikes + 1 } : a
+              );
+            } else {
+              updatedAnnouncements = prev.map(a =>
+                a.id === id ? { ...a, dislikes: a.dislikes + 1 } : a
+              );
+            }
+
+            setUserActions(prev => ({ ...prev, [id]: 'dislike' }));
+            handleSearch(currentFilters.query, currentFilters.filters, mode, updatedAnnouncements);
+            return updatedAnnouncements;
+          });
+        }
       };
 
       const handleParticipate = (id) => {
@@ -1202,11 +1439,11 @@
         setShowParticipantsModal({ id, title });
       };
 
-      const handleSendContacts = (announcementId, announcementTitle, selectedParticipantIds) => {
-        setShowSendContactsModal({ announcementId, announcementTitle, selectedParticipantIds });
+      const handleSendContacts = (announcementId, announcementTitle, selectedParticipantIds, isPersonal = false) => {
+        setShowSendContactsModal({ announcementId, announcementTitle, selectedParticipantIds, isPersonal });
       };
 
-      const handleSubmitContacts = ({ phone, telegram }, { announcementId, announcementTitle, selectedParticipantIds }) => {
+      const handleSubmitContacts = ({ phone, telegram }, { announcementId, announcementTitle, selectedParticipantIds, isPersonal }) => {
         const newInvitations = selectedParticipantIds.map(recipientId => ({
           id: Date.now() + recipientId,
           senderId: user.id,
@@ -1215,9 +1452,14 @@
           telegram,
           announcementId,
           announcementTitle,
-          recipientId
+          recipientId,
+          isPersonal
         }));
         setInvitations(prev => [...prev, ...newInvitations]);
+      };
+
+      const handleInvite = (recipientId, recipientName) => {
+        setShowInviteModal({ recipientId, recipientName });
       };
 
       const handleCreate = (data) => {
@@ -1307,8 +1549,8 @@
         handleSearch(currentFilters.query, currentFilters.filters, mode);
       };
 
-      const handleReport = (id) => {
-        setShowReportModal(id);
+      const handleReport = (id, isProfile = false) => {
+        setShowReportModal({ id, isProfile });
       };
 
       const handleSubmitReport = (text) => {
@@ -1323,118 +1565,24 @@
         }
       };
 
-      if (isSynced === null) {
-        return (
-          <div className="min-h-screen flex items-center justify-center">
-            <div className="flex gap-2">
-              <span className="w-2 h-2 bg-blue-500 rounded-full animate-bounce"></span>
-              <span className="w-2 h-2 bg-blue-500 rounded-full animate-bounce delay-100"></span>
-              <span className="w-2 h-2 bg-blue-500 rounded-full animate-bounce delay-200"></span>
-            </div>
-          </div>
-        );
-      }
+      const handleModeChange = (newMode) => {
+        setMode(newMode);
+        handleSearch(currentFilters.query, currentFilters.filters, newMode);
+      };
 
       if (!isSynced) {
-        return (
-          <Modal onClose={() => setIsSynced(true)}>
-            <p className="mb-4">Синхронизация Telegram не удалась, войдите обычным путем</p>
-            <button onClick={() => setIsSynced(true)} className="bg-blue-500 text-white px-4 py-2 rounded-lg">Зарегистрироваться</button>
-          </Modal>
-        );
-      }
-
-      if (!user) {
         return <RegistrationModal onRegister={handleRegister} />;
       }
 
       return (
         <div className="min-h-screen bg-gray-100">
-          <header className="p-4 flex justify-center">
-            <img src="https://uno5512.github.io/FrendsHub/3.png" alt="Логотип" className="w-[100px] h-[100px]" loading="lazy" />
-          </header>
-          <main className="p-4">
-            <SearchBar
-              onSearch={handleSearch}
-              mode={mode}
-              onModeChange={setMode}
-            />
-            <section className="space-y-4">
-              {mode === 'events' ? (
-                filteredAnnouncements.length > 0 ? (
-                  filteredAnnouncements.map(a => (
-                    <Announcement
-                      key={a.id}
-                      data={a}
-                      isOwn={a.creatorId === user.id}
-                      isFavorite={favorites.includes(a.id)}
-                      isHidden={hiddenAnnouncements.includes(a.id)}
-                      onLike={handleLike}
-                      onDislike={handleDislike}
-                      onShowParticipants={handleShowParticipants}
-                      onEdit={() => {}}
-                      onDelete={handleDelete}
-                      activeMenuId={activeMenuId}
-                      openMenu={openMenu}
-                      closeMenu={closeMenu}
-                      userActions={userActions}
-                      onViewProfile={handleViewProfile}
-                      onAddToFavorites={handleAddToFavorites}
-                      onRemoveFromFavorites={handleRemoveFromFavorites}
-                      onHide={handleHide}
-                      onShowAgain={handleShowAgain}
-                      onReport={handleReport}
-                    />
-                  ))
-                ) : (
-                  <p className="text-gray-500">Нет событий</p>
-                )
-              ) : (
-                filteredUsers.length > 0 ? (
-                  filteredUsers.map(u => (
-                    <ProfileCard
-                      key={u.id}
-                      user={u}
-                      onViewProfile={handleViewProfile}
-                    />
-                  ))
-                ) : (
-                  <p className="text-gray-500">Нет друзей</p>
-                )
-              )}
-            </section>
-          </main>
-          <footer className="fixed bottom-4 right-4 flex gap-4">
-            {mode === 'events' && (
-              <button onClick={() => setShowCreate(true)} className="bg-blue-500 text-white w-12 h-12 rounded-full flex items-center justify-center text-2xl" aria-label="Создать объявление">+</button>
-            )}
-            <button onClick={() => setShowAccount(true)} className="bg-gray-500 text-white w-12 h-12 rounded-full flex items-center justify-center" aria-label="Открыть аккаунт">↑</button>
-          </footer>
-          {showAccount && (
-            <AccountModal
+          {showEditProfileModal && (
+            <EditProfileModal
               user={user}
-              announcements={announcements}
-              applications={applications}
-              favorites={favorites}
-              hiddenAnnouncements={hiddenAnnouncements}
-              invitations={invitations}
-              onClose={() => setShowAccount(false)}
-              onLike={handleLike}
-              onDislike={handleDislike}
-              onShowParticipants={handleShowParticipants}
-              onAddToFavorites={handleAddToFavorites}
-              onRemoveFromFavorites={handleRemoveFromFavorites}
-              onHide={handleHide}
-              onShowAgain={handleShowAgain}
-              onReport={handleReport}
-              onViewProfile={handleViewProfile}
-              userActions={userActions}
-              activeMenuId={activeMenuId}
-              openMenu={openMenu}
-              closeMenu={closeMenu}
+              onSave={handleEditProfile}
+              onClose={() => setShowEditProfileModal(false)}
             />
           )}
-          {showCreate && <CreateAnnouncementModal onCreate={handleCreate} onClose={() => setShowCreate(false)} />}
           {showProfile && (
             <ProfileModal
               user={users.find(u => u.id === showProfile)}
@@ -1456,23 +1604,57 @@
               closeMenu={closeMenu}
             />
           )}
-          {showReportModal && (
-            <ReportModal
-              onClose={() => setShowReportModal(null)}
-              onSubmit={handleSubmitReport}
-            />
-          )}
           {showParticipantsModal && (
             <ParticipantsModal
               announcementId={showParticipantsModal.id}
               announcementTitle={showParticipantsModal.title}
               participants={
-                applications.find(app => app.announcementId === showParticipantsModal.id)?.participants || []
+                applications
+                  .find(app => app.announcementId === showParticipantsModal.id)
+                  ?.participants || []
               }
               isOwn={announcements.find(a => a.id === showParticipantsModal.id)?.creatorId === user.id}
-              onParticipate={handleParticipate}
-              onSendContacts={handleSendContacts}
               currentUser={user}
+              onClose={() => setShowParticipantsModal(null)}
+            />
+          )}
+          {showAccount && (
+            <AccountModal
+              user={user}
+              announcements={announcements}
+              applications={applications}
+              favorites={favorites}
+              hiddenAnnouncements={hiddenAnnouncements}
+              invitations={invitations}
+              favoriteProfiles={favoriteProfiles}
+              hiddenProfiles={hiddenProfiles}
+              onClose={() => setShowAccount(false)}
+              onLike={handleLike}
+              onDislike={handleDislike}
+              onShowParticipants={handleShowParticipants}
+              onAddToFavorites={handleAddToFavorites}
+              onRemoveFromFavorites={handleRemoveFromFavorites}
+              onHide={handleHide}
+              onShowAgain={handleShowAgain}
+              onReport={handleReport}
+              onViewProfile={handleViewProfile}
+              userActions={userActions}
+              activeMenuId={activeMenuId}
+              openMenu={openMenu}
+              closeMenu={closeMenu}
+              onEditProfile={() => setShowEditProfileModal(true)}
+            />
+          )}
+          {showCreate && (
+            <CreateAnnouncementModal
+              onCreate={handleCreate}
+              onClose={() => setShowCreate(false)}
+            />
+          )}
+          {showReportModal && (
+            <ReportModal
+              onClose={() => setShowReportModal(null)}
+              onSubmit={handleSubmitReport}
             />
           )}
           {showSendContactsModal && (
@@ -1482,6 +1664,100 @@
               announcementTitle={showSendContactsModal.announcementTitle}
             />
           )}
+          {showInviteModal && (
+            <InviteModal
+              ownAnnouncements={announcements.filter(a => a.creatorId === user.id)}
+              onSelectAnnouncement={(id, title) =>
+                handleSelectAnnouncement(id, title, showInviteModal.recipientId, showInviteModal.recipientName)
+              }
+              onCreateAnnouncement={() => {
+                setShowInviteModal(null);
+                setShowCreate(true);
+              }}
+              onClose={() => setShowInviteModal(null)}
+            />
+          )}
+          <header className="flex justify-between items-center p-4 bg-white shadow">
+            <h1 className="text-xl font-bold">Fibonacci Poetry</h1>
+            <button
+              onClick={() => setShowAccount(true)}
+              className="bg-blue-500 text-white px-4 py-2 rounded-lg"
+            >
+              Аккаунт
+            </button>
+          </header>
+          <SearchBar
+            onSearch={handleSearch}
+            mode={mode}
+            onModeChange={handleModeChange}
+          />
+          <main className="p-4 space-y-4">
+            {mode === 'events' ? (
+              <>
+                <button
+                  onClick={() => setShowCreate(true)}
+                  className="bg-blue-500 text-white px-4 py-2 rounded-lg mb-4"
+                >
+                  Создать объявление
+                </button>
+                {filteredAnnouncements.length > 0 ? (
+                  filteredAnnouncements.map(a => (
+                    <Announcement
+                      key={a.id}
+                      data={a}
+                      isOwn={a.creatorId === user.id}
+                      isFavorite={favorites.includes(a.id)}
+                      isHidden={hiddenAnnouncements.includes(a.id)}
+                      onLike={handleLike}
+                      onDislike={handleDislike}
+                      onShowParticipants={handleShowParticipants}
+                      onEdit={() => {}}
+                      onDelete={() => {}}
+                      activeMenuId={activeMenuId}
+                      openMenu={openMenu}
+                      closeMenu={closeMenu}
+                      userActions={userActions}
+                      onViewProfile={handleViewProfile}
+                      onAddToFavorites={handleAddToFavorites}
+                      onRemoveFromFavorites={handleRemoveFromFavorites}
+                      onHide={handleHide}
+                      onShowAgain={handleShowAgain}
+                      onReport={handleReport}
+                    />
+                  ))
+                ) : (
+                  <p className="text-gray-500">Нет объявлений</p>
+                )}
+              </>
+            ) : (
+              filteredUsers.length > 0 ? (
+                filteredUsers.map(u => (
+                  <ProfileCard
+                    key={u.id}
+                    user={u}
+                    isOwn={u.id === user.id}
+                    isFavorite={favoriteProfiles.includes(u.id)}
+                    isHidden={hiddenProfiles.includes(u.id)}
+                    onLike={() => handleLike(u.id, true)}
+                    onDislike={() => handleDislike(u.id, true)}
+                    onViewProfile={handleViewProfile}
+                    onAddToFavorites={() => handleAddToFavorites(u.id, true)}
+                    onRemoveFromFavorites={() => handleRemoveFromFavorites(u.id, true)}
+                    onHide={() => handleHide(u.id, true)}
+                    onShowAgain={() => handleShowAgain(u.id, true)}
+                    onReport={() => handleReport(u.id, true)}
+                    activeMenuId={activeMenuId}
+                    openMenu={openMenu}
+                    closeMenu={closeMenu}
+                    userActions={userActions}
+                    onInvite={handleInvite}
+                  />
+                ))
+              ) : (
+                <p className="text-gray-500">Нет профилей</p>
+              )
+            )}
+          </main>
         </div>
       );
     }
