@@ -21,6 +21,10 @@
     .announcement-expanded {
       transition: max-height 0.3s ease-in-out;
     }
+    .like-dislike-img {
+      width: 24px;
+      height: 24px;
+    }
   </style>
 </head>
 <body>
@@ -154,7 +158,7 @@
       const handleFilterChange = (e) => {
         const { name, value } = e.target;
         setFilters(prev => ({ ...prev, [name]: value }));
-        onSearch(query, { ...filters, [name]: value });
+        onSearch(query, { ...prev, [name]: value });
       };
 
       const handleSearchChange = (e) => {
@@ -210,20 +214,56 @@
       );
     }
 
-    // Announcement Component
-    function Announcement({ data, isOwn, onLike, onDislike, onParticipate, onEdit, onDelete }) {
+    // Announcement Component (Updated)
+    function Announcement({ data, isOwn, onLike, onDislike, onParticipate, onEdit, onDelete, activeMenuId, openMenu, closeMenu }) {
       const [expanded, setExpanded] = useState(false);
-      const [showOptions, setShowOptions] = useState(false);
-      const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0 });
+      const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0, direction: 'below' });
       const buttonRef = useRef(null);
+      const showOptions = activeMenuId === data.id;
+
+      const updateMenuPosition = () => {
+        if (buttonRef.current && showOptions) {
+          const rect = buttonRef.current.getBoundingClientRect();
+          const menuHeight = 120; // Approximate menu height
+          const viewportHeight = window.innerHeight;
+          const spaceBelow = viewportHeight - rect.bottom;
+          const direction = spaceBelow < menuHeight ? 'above' : 'below';
+
+          setMenuPosition({
+            top: direction === 'below' ? rect.bottom + window.scrollY + 4 : rect.top + window.scrollY - menuHeight - 4,
+            left: rect.right + window.scrollX - 120,
+            direction
+          });
+        }
+      };
+
+      useEffect(() => {
+        updateMenuPosition();
+        // Update position during animation
+        if (showOptions) {
+          const interval = setInterval(updateMenuPosition, 50); // Update every 50ms during animation
+          return () => clearInterval(interval);
+        }
+      }, [expanded, showOptions]);
+
+      useEffect(() => {
+        const handleOutsideClick = (e) => {
+          if (buttonRef.current && !buttonRef.current.contains(e.target) && !e.target.closest('.options-menu')) {
+            closeMenu();
+          }
+        };
+        document.addEventListener('click', handleOutsideClick);
+        return () => document.removeEventListener('click', handleOutsideClick);
+      }, [closeMenu]);
 
       const handleOptionsClick = (e) => {
-        const rect = buttonRef.current.getBoundingClientRect();
-        setMenuPosition({
-          top: rect.bottom + window.scrollY + 4,
-          left: rect.right + window.scrollX - 120
-        });
-        setShowOptions(!showOptions);
+        e.stopPropagation();
+        if (showOptions) {
+          closeMenu();
+        } else {
+          openMenu(data.id);
+          updateMenuPosition();
+        }
       };
 
       return (
@@ -255,10 +295,14 @@
             <div className="flex justify-between items-center mt-2">
               <a href="#" className="text-blue-500">{data.creatorName}</a>
               <span>{data.age} лет</span>
-              <span>{data.participants} участник(ов)</span>
+              <span>{data.participants}</span>
               <div className="flex gap-2">
-                <button onClick={() => onLike(data.id)} className="text-green-500" aria-label="Лайк">👍 {data.likes}</button>
-                <button onClick={() => onDislike(data.id)} className="text-red-500" aria-label="Дизлайк">👎 {data.dislikes}</button>
+                <button onClick={() => onLike(data.id)} className="p-1" aria-label="Лайк">
+                  <img src="https://raw.githubusercontent.com/Uno5512/FrendsHub/main/2.png" alt="Лайк" className="like-dislike-img" />
+                </button>
+                <button onClick={() => onDislike(data.id)} className="p-1" aria-label="Дизлайк">
+                  <img src="https://raw.githubusercontent.com/Uno5512/FrendsHub/main/1.png" alt="Дизлайк" className="like-dislike-img" />
+                </button>
                 <button
                   ref={buttonRef}
                   onClick={handleOptionsClick}
@@ -272,21 +316,21 @@
           </article>
           {showOptions && (
             <div
-              className="fixed bg-white border rounded shadow-lg p-2 w-32 z-50"
+              className="fixed bg-white border rounded shadow-lg p-2 w-32 z-50 options-menu"
               style={{ top: `${menuPosition.top}px`, left: `${menuPosition.left}px` }}
             >
               {isOwn ? (
                 <>
-                  <button onClick={() => { onEdit(data); setShowOptions(false); }} className="block w-full text-left hover:bg-gray-100 p-1">Редактировать</button>
-                  <button onClick={() => { onDelete(data.id); setShowOptions(false); }} className="block w-full text-left hover:bg-gray-100 p-1">Удалить</button>
-                  <button onClick={() => setShowOptions(false)} className="block w-full text-left hover:bg-gray-100 p-1">Поделиться</button>
+                  <button onClick={() => { onEdit(data); closeMenu(); }} className="block w-full text-left hover:bg-gray-100 p-1">Редактировать</button>
+                  <button onClick={() => { onDelete(data.id); closeMenu(); }} className="block w-full text-left hover:bg-gray-100 p-1">Удалить</button>
+                  <button onClick={() => closeMenu()} className="block w-full text-left hover:bg-gray-100 p-1">Поделиться</button>
                 </>
               ) : (
                 <>
-                  <button onClick={() => setShowOptions(false)} className="block w-full text-left hover:bg-gray-100 p-1">Поделиться</button>
-                  <button onClick={() => setShowOptions(false)} className="block w-full text-left hover:bg-gray-100 p-1">В избранное</button>
-                  <button onClick={() => setShowOptions(false)} className="block w-full text-left hover:bg-gray-100 p-1">Не показывать</button>
-                  <button onClick={() => setShowOptions(false)} className="block w-full text-left hover:bg-gray-100 p-1">Пожаловаться</button>
+                  <button onClick={() => closeMenu()} className="block w-full text-left hover:bg-gray-100 p-1">Поделиться</button>
+                  <button onClick={() => closeMenu()} className="block w-full text-left hover:bg-gray-100 p-1">В избранное</button>
+                  <button onClick={() => closeMenu()} className="block w-full text-left hover:bg-gray-100 p-1">Не показывать</button>
+                  <button onClick={() => closeMenu()} className="block w-full text-left hover:bg-gray-100 p-1">Пожаловаться</button>
                 </>
               )}
             </div>
@@ -295,7 +339,7 @@
       );
     }
 
-    // Participants Modal (New)
+    // Participants Modal
     function ParticipantsModal({ announcementTitle, participants, onClose }) {
       return (
         <Modal onClose={onClose}>
@@ -317,7 +361,7 @@
       );
     }
 
-    // Account Modal (Updated)
+    // Account Modal
     function AccountModal({ user, announcements, applications, onClose }) {
       const [showParticipantsModal, setShowParticipantsModal] = useState(null);
       const ownAnnouncements = announcements.filter(a => a.creatorName === user.name);
@@ -426,7 +470,7 @@
       );
     }
 
-    // Main App Component
+    // Main App Component (Updated)
     function App() {
       const [user, setUser] = useState(null);
       const [isSynced, setIsSynced] = useState(null);
@@ -450,10 +494,31 @@
       const [showCreate, setShowCreate] = useState(false);
       const [applications, setApplications] = useState([]);
       const [currentFilters, setCurrentFilters] = useState({ query: '', filters: { city: '', type: '', date: '', gender: '', sort: 'По рейтингу' } });
+      const [activeMenuId, setActiveMenuId] = useState(null);
+
+      const openMenu = (id) => {
+        setActiveMenuId(id);
+      };
+
+      const closeMenu = () => {
+        setActiveMenuId(null);
+      };
 
       useEffect(() => {
         setTimeout(() => setIsSynced(Math.random() > 0.5), 1000); // Simulate Telegram sync
       }, []);
+
+      const calculateAge = (birthdate) => {
+        if (!birthdate) return 25; // Fallback
+        const today = new Date('2025-05-19');
+        const birth = new Date(birthdate);
+        let age = today.getFullYear() - birth.getFullYear();
+        const monthDiff = today.getMonth() - birth.getMonth();
+        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+          age--;
+        }
+        return age;
+      };
 
       const handleRegister = (userData) => {
         setUser(userData);
@@ -543,7 +608,7 @@
           id: Date.now(),
           creatorName: user.name,
           creatorAvatar: user.avatar,
-          age: 25,
+          age: calculateAge(user.birthdate),
           participants: 0,
           likes: 0,
           dislikes: 0
@@ -636,6 +701,9 @@
                   onParticipate={handleParticipate}
                   onEdit={() => {}}
                   onDelete={handleDelete}
+                  activeMenuId={activeMenuId}
+                  openMenu={openMenu}
+                  closeMenu={closeMenu}
                 />
               ))}
             </section>
