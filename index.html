@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>P2P Social - Децентрализованная лента</title>
+    <title>Социальная лента</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -32,13 +32,13 @@
         body {
             background-image: radial-gradient(circle, #e5e7eb 1px, transparent 1px);
             background-size: 12px 12px;
-            background-color: #f8fafc;
+            background-color: #f8f4f2;
         }
         
         .glass {
-            background: rgba(255, 255, 255, 0.25);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(6px);
+            border: 1px solid rgba(225, 222, 219, 0.5);
         }
         
         .status-dot {
@@ -49,50 +49,83 @@
             0%, 100% { opacity: 1; }
             50% { opacity: 0.5; }
         }
+
+        .create-btn {
+            border: 2px dashed #383533;
+            transition: all 0.3s ease;
+        }
+
+        .create-btn:hover {
+            border-color: #fbede0;
+            background-color: rgba(251, 237, 224, 0.1);
+        }
+
+        .scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
     </style>
 </head>
-<body class="font-rubik min-h-screen">
+<body class="font-rubik min-h-screen text-[#383533]">
     <div class="container mx-auto px-4 py-6 max-w-4xl">
-        <!-- Header -->
-        <div class="text-center mb-8">
-            <h1 class="text-4xl font-bold text-gray-800 mb-2">🌐 P2P Social</h1>
-            <p class="text-gray-600 mb-4">Децентрализованная лента без серверов</p>
-            <div class="flex items-center justify-center gap-3 text-sm text-gray-700">
+        <!-- Header с кнопкой создания -->
+        <div class="flex items-center justify-between mb-6">
+            <div class="flex items-center gap-3 text-sm">
                 <div class="flex items-center gap-2">
                     <div class="w-2 h-2 rounded-full bg-red-500 status-dot" id="statusDot"></div>
-                    <span id="statusText">Подключение к сети...</span>
+                    <span id="statusText">Подключение...</span>
                 </div>
-                <span class="text-gray-500">|</span>
-                <span id="peerCount">Пиров: 0</span>
-                <span class="text-gray-500">|</span>
-                <span id="postCount">Постов: 0</span>
+                <span class="text-[#383533]/50">|</span>
+                <span id="friendCount">Друзей: 0</span>
+                <span class="text-[#383533]/50">|</span>
+                <span id="postCount">Записей: 0</span>
+            </div>
+            
+            <button id="createPostBtn" class="create-btn rounded-lg px-4 py-2 flex items-center gap-2 text-[#383533] hover:text-[#383533]/80">
+                <svg width="20" height="20" viewBox="0 0 400 400" fill="none">
+                    <path d="M71.8708 189.953C76.0596 179.972 67.0124 166.184 74.2179 157.188C75.8153 155.199 122.602 153.152 125.561 155.514C136.45 164.206 111.415 193.423 144.018 201.553C171.926 208.513 155.397 160.743 162.516 157.188C171.049 152.934 188.865 158.57 198.547 157.188C226.846 153.158 203.311 181.664 211.97 193.182C217.423 200.435 261.828 185.402 250.56 219.132C244.647 236.825 226.375 230.776 216.164 235.873C211.338 238.281 215.898 272.743 215.1 272.582C205.09 270.587 157.177 275.336 158.734 276.89C168.054 286.189 186.94 229.756 144.018 235.873C133.985 237.301 125.13 246.004 123.884 255.963C123.16 261.765 125.774 278.518 125.561 278.564C113.242 281.023 100.187 277.778 86.9713 281.075C84.5867 281.671 67.5038 288.431 65.9983 286.935C63.3552 284.292 66.3776 262.486 66.8373 258.788C67.5727 252.946 65.9754 240.01 71.8708 240.01C84.7533 240.01 42.0914 251.826 29.6626 235.873C17.2337 219.92 29.6626 189.953 66.8373 198.994" stroke="currentColor" stroke-width="16" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M219.962 158.69C301.398 167.678 215.1 108.884 284.641 112.13C309.301 113.281 287.258 146.158 293.857 154.973C299.085 161.97 334.878 147.654 341.615 156.653C345.643 162.039 327.578 197.327 334.074 199.496C339.004 201.142 350.98 188.742 359.204 191.096C376.15 195.952 380.691 231.713 365.907 238.979C351.123 246.245 341.747 240.521 340.777 241.5C336.129 246.154 349.597 267.685 346.642 275.102C344.754 279.832 305.714 287.83 301.398 283.503C292.4 274.481 309.369 240.976 291.344 236.459C265.56 229.998 276.039 267.893 267.046 270.902C254.301 275.16 229.326 272.582 215.1 272.582" stroke="currentColor" stroke-width="16" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span class="font-medium">Создать</span>
+            </button>
+        </div>
+
+        <!-- Категории -->
+        <div class="relative mb-6">
+            <div id="categoryContainer" class="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide py-2">
+                <div id="categories" class="flex space-x-3 px-4">
+                    <!-- Категории будут загружены динамически -->
+                </div>
             </div>
         </div>
 
-        <!-- Create Post Form -->
-        <div class="glass rounded-2xl p-6 mb-6">
-            <h2 class="text-xl font-semibold text-gray-800 mb-4">Создать событие</h2>
+        <!-- Форма создания поста -->
+        <div id="createForm" class="glass rounded-2xl p-6 mb-6 hidden">
+            <h2 class="text-xl font-semibold mb-4">Создать запись</h2>
             <div class="space-y-4">
                 <input type="text" id="postTitle" 
-                       placeholder="Заголовок события..." 
-                       class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-400 focus:outline-none bg-white/70">
+                       placeholder="Заголовок..." 
+                       class="w-full px-4 py-3 rounded-xl border border-[#e1dedb]/50 focus:border-[#fbede0] focus:outline-none bg-white/70">
                 
                 <textarea id="postDescription" 
-                          placeholder="Описание события..." 
+                          placeholder="Описание..." 
                           rows="3"
-                          class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-400 focus:outline-none bg-white/70 resize-none"></textarea>
+                          class="w-full px-4 py-3 rounded-xl border border-[#e1dedb]/50 focus:border-[#fbede0] focus:outline-none bg-white/70 resize-none"></textarea>
                 
                 <input type="text" id="postTags" 
-                       placeholder="Теги через запятую (концерт, музыка, рок)" 
-                       class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-400 focus:outline-none bg-white/70">
+                       placeholder="Теги через запятую" 
+                       class="w-full px-4 py-3 rounded-xl border border-[#e1dedb]/50 focus:border-[#fbede0] focus:outline-none bg-white/70">
                 
                 <textarea id="postContacts" 
                           placeholder="Ваши контакты и ссылки..." 
                           rows="2"
-                          class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-400 focus:outline-none bg-white/70 resize-none"></textarea>
+                          class="w-full px-4 py-3 rounded-xl border border-[#e1dedb]/50 focus:border-[#fbede0] focus:outline-none bg-white/70 resize-none"></textarea>
                 
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    <select id="postCity" class="px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-400 focus:outline-none bg-white/70">
+                    <select id="postCity" class="px-4 py-3 rounded-xl border border-[#e1dedb]/50 focus:border-[#fbede0] focus:outline-none bg-white/70">
                         <option value="">Город</option>
                         <option value="moscow">Москва</option>
                         <option value="spb">СПб</option>
@@ -101,46 +134,52 @@
                         <option value="other">Другой</option>
                     </select>
                     
-                    <select id="postType" class="px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-400 focus:outline-none bg-white/70">
-                        <option value="event">Событие</option>
-                        <option value="meet">Встреча</option>
-                        <option value="help">Помощь</option>
-                        <option value="sale">Продажа</option>
-                        <option value="other">Другое</option>
-                    </select>
-                    
-                    <select id="postGender" class="px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-400 focus:outline-none bg-white/70">
+                    <select id="postGender" class="px-4 py-3 rounded-xl border border-[#e1dedb]/50 focus:border-[#fbede0] focus:outline-none bg-white/70">
                         <option value="">Пол</option>
                         <option value="male">Мужской</option>
                         <option value="female">Женский</option>
                         <option value="any">Любой</option>
                     </select>
                     
-                    <select id="postAge" class="px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-400 focus:outline-none bg-white/70">
+                    <select id="postAge" class="px-4 py-3 rounded-xl border border-[#e1dedb]/50 focus:border-[#fbede0] focus:outline-none bg-white/70">
                         <option value="">Возраст</option>
                         <option value="18-25">18-25</option>
                         <option value="26-35">26-35</option>
                         <option value="36-45">36-45</option>
                         <option value="46+">46+</option>
                     </select>
+
+                    <select id="postType" class="px-4 py-3 rounded-xl border border-[#e1dedb]/50 focus:border-[#fbede0] focus:outline-none bg-white/70">
+                        <option value="event">Событие</option>
+                        <option value="meet">Встреча</option>
+                        <option value="help">Помощь</option>
+                        <option value="sale">Продажа</option>
+                        <option value="other">Другое</option>
+                    </select>
                 </div>
                 
-                <button onclick="createPost()" 
-                        class="w-full bg-gray-600 hover:bg-gray-700 text-white font-medium py-3 px-6 rounded-xl transition-colors">
-                    Создать событие
-                </button>
+                <div class="flex gap-3">
+                    <button onclick="createPost()" 
+                            class="flex-1 bg-[#383533] hover:bg-[#383533]/90 text-white font-medium py-3 px-6 rounded-xl transition-colors">
+                        Опубликовать
+                    </button>
+                    <button onclick="cancelCreate()" 
+                            class="px-6 py-3 border border-[#e1dedb]/50 rounded-xl text-[#383533] hover:bg-white/50 transition-colors">
+                        Отмена
+                    </button>
+                </div>
             </div>
         </div>
 
-        <!-- Filters -->
+        <!-- Фильтры -->
         <div class="glass rounded-2xl p-6 mb-6">
-            <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-6 gap-4">
                 <input type="text" id="searchBox" 
                        placeholder="🔍 Поиск..." 
                        oninput="filterPosts()"
-                       class="md:col-span-2 px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-400 focus:outline-none bg-white/70">
+                       class="md:col-span-2 px-4 py-3 rounded-xl border border-[#e1dedb]/50 focus:border-[#fbede0] focus:outline-none bg-white/70">
                 
-                <select id="filterCity" onchange="filterPosts()" class="px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-400 focus:outline-none bg-white/70">
+                <select id="filterCity" onchange="filterPosts()" class="px-4 py-3 rounded-xl border border-[#e1dedb]/50 focus:border-[#fbede0] focus:outline-none bg-white/70">
                     <option value="">Все города</option>
                     <option value="moscow">Москва</option>
                     <option value="spb">СПб</option>
@@ -148,17 +187,23 @@
                     <option value="nsk">Новосибирск</option>
                     <option value="other">Другой</option>
                 </select>
-                
-                <select id="filterType" onchange="filterPosts()" class="px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-400 focus:outline-none bg-white/70">
-                    <option value="">Все типы</option>
-                    <option value="event">События</option>
-                    <option value="meet">Встречи</option>
-                    <option value="help">Помощь</option>
-                    <option value="sale">Продажа</option>
-                    <option value="other">Другое</option>
+
+                <select id="filterGender" onchange="filterPosts()" class="px-4 py-3 rounded-xl border border-[#e1dedb]/50 focus:border-[#fbede0] focus:outline-none bg-white/70">
+                    <option value="">Любой пол</option>
+                    <option value="male">Мужской</option>
+                    <option value="female">Женский</option>
+                    <option value="any">Любой</option>
+                </select>
+
+                <select id="filterAge" onchange="filterPosts()" class="px-4 py-3 rounded-xl border border-[#e1dedb]/50 focus:border-[#fbede0] focus:outline-none bg-white/70">
+                    <option value="">Любой возраст</option>
+                    <option value="18-25">18-25</option>
+                    <option value="26-35">26-35</option>
+                    <option value="36-45">36-45</option>
+                    <option value="46+">46+</option>
                 </select>
                 
-                <select id="filterSort" onchange="filterPosts()" class="px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-400 focus:outline-none bg-white/70">
+                <select id="filterSort" onchange="filterPosts()" class="px-4 py-3 rounded-xl border border-[#e1dedb]/50 focus:border-[#fbede0] focus:outline-none bg-white/70">
                     <option value="new">Новые</option>
                     <option value="old">Старые</option>
                     <option value="liked">По лайкам</option>
@@ -169,16 +214,31 @@
             </div>
             
             <button onclick="resetFilters()" 
-                    class="mt-4 bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-lg transition-colors">
+                    class="mt-4 bg-[#383533]/10 hover:bg-[#383533]/20 text-[#383533] font-medium py-2 px-4 rounded-lg transition-colors">
                 Сбросить фильтры
             </button>
         </div>
 
-        <!-- Posts Feed -->
+        <!-- Лента постов -->
         <div id="postsFeed">
             <div class="glass rounded-2xl p-8 text-center">
                 <div class="text-6xl mb-4">🚀</div>
-                <p class="text-gray-600">Создайте первый пост или дождитесь подключения к сети!</p>
+                <p class="text-[#383533]/60">Создайте первую запись или дождитесь подключения к сети!</p>
+            </div>
+        </div>
+
+        <!-- Модальное окно контактов -->
+        <div id="contactModal" class="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-30 hidden">
+            <div class="bg-[#f8f4f2] rounded-xl max-w-md w-full max-h-[80vh] shadow-2xl flex flex-col">
+                <div class="p-5 pb-3">
+                    <h2 class="text-lg font-semibold">Контакты</h2>
+                </div>
+                <div class="flex-1 overflow-y-auto px-5">
+                    <div id="contactContent" class="text-sm text-[#383533]/80"></div>
+                </div>
+                <div class="border-t border-[#e1dedb]/30 p-4">
+                    <button id="closeContactModal" class="w-full px-4 py-2 bg-[#383533] text-white rounded-lg text-sm hover:bg-[#383533]/90 transition-colors">Закрыть</button>
+                </div>
             </div>
         </div>
     </div>
@@ -217,7 +277,7 @@
             shouldUpdate(existing, incoming) {
                 if (incoming.timestamp > existing.timestamp) return true;
                 if (incoming.timestamp === existing.timestamp) {
-                    return incoming.nodeId > existing.nodeId; // Детерминированное разрешение конфликтов
+                    return incoming.nodeId > existing.nodeId;
                 }
                 return false;
             }
@@ -230,7 +290,6 @@
                         updated = true;
                     }
                     
-                    // Обновляем vector clock
                     const incomingClock = entry.vectorClock.get(entry.nodeId) || 0;
                     const currentClock = this.vectorClock.get(entry.nodeId) || 0;
                     this.vectorClock.set(entry.nodeId, Math.max(currentClock, incomingClock));
@@ -271,12 +330,12 @@
             }
         }
 
-        // WebRTC P2P Network
+        // P2P Network
         class P2PNetwork {
             constructor() {
-                this.peers = new Map();
+                this.friends = new Map();
                 this.connections = new Map();
-                this.rtcConnections = new Map(); // Для WebRTC соединений
+                this.rtcConnections = new Map();
                 this.myId = this.generateId();
                 this.crdt = new CRDT();
                 this.userActions = new Map();
@@ -285,6 +344,8 @@
                 this.signalingSocket = null;
                 this.reconnectAttempts = 0;
                 this.maxReconnectAttempts = 5;
+                this.categories = ['все', 'событие', 'встреча', 'помощь', 'продажа', 'другое'];
+                this.activeCategory = 'все';
                 this.iceServers = [
                     { urls: 'stun:stun.l.google.com:19302' },
                     { urls: 'stun:stun1.l.google.com:19302' },
@@ -296,10 +357,30 @@
                 this.startCleanupTimer();
                 this.registerServiceWorker();
                 this.setupNetworkEventListeners();
+                this.initCategories();
             }
 
             generateId() {
-                return 'peer_' + Math.random().toString(36).substr(2, 9) + Date.now().toString(36);
+                return 'user_' + Math.random().toString(36).substr(2, 9) + Date.now().toString(36);
+            }
+
+            initCategories() {
+                const container = document.getElementById('categories');
+                container.innerHTML = this.categories.map(cat => `
+                    <button class="text-base font-medium snap-center px-3 py-1.5 rounded-md whitespace-nowrap transition-all ${cat === this.activeCategory ? 'bg-[#fbede0] text-[#383533]' : 'text-[#383533]/70 hover:text-[#383533]'}" data-category="${cat}">
+                        ${cat.charAt(0).toUpperCase() + cat.slice(1)}
+                    </button>
+                `).join('');
+
+                // Обработчик категорий
+                container.addEventListener('click', (e) => {
+                    const target = e.target.closest('[data-category]');
+                    if (target) {
+                        this.activeCategory = target.getAttribute('data-category');
+                        this.initCategories();
+                        renderPosts();
+                    }
+                });
             }
 
             async registerServiceWorker() {
@@ -308,23 +389,20 @@
                         const registration = await navigator.serviceWorker.register('./sw.js');
                         console.log('Service Worker зарегистрирован:', registration.scope);
                         
-                        // Слушаем сообщения от Service Worker
                         navigator.serviceWorker.addEventListener('message', event => {
                             if (event.data.type === 'SYNC_COMPLETE') {
-                                console.log('Синхронизировано постов:', event.data.posts);
+                                console.log('Синхронизировано записей:', event.data.posts);
                                 this.updateStatus('Синхронизация завершена');
                                 renderPosts();
                             }
                         });
                         
-                        // Запрашиваем фоновую синхронизацию при создании поста
                         if ('sync' in window.ServiceWorkerRegistration.prototype) {
                             registration.sync.register('sync-posts');
                         }
                         
                     } catch (error) {
                         console.error('Ошибка Service Worker:', error);
-                        // Fallback: создаем Service Worker через blob
                         await this.registerFallbackServiceWorker();
                     }
                 } else {
@@ -358,14 +436,11 @@
 
             async initNetwork() {
                 try {
-                    this.updateStatus('Подключение к signaling серверу...');
-                    
-                    // Пытаемся подключиться к реальному signaling серверу
+                    this.updateStatus('Подключение...');
                     await this.connectToSignalingServer();
-                    
                 } catch (error) {
                     console.error('Network error:', error);
-                    this.updateStatus('Работаем локально');
+                    this.updateStatus('Локальный режим');
                     this.isConnected = false;
                     this.startLocalMode();
                 }
@@ -374,20 +449,15 @@
             async connectToSignalingServer() {
                 return new Promise((resolve, reject) => {
                     try {
-                        // Подключаемся к вашему bootstrap signaling серверу
-                        // Замените на реальный URL после деплоя
-                        const signalingUrl = 'ws://six-4xly.onrender.com/ws'; // Для локальной разработки
-                        // const signalingUrl = 'wss://your-signaling-server.herokuapp.com'; // Для production
+                        const signalingUrl = 'wss://six-4xly.onrender.com';
                         
                         this.signalingSocket = new WebSocket(signalingUrl);
                         
                         this.signalingSocket.onopen = () => {
-                            console.log('🔗 Bootstrap signaling подключен');
+                            console.log('🔗 Signaling подключен');
                             this.isConnected = true;
-                            this.updateStatus('Подключен к сети');
+                            this.updateStatus('live');
                             this.reconnectAttempts = 0;
-                            
-                            // Анонсируем себя в сети
                             this.announcePresence();
                             resolve();
                         };
@@ -395,13 +465,7 @@
                         this.signalingSocket.onmessage = async (event) => {
                             try {
                                 const message = JSON.parse(event.data);
-                                
-                                // Игнорируем собственные сообщения
-                                if (message.from === this.myId) {
-                                    return;
-                                }
-                                
-                                // Обрабатываем только сообщения адресованные нам или broadcast
+                                if (message.from === this.myId) return;
                                 if (!message.target || message.target === this.myId || message.target === 'all') {
                                     await this.handleSignalingMessage(message);
                                 }
@@ -413,17 +477,15 @@
                         this.signalingSocket.onclose = () => {
                             console.log('❌ Signaling соединение закрыто');
                             this.isConnected = false;
-                            this.updateStatus('Соединение потеряно');
+                            this.updateStatus('Переподключение...');
                             
-                            // Переподключение с экспоненциальной задержкой
                             if (this.reconnectAttempts < this.maxReconnectAttempts && this.isOnline) {
                                 const delay = Math.min(1000 * Math.pow(2, this.reconnectAttempts), 30000);
                                 this.reconnectAttempts++;
-                                
                                 console.log(`🔄 Переподключение через ${delay}ms (попытка ${this.reconnectAttempts})`);
                                 setTimeout(() => this.connectToSignalingServer(), delay);
                             } else {
-                                this.updateStatus('Переподключение не удалось');
+                                this.updateStatus('Офлайн');
                                 this.startLocalMode();
                             }
                         };
@@ -433,7 +495,6 @@
                             reject(error);
                         };
 
-                        // Таймаут подключения
                         setTimeout(() => {
                             if (this.signalingSocket.readyState !== WebSocket.OPEN) {
                                 console.log('⏰ Timeout подключения к signaling серверу');
@@ -449,17 +510,14 @@
             }
 
             startLocalMode() {
-                // Режим работы без сети - только локальные данные
                 setTimeout(() => {
                     this.updateStatus('Локальный режим');
                     this.broadcastMyData();
-                    // Имитируем несколько локальных "пиров" для демо
-                    this.simulateLocalPeers();
+                    this.simulateLocalFriends();
                 }, 1000);
             }
 
-            simulateLocalPeers() {
-                // Создаем виртуальных пиров для демонстрации
+            simulateLocalFriends() {
                 const demoUsers = [
                     { name: 'Алексей', city: 'moscow' },
                     { name: 'Мария', city: 'spb' },
@@ -467,27 +525,29 @@
                 ];
 
                 demoUsers.forEach((user, index) => {
-                    const peerId = `demo_${user.name}_${index}`;
-                    this.peers.set(peerId, {
-                        id: peerId,
+                    const friendId = `demo_${user.name}_${index}`;
+                    this.friends.set(friendId, {
+                        id: friendId,
                         name: user.name,
                         connected: true,
                         lastSeen: Date.now()
                     });
 
-                    // Создаем демо-посты от виртуальных пользователей
                     if (Math.random() > 0.5) {
                         const demoPost = {
                             id: this.generateId(),
-                            author: peerId,
+                            author: friendId,
                             authorName: user.name,
-                            timestamp: Date.now() - Math.random() * 86400000, // Последние 24 часа
+                            timestamp: Date.now() - Math.random() * 86400000,
                             expiresAt: Date.now() + (7 * 24 * 60 * 60 * 1000),
                             title: this.generateDemoTitle(),
                             description: this.generateDemoDescription(),
                             city: user.city,
                             type: ['event', 'meet', 'help'][Math.floor(Math.random() * 3)],
+                            gender: ['male', 'female', 'any'][Math.floor(Math.random() * 3)],
+                            age: ['18-25', '26-35', '36-45'][Math.floor(Math.random() * 3)],
                             tags: this.generateDemoTags(),
+                            contacts: this.generateDemoContacts(),
                             likes: Math.floor(Math.random() * 10),
                             likedBy: [],
                             reports: { illegal: 0, provocation: 0, advertisement: 0 }
@@ -497,7 +557,7 @@
                     }
                 });
 
-                this.updatePeerCount();
+                this.updateCounts();
                 renderPosts();
             }
 
@@ -533,14 +593,96 @@
                 return allTags.sort(() => 0.5 - Math.random()).slice(0, count);
             }
 
+            generateDemoContacts() {
+                const contacts = [
+                    'Telegram: @username\nТелефон: +7 999 123-45-67',
+                    'WhatsApp: +7 987 654-32-10\nEmail: user@example.com',
+                    'ВКонтакте: vk.com/id123456\nТелефон: +7 912 345-67-89'
+                ];
+                return contacts[Math.floor(Math.random() * contacts.length)];
+            }
+
+            setupNetworkEventListeners() {
+                window.addEventListener('online', () => {
+                    this.isOnline = true;
+                    this.updateStatus('Сеть восстановлена');
+                    this.reconnectAttempts = 0;
+                    this.initNetwork();
+                });
+
+                window.addEventListener('offline', () => {
+                    this.isOnline = false;
+                    this.isConnected = false;
+                    this.updateStatus('Офлайн');
+                    this.closeAllConnections();
+                });
+
+                window.addEventListener('beforeunload', () => {
+                    this.disconnect();
+                });
+
+                document.addEventListener('visibilitychange', () => {
+                    if (!document.hidden && this.isOnline && !this.isConnected) {
+                        this.initNetwork();
+                    }
+                });
+            }
+
+            closeAllConnections() {
+                for (const [friendId, connection] of this.rtcConnections) {
+                    connection.close();
+                }
+                this.rtcConnections.clear();
+                
+                for (const [friendId, channel] of this.connections) {
+                    channel.close();
+                }
+                this.connections.clear();
+                
+                if (this.signalingSocket) {
+                    this.signalingSocket.close();
+                    this.signalingSocket = null;
+                }
+                
+                this.friends.clear();
+                this.updateCounts();
+            }
+
+            disconnect() {
+                this.closeAllConnections();
+                this.isConnected = false;
+                this.updateStatus('Отключен');
+            }
+
             announcePresence() {
+                this.sendSignalingMessage({
+                    type: 'announce',
+                    target: 'all',
+                    peerId: this.myId,
+                    userAgent: navigator.userAgent.includes('Mobile') ? 'mobile' : 'desktop'
+                });
+                
+                console.log(`📢 Объявили о присутствии в сети (ID: ${this.myId})`);
+            }
+
+            sendSignalingMessage(message) {
                 if (this.signalingSocket && this.signalingSocket.readyState === WebSocket.OPEN) {
-                    const announcement = {
-                        type: 'announce',
-                        peerId: this.myId,
+                    const wrappedMessage = {
+                        ...message,
+                        from: this.myId,
                         timestamp: Date.now()
                     };
-                    this.signalingSocket.send(JSON.stringify(announcement));
+                    
+                    try {
+                        this.signalingSocket.send(JSON.stringify(wrappedMessage));
+                        return true;
+                    } catch (error) {
+                        console.error('⚠️ Ошибка отправки signaling сообщения:', error);
+                        return false;
+                    }
+                } else {
+                    console.warn('⚠️ Signaling соединение не активно');
+                    return false;
                 }
             }
 
@@ -550,12 +692,11 @@
                 switch (message.type) {
                     case 'announce':
                         if (message.peerId !== this.myId) {
-                            console.log(`👋 Новый пир в сети: ${message.peerId}`);
-                            // Инициируем соединение только если наш ID больше (избегаем дублирования)
+                            console.log(`👋 Новый друг в сети: ${message.peerId}`);
                             if (this.myId > message.peerId) {
                                 setTimeout(() => {
-                                    this.connectToPeer(message.peerId);
-                                }, Math.random() * 2000); // Случайная задержка
+                                    this.connectToFriend(message.peerId);
+                                }, Math.random() * 2000);
                             }
                         }
                         break;
@@ -568,41 +709,142 @@
                     case 'ice-candidate':
                         await this.handleIceCandidate(message);
                         break;
-                    default:
-                        console.log(`❓ Неизвестный тип signaling сообщения: ${message.type}`);
                 }
             }
 
-            async connectToPeer(peerId) {
-                if (this.connections.has(peerId) || this.rtcConnections.has(peerId)) {
-                    console.log(`🔄 Соединение с ${peerId} уже существует`);
+            async connectToFriend(friendId) {
+                if (this.connections.has(friendId) || this.rtcConnections.has(friendId)) {
+                    console.log(`🔄 Соединение с ${friendId} уже существует`);
                     return;
                 }
 
                 try {
-                    console.log(`🤝 Инициируем соединение с пиром: ${peerId}`);
-                    const connection = await this.createRTCConnection(peerId);
+                    console.log(`🤝 Инициируем соединение с другом: ${friendId}`);
+                    const connection = await this.createRTCConnection(friendId);
                     
-                    // Создаем offer
                     const offer = await connection.createOffer({
                         offerToReceiveAudio: false,
                         offerToReceiveVideo: false
                     });
                     await connection.setLocalDescription(offer);
 
-                    // Отправляем offer через signaling сервер
                     this.sendSignalingMessage({
                         type: 'offer',
-                        target: peerId,
+                        target: friendId,
                         offer: offer
                     });
 
-                    console.log(`📤 Offer отправлен пиру: ${peerId}`);
+                    console.log(`📤 Offer отправлен другу: ${friendId}`);
 
                 } catch (error) {
-                    console.error(`❌ Ошибка подключения к пиру ${peerId}:`, error);
-                    this.handlePeerDisconnection(peerId);
+                    console.error(`❌ Ошибка подключения к другу ${friendId}:`, error);
+                    this.handleFriendDisconnection(friendId);
                 }
+            }
+
+            async createRTCConnection(friendId) {
+                if (this.rtcConnections.has(friendId)) {
+                    return this.rtcConnections.get(friendId);
+                }
+
+                const connection = new RTCPeerConnection({ iceServers: this.iceServers });
+                this.rtcConnections.set(friendId, connection);
+                
+                const dataChannel = connection.createDataChannel('posts', {
+                    ordered: true,
+                    maxRetransmits: 3
+                });
+
+                this.setupDataChannel(dataChannel, friendId);
+                
+                connection.ondatachannel = (event) => {
+                    this.setupDataChannel(event.channel, friendId);
+                };
+
+                connection.onicecandidate = (event) => {
+                    if (event.candidate) {
+                        this.sendSignalingMessage({
+                            type: 'ice-candidate',
+                            target: friendId,
+                            candidate: event.candidate
+                        });
+                    }
+                };
+
+                connection.onconnectionstatechange = () => {
+                    console.log(`RTC Connection state with ${friendId}: ${connection.connectionState}`);
+                    
+                    if (connection.connectionState === 'connected') {
+                        this.friends.set(friendId, {
+                            id: friendId,
+                            connected: true,
+                            lastSeen: Date.now()
+                        });
+                        this.updateCounts();
+                    } else if (connection.connectionState === 'failed' || connection.connectionState === 'disconnected') {
+                        this.handleFriendDisconnection(friendId);
+                    }
+                };
+
+                return connection;
+            }
+
+            setupDataChannel(dataChannel, friendId) {
+                dataChannel.onopen = () => {
+                    console.log(`Data channel открыт с ${friendId}`);
+                    this.connections.set(friendId, dataChannel);
+                    
+                    this.sendToFriend(friendId, {
+                        type: 'sync',
+                        data: this.crdt.serialize()
+                    });
+                };
+
+                dataChannel.onmessage = (event) => {
+                    try {
+                        const message = JSON.parse(event.data);
+                        this.handleFriendMessage(friendId, message);
+                    } catch (error) {
+                        console.error('Ошибка парсинга сообщения от друга:', error);
+                    }
+                };
+
+                dataChannel.onclose = () => {
+                    console.log(`Data channel закрыт с ${friendId}`);
+                    this.handleFriendDisconnection(friendId);
+                };
+
+                dataChannel.onerror = (error) => {
+                    console.error(`Ошибка data channel с ${friendId}:`, error);
+                };
+            }
+
+            handleFriendDisconnection(friendId) {
+                this.connections.delete(friendId);
+                this.friends.delete(friendId);
+                
+                const rtcConnection = this.rtcConnections.get(friendId);
+                if (rtcConnection) {
+                    rtcConnection.close();
+                    this.rtcConnections.delete(friendId);
+                }
+                
+                this.updateCounts();
+                console.log(`Друг ${friendId} отключен`);
+            }
+
+            sendToFriend(friendId, message) {
+                const dataChannel = this.connections.get(friendId);
+                if (dataChannel && dataChannel.readyState === 'open') {
+                    try {
+                        dataChannel.send(JSON.stringify(message));
+                        return true;
+                    } catch (error) {
+                        console.error(`Ошибка отправки сообщения другу ${friendId}:`, error);
+                        return false;
+                    }
+                }
+                return false;
             }
 
             async handleOffer(message) {
@@ -620,7 +862,7 @@
                         answer: answer
                     });
 
-                    console.log(`📤 Answer отправлен пиру: ${message.from}`);
+                    console.log(`📤 Answer отправлен другу: ${message.from}`);
 
                 } catch (error) {
                     console.error(`❌ Ошибка обработки offer от ${message.from}:`, error);
@@ -654,222 +896,35 @@
                 }
             }
 
-            sendSignalingMessage(message) {
-                if (this.signalingSocket && this.signalingSocket.readyState === WebSocket.OPEN) {
-                    this.signalingSocket.send(JSON.stringify(message));
-                }
-            }
-
-            setupNetworkEventListeners() {
-                // Отслеживаем состояние сети
-                window.addEventListener('online', () => {
-                    this.isOnline = true;
-                    this.updateStatus('Сеть восстановлена');
-                    this.reconnectAttempts = 0;
-                    this.initNetwork();
-                });
-
-                window.addEventListener('offline', () => {
-                    this.isOnline = false;
-                    this.isConnected = false;
-                    this.updateStatus('Работаем офлайн');
-                    this.closeAllConnections();
-                });
-
-                // Обработка закрытия страницы
-                window.addEventListener('beforeunload', () => {
-                    this.disconnect();
-                });
-
-                // Обработка фокуса/потери фокуса страницы
-                document.addEventListener('visibilitychange', () => {
-                    if (document.hidden) {
-                        console.log('Приложение скрыто');
-                    } else {
-                        console.log('Приложение активно');
-                        if (this.isOnline && !this.isConnected) {
-                            this.initNetwork();
-                        }
-                    }
-                });
-            }
-
-            closeAllConnections() {
-                // Закрываем все WebRTC соединения
-                for (const [peerId, connection] of this.rtcConnections) {
-                    connection.close();
-                }
-                this.rtcConnections.clear();
-                
-                // Закрываем data channels
-                for (const [peerId, channel] of this.connections) {
-                    channel.close();
-                }
-                this.connections.clear();
-                
-                // Закрываем signaling соединение
-                if (this.signalingSocket) {
-                    this.signalingSocket.close();
-                    this.signalingSocket = null;
-                }
-                
-                this.peers.clear();
-                this.updatePeerCount();
-            }
-
-            disconnect() {
-                this.closeAllConnections();
-                this.isConnected = false;
-                this.updateStatus('Отключен');
-            }
-
-            async createRTCConnection(peerId) {
-                if (this.rtcConnections.has(peerId)) {
-                    return this.rtcConnections.get(peerId);
-                }
-
-                const connection = new RTCPeerConnection({ iceServers: this.iceServers });
-                this.rtcConnections.set(peerId, connection);
-                
-                // Создаем data channel для постов
-                const dataChannel = connection.createDataChannel('posts', {
-                    ordered: true,
-                    maxRetransmits: 3
-                });
-
-                this.setupDataChannel(dataChannel, peerId);
-                
-                // Обработка incoming data channels
-                connection.ondatachannel = (event) => {
-                    this.setupDataChannel(event.channel, peerId);
-                };
-
-                // ICE candidate handling
-                connection.onicecandidate = (event) => {
-                    if (event.candidate) {
-                        this.sendSignalingMessage({
-                            type: 'ice-candidate',
-                            target: peerId,
-                            from: this.myId,
-                            candidate: event.candidate
-                        });
-                    }
-                };
-
-                // Connection state monitoring
-                connection.onconnectionstatechange = () => {
-                    console.log(`RTC Connection state with ${peerId}: ${connection.connectionState}`);
-                    
-                    if (connection.connectionState === 'connected') {
-                        this.peers.set(peerId, {
-                            id: peerId,
-                            connected: true,
-                            lastSeen: Date.now()
-                        });
-                        this.updatePeerCount();
-                    } else if (connection.connectionState === 'failed' || connection.connectionState === 'disconnected') {
-                        this.handlePeerDisconnection(peerId);
-                    }
-                };
-
-                connection.oniceconnectionstatechange = () => {
-                    console.log(`ICE Connection state with ${peerId}: ${connection.iceConnectionState}`);
-                };
-
-                return connection;
-            }
-
-            setupDataChannel(dataChannel, peerId) {
-                dataChannel.onopen = () => {
-                    console.log(`Data channel открыт с ${peerId}`);
-                    this.connections.set(peerId, dataChannel);
-                    
-                    // Сразу отправляем синхронизацию
-                    this.sendToPeer(peerId, {
-                        type: 'sync',
-                        data: this.crdt.serialize()
-                    });
-                };
-
-                dataChannel.onmessage = (event) => {
-                    try {
-                        const message = JSON.parse(event.data);
-                        this.handlePeerMessage(peerId, message);
-                    } catch (error) {
-                        console.error('Ошибка парсинга сообщения от пира:', error);
-                    }
-                };
-
-                dataChannel.onclose = () => {
-                    console.log(`Data channel закрыт с ${peerId}`);
-                    this.handlePeerDisconnection(peerId);
-                };
-
-                dataChannel.onerror = (error) => {
-                    console.error(`Ошибка data channel с ${peerId}:`, error);
-                };
-            }
-
-            handlePeerDisconnection(peerId) {
-                this.connections.delete(peerId);
-                this.peers.delete(peerId);
-                
-                const rtcConnection = this.rtcConnections.get(peerId);
-                if (rtcConnection) {
-                    rtcConnection.close();
-                    this.rtcConnections.delete(peerId);
-                }
-                
-                this.updatePeerCount();
-                console.log(`Пир ${peerId} отключен`);
-            }
-
-            sendToPeer(peerId, message) {
-                const dataChannel = this.connections.get(peerId);
-                if (dataChannel && dataChannel.readyState === 'open') {
-                    try {
-                        dataChannel.send(JSON.stringify(message));
-                        return true;
-                    } catch (error) {
-                        console.error(`Ошибка отправки сообщения пиру ${peerId}:`, error);
-                        return false;
-                    }
-                }
-                return false;
-            }
-
-            handlePeerMessage(peerId, message) {
+            handleFriendMessage(friendId, message) {
                 switch (message.type) {
                     case 'sync':
-                        this.handleSync(peerId, message.data);
+                        this.handleSync(friendId, message.data);
                         break;
                     case 'post':
-                        this.handleNewPost(peerId, message.data);
+                        this.handleNewPost(friendId, message.data);
                         break;
                     case 'like':
-                        this.handleLike(peerId, message.data);
+                        this.handleLike(friendId, message.data);
                         break;
                     case 'report':
-                        this.handleReport(peerId, message.data);
+                        this.handleReport(friendId, message.data);
                         break;
-                    default:
-                        console.log('Неизвестный тип сообщения:', message.type);
                 }
             }
 
-            handleSync(fromPeerId, syncData) {
+            handleSync(fromFriendId, syncData) {
                 try {
                     const remoteState = this.crdt.deserialize(syncData);
                     const updated = this.crdt.merge(remoteState);
                     
                     if (updated) {
-                        console.log(`Получена синхронизация от ${fromPeerId}, обновлено записей`);
+                        console.log(`Получена синхронизация от ${fromFriendId}`);
                         this.saveToStorage();
                         renderPosts();
-                        this.updatePeerCount();
+                        this.updateCounts();
                         
-                        // Отправляем обратную синхронизацию если есть новые данные
-                        this.sendToPeer(fromPeerId, {
+                        this.sendToFriend(fromFriendId, {
                             type: 'sync-response',
                             data: this.crdt.serialize()
                         });
@@ -879,26 +934,25 @@
                 }
             }
 
-            handleNewPost(fromPeerId, postData) {
+            handleNewPost(fromFriendId, postData) {
                 try {
                     if (this.crdt.update(postData.id, postData, postData.timestamp)) {
-                        console.log(`Новый пост от ${fromPeerId}: ${postData.title}`);
+                        console.log(`Новая запись от ${fromFriendId}: ${postData.title}`);
                         this.saveToStorage();
                         renderPosts();
-                        this.updatePeerCount();
+                        this.updateCounts();
                         
-                        // Транслируем новый пост другим пирам (исключая отправителя)
-                        this.relayMessage(fromPeerId, {
+                        this.relayMessage(fromFriendId, {
                             type: 'post',
                             data: postData
                         });
                     }
                 } catch (error) {
-                    console.error('Ошибка обработки нового поста:', error);
+                    console.error('Ошибка обработки новой записи:', error);
                 }
             }
 
-            handleLike(fromPeerId, likeData) {
+            handleLike(fromFriendId, likeData) {
                 try {
                     const post = this.crdt.get(likeData.postId);
                     if (post) {
@@ -924,8 +978,7 @@
                             this.saveToStorage();
                             renderPosts();
                             
-                            // Транслируем изменение другим пирам
-                            this.relayMessage(fromPeerId, {
+                            this.relayMessage(fromFriendId, {
                                 type: 'like',
                                 data: likeData
                             });
@@ -936,7 +989,7 @@
                 }
             }
 
-            handleReport(fromPeerId, reportData) {
+            handleReport(fromFriendId, reportData) {
                 try {
                     const post = this.crdt.get(reportData.postId);
                     if (post) {
@@ -951,8 +1004,7 @@
                         this.saveToStorage();
                         renderPosts();
                         
-                        // Транслируем жалобу другим пирам
-                        this.relayMessage(fromPeerId, {
+                        this.relayMessage(fromFriendId, {
                             type: 'report',
                             data: reportData
                         });
@@ -962,26 +1014,25 @@
                 }
             }
 
-            relayMessage(excludePeerId, message) {
-                // Отправляем сообщение всем пирам кроме отправителя
-                for (const [peerId, channel] of this.connections) {
-                    if (peerId !== excludePeerId && channel.readyState === 'open') {
-                        this.sendToPeer(peerId, message);
+            relayMessage(excludeFriendId, message) {
+                for (const [friendId, channel] of this.connections) {
+                    if (friendId !== excludeFriendId && channel.readyState === 'open') {
+                        this.sendToFriend(friendId, message);
                     }
                 }
             }
 
             broadcast(message) {
                 let successCount = 0;
-                let totalPeers = this.connections.size;
+                let totalFriends = this.connections.size;
                 
-                for (const [peerId, channel] of this.connections) {
-                    if (this.sendToPeer(peerId, message)) {
+                for (const [friendId, channel] of this.connections) {
+                    if (this.sendToFriend(friendId, message)) {
                         successCount++;
                     }
                 }
                 
-                console.log(`Сообщение отправлено ${successCount}/${totalPeers} пирам`);
+                console.log(`Сообщение отправлено ${successCount}/${totalFriends} друзьям`);
                 return successCount;
             }
 
@@ -1014,7 +1065,6 @@
                 this.crdt.update(post.id, post);
                 this.saveToStorage();
                 
-                // Уведомляем пиров
                 this.broadcast({
                     type: 'post',
                     data: post
@@ -1042,7 +1092,6 @@
                     }
                 }
                 
-                // Fallback для старых браузеров
                 return btoa(JSON.stringify({
                     author: post.author,
                     title: post.title,
@@ -1074,7 +1123,6 @@
                 this.saveUserAction(postId, userActions);
                 this.saveToStorage();
 
-                // Уведомляем пиров
                 this.broadcast({
                     type: 'like',
                     data: {
@@ -1089,6 +1137,7 @@
                 const post = this.crdt.get(postId);
                 if (!post) return;
 
+                post.reports = post.reports || { illegal: 0, provocation: 0, advertisement: 0 };
                 post.reports[type] = (post.reports[type] || 0) + 1;
                 
                 if (post.reports[type] >= 10) {
@@ -1154,12 +1203,12 @@
                 document.getElementById('statusText').textContent = text;
                 const statusDot = document.getElementById('statusDot');
                 statusDot.className = `w-2 h-2 rounded-full status-dot ${this.isConnected ? 'bg-green-500' : 'bg-red-500'}`;
-                this.updatePeerCount();
+                this.updateCounts();
             }
 
-            updatePeerCount() {
-                document.getElementById('peerCount').textContent = `Пиров: ${this.peers.size}`;
-                document.getElementById('postCount').textContent = `Постов: ${this.getAllPosts().length}`;
+            updateCounts() {
+                document.getElementById('friendCount').textContent = `Друзей: ${this.friends.size}`;
+                document.getElementById('postCount').textContent = `Записей: ${this.getAllPosts().length}`;
             }
 
             saveToStorage() {
@@ -1194,7 +1243,7 @@
                         if (post.expiresAt <= now) {
                             if (post.author === this.myId) {
                                 post.status = 'draft';
-                                post.note = 'Пост истек (7 дней)';
+                                post.note = 'Запись истекла (7 дней)';
                                 this.crdt.update(id, post);
                             }
                             cleaned = true;
@@ -1204,7 +1253,7 @@
                     if (cleaned) {
                         this.saveToStorage();
                         renderPosts();
-                        this.updatePeerCount();
+                        this.updateCounts();
                     }
                 }, 10 * 60 * 1000);
             }
@@ -1214,6 +1263,16 @@
         const network = new P2PNetwork();
 
         // UI функции
+        function showCreateForm() {
+            document.getElementById('createForm').classList.remove('hidden');
+            document.getElementById('createPostBtn').style.display = 'none';
+        }
+
+        function hideCreateForm() {
+            document.getElementById('createForm').classList.add('hidden');
+            document.getElementById('createPostBtn').style.display = 'flex';
+        }
+
         async function createPost() {
             const title = document.getElementById('postTitle').value.trim();
             const description = document.getElementById('postDescription').value.trim();
@@ -1229,7 +1288,7 @@
                 tags: document.getElementById('postTags').value.split(',').map(t => t.trim()).filter(t => t),
                 contacts: document.getElementById('postContacts').value.trim(),
                 city: document.getElementById('postCity').value,
-                type: document.getElementById('postType').value,
+                type: network.activeCategory === 'все' ? 'event' : network.activeCategory,
                 gender: document.getElementById('postGender').value,
                 age: document.getElementById('postAge').value
             };
@@ -1242,8 +1301,13 @@
             document.getElementById('postTags').value = '';
             document.getElementById('postContacts').value = '';
             
+            hideCreateForm();
             renderPosts();
-            network.updatePeerCount();
+            network.updateCounts();
+        }
+
+        function cancelCreate() {
+            hideCreateForm();
         }
 
         function renderPosts() {
@@ -1254,7 +1318,7 @@
                 container.innerHTML = `
                     <div class="glass rounded-2xl p-8 text-center">
                         <div class="text-6xl mb-4">📭</div>
-                        <p class="text-gray-600">Постов не найдено</p>
+                        <p class="text-[#383533]/60">Записей не найдено</p>
                     </div>
                 `;
                 return;
@@ -1270,53 +1334,55 @@
                     <div class="glass rounded-2xl p-6 mb-4">
                         ${post.flagged ? `
                             <div class="bg-yellow-100 border border-yellow-400 text-yellow-800 px-4 py-2 rounded-lg mb-4">
-                                ⚠️ Пост помечен: ${getReportTypeName(post.flagged)}
+                                ⚠️ Запись помечена: ${getReportTypeName(post.flagged)}
                             </div>
                         ` : ''}
                         
                         <div class="flex justify-between items-start mb-3">
-                            <div class="text-sm text-gray-600">
-                                ${isMyPost ? '👤 Ваш пост' : '👥 Участник сети'} • 
+                            <div class="text-sm text-[#383533]/60">
+                                ${isMyPost ? '👤 Ваша запись' : '👥 Друг'} • 
                                 ${new Date(post.timestamp).toLocaleDateString()} • 
                                 ⏱️ ${daysLeft}д
                                 ${post.city ? ` • 📍 ${getCityName(post.city)}` : ''}
                                 ${post.type ? ` • 🏷️ ${getTypeName(post.type)}` : ''}
+                                ${post.gender ? ` • ${getGenderName(post.gender)}` : ''}
+                                ${post.age ? ` • ${post.age}` : ''}
                             </div>
                         </div>
                         
-                        <h3 class="text-xl font-semibold text-gray-800 mb-2">${escapeHtml(post.title)}</h3>
-                        <p class="text-gray-700 mb-4 leading-relaxed">${escapeHtml(post.description)}</p>
+                        <h3 class="text-xl font-semibold text-[#383533] mb-2">${escapeHtml(post.title)}</h3>
+                        <p class="text-[#383533]/80 mb-4 leading-relaxed">${escapeHtml(post.description)}</p>
                         
                         ${post.tags && post.tags.length > 0 ? `
                             <div class="flex flex-wrap gap-2 mb-4">
                                 ${post.tags.map(tag => `
-                                    <span class="px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full">#${escapeHtml(tag)}</span>
+                                    <span class="px-3 py-1 bg-[#fbede0] text-[#383533] text-sm rounded-full">#${escapeHtml(tag)}</span>
                                 `).join('')}
-                            </div>
-                        ` : ''}
-                        
-                        ${post.contacts ? `
-                            <div class="bg-gray-50 rounded-lg p-3 mb-4">
-                                <div class="text-sm text-gray-600 mb-1">Контакты:</div>
-                                <div class="text-gray-800">${escapeHtml(post.contacts)}</div>
                             </div>
                         ` : ''}
                         
                         <div class="flex flex-wrap gap-2 items-center">
                             <button onclick="likePost('${post.id}')" 
-                                    class="flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${userActions.liked ? 'bg-red-100 text-red-700' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'}">
+                                    class="flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${userActions.liked ? 'bg-red-100 text-red-700' : 'bg-[#383533]/10 hover:bg-[#383533]/20 text-[#383533]'}">
                                 ${userActions.liked ? '❤️' : '🤍'} ${post.likes || 0}
                             </button>
                             
                             <button onclick="favoritePost('${post.id}')" 
-                                    class="px-3 py-2 rounded-lg transition-colors ${userActions.favorite ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'}">
+                                    class="px-3 py-2 rounded-lg transition-colors ${userActions.favorite ? 'bg-yellow-100 text-yellow-700' : 'bg-[#383533]/10 hover:bg-[#383533]/20 text-[#383533]'}">
                                 ${userActions.favorite ? '⭐' : '☆'}
                             </button>
                             
                             <button onclick="hidePost('${post.id}')" 
-                                    class="px-3 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 transition-colors">
+                                    class="px-3 py-2 rounded-lg bg-[#383533]/10 hover:bg-[#383533]/20 text-[#383533] transition-colors">
                                 ${userActions.hidden ? '👁️' : '🙈'}
                             </button>
+
+                            ${post.contacts ? `
+                                <button onclick="showContacts('${post.id}')" 
+                                        class="px-3 py-2 rounded-lg bg-[#fbede0] hover:bg-[#fbede0]/80 text-[#383533] transition-colors">
+                                    📞 Контакты
+                                </button>
+                            ` : ''}
                             
                             ${!isMyPost ? `
                                 <div class="relative">
@@ -1344,8 +1410,14 @@
             let posts = network.getAllPosts();
             const search = document.getElementById('searchBox').value.toLowerCase();
             const cityFilter = document.getElementById('filterCity').value;
-            const typeFilter = document.getElementById('filterType').value;
+            const genderFilter = document.getElementById('filterGender').value;
+            const ageFilter = document.getElementById('filterAge').value;
             const sortFilter = document.getElementById('filterSort').value;
+
+            // Фильтр по категории
+            if (network.activeCategory !== 'все') {
+                posts = posts.filter(post => post.type === network.activeCategory);
+            }
 
             // Поиск
             if (search) {
@@ -1360,9 +1432,13 @@
             if (cityFilter) {
                 posts = posts.filter(post => post.city === cityFilter);
             }
-            
-            if (typeFilter) {
-                posts = posts.filter(post => post.type === typeFilter);
+
+            if (genderFilter) {
+                posts = posts.filter(post => post.gender === genderFilter);
+            }
+
+            if (ageFilter) {
+                posts = posts.filter(post => post.age === ageFilter);
             }
 
             // Сортировка и специальные фильтры
@@ -1396,7 +1472,8 @@
         function resetFilters() {
             document.getElementById('searchBox').value = '';
             document.getElementById('filterCity').value = '';
-            document.getElementById('filterType').value = '';
+            document.getElementById('filterGender').value = '';
+            document.getElementById('filterAge').value = '';
             document.getElementById('filterSort').value = 'new';
             renderPosts();
         }
@@ -1427,12 +1504,20 @@
             const menu = document.getElementById(`reportMenu_${postId}`);
             menu.classList.toggle('hidden');
             
-            // Закрываем другие меню
             document.querySelectorAll('[id^="reportMenu_"]').forEach(dropdown => {
                 if (dropdown.id !== `reportMenu_${postId}`) {
                     dropdown.classList.add('hidden');
                 }
             });
+        }
+
+        function showContacts(postId) {
+            const post = network.crdt.get(postId);
+            if (post && post.contacts) {
+                document.getElementById('contactContent').innerHTML = 
+                    post.contacts.split('\n').map(line => `<p class="mb-2">${escapeHtml(line)}</p>`).join('');
+                document.getElementById('contactModal').classList.remove('hidden');
+            }
         }
 
         function getCityName(city) {
@@ -1457,6 +1542,15 @@
             return types[type] || type;
         }
 
+        function getGenderName(gender) {
+            const genders = {
+                'male': 'Мужской',
+                'female': 'Женский',
+                'any': 'Любой'
+            };
+            return genders[gender] || gender;
+        }
+
         function getReportTypeName(type) {
             const reportTypes = {
                 'illegal': 'Незаконный контент',
@@ -1472,12 +1566,41 @@
             return div.innerHTML;
         }
 
-        // Закрытие меню по клику вне
+        // Event listeners
+        document.getElementById('createPostBtn').addEventListener('click', showCreateForm);
+        document.getElementById('closeContactModal').addEventListener('click', () => {
+            document.getElementById('contactModal').classList.add('hidden');
+        });
+
+        // Закрытие модалки по клику на фон
+        document.getElementById('contactModal').addEventListener('click', (e) => {
+            if (e.target.id === 'contactModal') {
+                document.getElementById('contactModal').classList.add('hidden');
+            }
+        });
+
+        // Закрытие форм по клику вне
         document.addEventListener('click', (e) => {
+            const createForm = document.getElementById('createForm');
+            if (!createForm.classList.contains('hidden') && 
+                !createForm.contains(e.target) && 
+                !document.getElementById('createPostBtn').contains(e.target)) {
+                hideCreateForm();
+            }
+
+            // Закрытие меню жалоб
             if (!e.target.closest('[id^="reportMenu_"]') && !e.target.closest('button')) {
                 document.querySelectorAll('[id^="reportMenu_"]').forEach(dropdown => {
                     dropdown.classList.add('hidden');
                 });
+            }
+        });
+
+        // Escape для закрытия модалок
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                document.getElementById('contactModal').classList.add('hidden');
+                hideCreateForm();
             }
         });
 
@@ -1487,10 +1610,10 @@
         // Периодическое обновление
         setInterval(() => {
             renderPosts();
-            network.updatePeerCount();
+            network.updateCounts();
         }, 30000);
 
-        // Синхронизация с пирами каждые 10 секунд
+        // Синхронизация с друзьями каждые 10 секунд
         setInterval(() => {
             if (network.isConnected) {
                 network.broadcastMyData();
