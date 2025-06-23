@@ -376,7 +376,7 @@
                     try {
                         // Подключаемся к вашему bootstrap signaling серверу
                         // Замените на реальный URL после деплоя
-                        const signalingUrl = 'ws://six-4xly.onrender.com'; // Для локальной разработки
+                        const signalingUrl = 'ws://six-4xly.onrender.com/ws'; // Для локальной разработки
                         // const signalingUrl = 'wss://your-signaling-server.herokuapp.com'; // Для production
                         
                         this.signalingSocket = new WebSocket(signalingUrl);
