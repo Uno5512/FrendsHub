@@ -1,1768 +1,1501 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Fibonacci Poetry</title>
-  <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500&display=swap" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/react@18.3.1/umd/react.production.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.26.9/babel.min.js"></script>
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="manifest" href="data:application/manifest+json,{}">
-  <style>
-    body {
-      font-family: 'Rubik', sans-serif;
-    }
-    .modal-backdrop {
-      backdrop-filter: blur(5px);
-      background-color: rgba(0, 0, 0, 0.5);
-    }
-    .announcement-expanded, .profile-expanded {
-      transition: max-height 0.3s ease-in-out;
-    }
-    .like-dislike-img {
-      width: 24px;
-      height: 24px;
-    }
-    .announcement-title, .profile-about {
-      word-break: break-word;
-      hyphens: auto;
-    }
-    .announcement-description, .profile-description {
-      word-break: break-word;
-      hyphens: auto;
-    }
-    .accordion-content {
-      transition: max-height 0.3s ease-in-out;
-      overflow: hidden;
-    }
-  </style>
-</head>
-<body>
-  <div id="root"></div>
-  <template id="city-options">
-    <option value="">Любой город</option>
-    <option value="Москва">Москва</option>
-    <option value="Казань">Казань</option>
-    <option value="Санкт-Петербург">Санкт-Петербург</option>
-  </template>
-  <template id="type-options">
-    <option value="">Любой тип</option>
-    <option value="Прогулка">Прогулка</option>
-    <option value="Общение">Общение</option>
-    <option value="Игры">Игры</option>
-  </template>
-  <template id="date-options">
-    <option value="">Любая дата</option>
-    <option value="Сегодня">Сегодня</option>
-    <option value="Завтра">Завтра</option>
-    <option value="На неделе">На неделе</option>
-  </template>
-  <template id="gender-options">
-    <option value="">Любой пол</option>
-    <option value="Мужской">Мужской</option>
-    <option value="Женский">Женский</option>
-    <option value="Не важно">Не важно</option>
-  </template>
-  <template id="sort-options">
-    <option value="По рейтингу">По рейтингу</option>
-    <option value="Верифицированные">Верифицированные</option>
-    <option value="Новые">Новые</option>
-    <option value="Старые">Старые</option>
-  </template>
-
-  <script type="text/babel">
-    const { useState, useEffect, useRef } = React;
-
-    // Modal Component
-    function Modal({ children, onClose }) {
-      return (
-        <div className="fixed inset-0 modal-backdrop flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-3xl shadow-lg max-w-md w-full">
-            {children}
-            <button onClick={onClose} className="mt-4 text-gray-500 hover:text-gray-700">Закрыть</button>
-          </div>
-        </div>
-      );
-    }
-
-    // Registration Modal
-    function RegistrationModal({ onRegister }) {
-      const [name, setName] = useState('');
-      const [birthdate, setBirthdate] = useState('');
-      const [gender, setGender] = useState('Не важно');
-      const [about, setAbout] = useState('');
-      const [avatar, setAvatar] = useState('https://mir-s3-cdn-cf.behance.net/project_modules/fs_webp/cf5343120913219.60bb24ccb2f89.jpg');
-      const [error, setError] = useState('');
-
-      const handleNext = () => {
-        if (!name || !birthdate || !about) {
-          setError('Пожалуйста, заполните все обязательные поля');
-          return;
-        }
-        onRegister({ name, birthdate, gender, about, avatar });
-      };
-
-      return (
-        <Modal onClose={() => {}}>
-          <h2 className="text-xl font-bold mb-4">Регистрация</h2>
-          <div className="flex flex-col gap-4">
-            <div className="flex gap-4">
-              <img src={avatar} alt="Аватар" className="w-16 h-16 rounded-full" loading="lazy" />
-              <input
-                type="text"
-                placeholder="Имя *"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="p-2 rounded-lg border"
-                required
-                aria-label="Имя"
-              />
-            </div>
-            <input
-              type="date"
-              value={birthdate}
-              onChange={(e) => setBirthdate(e.target.value)}
-              className="p-2 rounded-lg border"
-              required
-              aria-label="Дата рождения"
-            />
-            <select
-              value={gender}
-              onChange={(e) => setGender(e.target.value)}
-              className="p-2 rounded-lg border"
-              aria-label="Пол"
-            >
-              <option value="Мужской">Мужской</option>
-              <option value="Женский">Женский</option>
-              <option value="Не важно">Не важно</option>
-            </select>
-            <textarea
-              placeholder="О себе *"
-              value={about}
-              onChange={(e) => setAbout(e.target.value)}
-              className="p-2 rounded-lg border w-full"
-              required
-              aria-label="О себе"
-            />
-            {error && <p className="text-red-500">{error}</p>}
-            <div className="flex gap-4">
-              <button className="bg-gray-300 px-4 py-2 rounded-lg">Отмена</button>
-              <button onClick={handleNext} className="bg-blue-500 text-white px-4 py-2 rounded-lg">Далее</button>
-            </div>
-          </div>
-        </Modal>
-      );
-    }
-
-    // Edit Profile Modal (New)
-    function EditProfileModal({ user, onSave, onClose }) {
-      const [name, setName] = useState(user.name);
-      const [birthdate, setBirthdate] = useState(user.birthdate);
-      const [gender, setGender] = useState(user.gender);
-      const [about, setAbout] = useState(user.about);
-      const [avatar, setAvatar] = useState(user.avatar);
-      const [error, setError] = useState('');
-
-      const handleSave = () => {
-        if (!name || !birthdate || !about) {
-          setError('Пожалуйста, заполните все обязательные поля');
-          return;
-        }
-        onSave({ ...user, name, birthdate, gender, about, avatar });
-        onClose();
-      };
-
-      return (
-        <Modal onClose={onClose}>
-          <h2 className="text-xl font-bold mb-4">Редактировать профиль</h2>
-          <div className="flex flex-col gap-4">
-            <div className="flex gap-4">
-              <img src={avatar} alt="Аватар" className="w-16 h-16 rounded-full" loading="lazy" />
-              <input
-                type="text"
-                placeholder="Имя *"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="p-2 rounded-lg border"
-                required
-                aria-label="Имя"
-              />
-            </div>
-            <input
-              type="date"
-              value={birthdate}
-              onChange={(e) => setBirthdate(e.target.value)}
-              className="p-2 rounded-lg border"
-              required
-              aria-label="Дата рождения"
-            />
-            <select
-              value={gender}
-              onChange={(e) => setGender(e.target.value)}
-              className="p-2 rounded-lg border"
-              aria-label="Пол"
-            >
-              <option value="Мужской">Мужской</option>
-              <option value="Женский">Женский</option>
-              <option value="Не важно">Не важно</option>
-            </select>
-            <textarea
-              placeholder="О себе *"
-              value={about}
-              onChange={(e) => setAbout(e.target.value)}
-              className="p-2 rounded-lg border w-full"
-              required
-              aria-label="О себе"
-            />
-            {error && <p className="text-red-500">{error}</p>}
-            <div className="flex gap-4">
-              <button onClick={onClose} className="bg-gray-300 px-4 py-2 rounded-lg">Отмена</button>
-              <button onClick={handleSave} className="bg-blue-500 text-white px-4 py-2 rounded-lg">Сохранить</button>
-            </div>
-          </div>
-        </Modal>
-      );
-    }
-
-    // Search Bar Component
-    function SearchBar({ onSearch, mode, onModeChange }) {
-      const [query, setQuery] = useState('');
-      const [filters, setFilters] = useState({
-        city: '',
-        type: '',
-        date: '',
-        gender: '',
-        sort: 'По рейтингу'
-      });
-
-      const handleFilterChange = (e) => {
-        const { name, value } = e.target;
-        setFilters(prevFilters => {
-          const updatedFilters = { ...prevFilters, [name]: value };
-          onSearch(query, updatedFilters, mode);
-          return updatedFilters;
-        });
-      };
-
-      const handleSearchChange = (e) => {
-        const newQuery = e.target.value;
-        setQuery(newQuery);
-        onSearch(newQuery, filters, mode);
-      };
-
-      const handleModeChange = (e) => {
-        const newMode = e.target.value;
-        onModeChange(newMode);
-        const updatedFilters = {
-          ...filters,
-          type: newMode === 'friends' ? '' : filters.type,
-          date: newMode === 'friends' ? '' : filters.date
-        };
-        setFilters(updatedFilters);
-        onSearch(query, updatedFilters, newMode);
-      };
-
-      return (
-        <section className="p-4">
-          <input
-            type="search"
-            placeholder={mode === 'events' ? 'Поиск событий...' : 'Поиск друзей...'}
-            value={query}
-            onChange={handleSearchChange}
-            className="w-full p-2 mb-4 rounded-[22px] border"
-            aria-label={mode === 'events' ? 'Поиск событий' : 'Поиск друзей'}
-          />
-          <div className="flex flex-wrap gap-2 mb-4">
-            <select
-              name="mode"
-              value={mode}
-              onChange={handleModeChange}
-              className="p-2 rounded-lg border"
-              aria-label="Режим"
-            >
-              <option value="events">События</option>
-              <option value="friends">Друзья</option>
-            </select>
-          </div>
-          <fieldset className="flex flex-wrap gap-2">
-            <legend className="sr-only">Фильтры</legend>
-            <select name="city" value={filters.city} onChange={handleFilterChange} className="p-2 rounded-lg border" aria-label="Город">
-              <option value="">Любой город</option>
-              <option value="Москва">Москва</option>
-              <option value="Казань">Казань</option>
-              <option value="Санкт-Петербург">Санкт-Петербург</option>
-            </select>
-            {mode === 'events' && (
-              <>
-                <select name="type" value={filters.type} onChange={handleFilterChange} className="p-2 rounded-lg border" aria-label="Вид">
-                  <option value="">Любой тип</option>
-                  <option value="Прогулка">Прогулка</option>
-                  <option value="Общение">Общение</option>
-                  <option value="Игры">Игры</option>
-                </select>
-                <select name="date" value={filters.date} onChange={handleFilterChange} className="p-2 rounded-lg border" aria-label="Дата">
-                  <option value="">Любая дата</option>
-                  <option value="Сегодня">Сегодня</option>
-                  <option value="Завтра">Завтра</option>
-                  <option value="На неделе">На неделе</option>
-                </select>
-              </>
-            )}
-            <select name="gender" value={filters.gender} onChange={handleFilterChange} className="p-2 rounded-lg border" aria-label="Пол">
-              <option value="">Любой пол</option>
-              <option value="Мужской">Мужской</option>
-              <option value="Женский">Женский</option>
-              <option value="Не важно">Не важно</option>
-            </select>
-            <select name="sort" value={filters.sort} onChange={handleFilterChange} className="p-2 rounded-lg border" aria-label="Сортировка">
-              <option value="По рейтингу">По рейтингу</option>
-              <option value="Верифицированные">Верифицированные</option>
-              <option value="Новые">Новые</option>
-              <option value="Старые">Старые</option>
-            </select>
-          </fieldset>
-        </section>
-      );
-    }
-
-    // Announcement Component
-    function Announcement({ data, isOwn, isFavorite, isHidden, onLike, onDislike, onShowParticipants, onEdit, onDelete, activeMenuId, openMenu, closeMenu, userActions, onViewProfile, onAddToFavorites, onRemoveFromFavorites, onHide, onShowAgain, onReport }) {
-      const [expanded, setExpanded] = useState(false);
-      const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0, direction: 'below' });
-      const buttonRef = useRef(null);
-      const showOptions = activeMenuId === data.id;
-
-      const updateMenuPosition = () => {
-        if (buttonRef.current && showOptions) {
-          const rect = buttonRef.current.getBoundingClientRect();
-          const menuHeight = 120;
-          const viewportHeight = window.innerHeight;
-          const spaceBelow = viewportHeight - rect.bottom;
-          const direction = spaceBelow < menuHeight ? 'above' : 'below';
-
-          setMenuPosition({
-            top: direction === 'below' ? rect.bottom + window.scrollY + 4 : rect.top + window.scrollY - menuHeight - 4,
-            left: rect.right + window.scrollX - 120,
-            direction
-          });
-        }
-      };
-
-      useEffect(() => {
-        updateMenuPosition();
-        if (showOptions) {
-          const interval = setInterval(updateMenuPosition, 50);
-          return () => clearInterval(interval);
-        }
-      }, [expanded, showOptions]);
-
-      useEffect(() => {
-        const handleOutsideClick = (e) => {
-          if (buttonRef.current && !buttonRef.current.contains(e.target) && !e.target.closest('.options-menu')) {
-            closeMenu();
-          }
-        };
-        document.addEventListener('click', handleOutsideClick);
-        return () => document.removeEventListener('click', handleOutsideClick);
-      }, [closeMenu]);
-
-      const handleOptionsClick = (e) => {
-        e.stopPropagation();
-        if (showOptions) {
-          closeMenu();
-        } else {
-          openMenu(data.id);
-          updateMenuPosition();
-        }
-      };
-
-      const handleShare = async () => {
-        const shareData = {
-          title: data.title,
-          text: data.description,
-          url: `https://app.example.com/announcement/${data.id}`
-        };
-        try {
-          if (navigator.share) {
-            await navigator.share(shareData);
-          } else {
-            await navigator.clipboard.writeText(shareData.url);
-            alert('Ссылка скопирована в буфер обмена');
-          }
-        } catch (err) {
-          console.error('Ошибка при попытке поделиться:', err);
-        }
-        closeMenu();
-      };
-
-      return (
-        <>
-          <article
-            onClick={(e) => {
-              if (!e.target.closest('button') && !e.target.closest('a')) setExpanded(!expanded);
-            }}
-            className={`p-4 rounded-[22px] border ${isOwn ? 'border-blue-500' : 'border-gray-300'} bg-white cursor-pointer announcement-expanded w-full`}
-            style={{ maxHeight: expanded ? '500px' : '150px', overflow: 'hidden' }}
-          >
-            <h3 className="font-bold announcement-title">{data.title}</h3>
-            {expanded && (
-              <div className="mt-2">
-                <p className="announcement-description">{data.description}</p>
-                <div className="text-sm text-gray-500">{data.metatags.join(', ')} • {data.createdAt}</div>
-                <div className="flex items-center gap-2 mt-2">
-                  <button onClick={() => onViewProfile(data.creatorId)} className="focus:outline-none">
-                    <img src={data.creatorAvatar} alt="Аватар создателя" className="w-8 h-8 rounded-full" loading="lazy" />
-                  </button>
-                  <button
-                    onClick={() => onShowParticipants(data.id, data.title)}
-                    className="bg-blue-500 text-white px-2 py-1 rounded ml-2"
-                    aria-label="Участники"
-                  >
-                    Участники ({data.participants})
-                  </button>
-                </div>
-              </div>
-            )}
-            <div className="flex justify-between items-center mt-2">
-              <div className="flex items-center gap-1">
-                <button onClick={() => onViewProfile(data.creatorId)} className="text-blue-500 focus:outline-none">{data.creatorName}</button>
-                {data.age && <span className="ml-1">{data.age} лет</span>}
-              </div>
-              <div className="flex gap-2 items-center">
-                <span>{data.participants}</span>
-                <button onClick={() => onLike(data.id)} className="p-1" aria-label="Лайк">
-                  <img src="https://raw.githubusercontent.com/Uno5512/FrendsHub/main/2.png" alt="Лайк" className="like-dislike-img" />
-                </button>
-                <button onClick={() => onDislike(data.id)} className="p-1" aria-label="Дизлайк">
-                  <img src="https://raw.githubusercontent.com/Uno5512/FrendsHub/main/1.png" alt="Дизлайк" className="like-dislike-img" />
-                </button>
-                <button
-                  ref={buttonRef}
-                  onClick={handleOptionsClick}
-                  className="text-gray-500"
-                  aria-label="Опции"
-                >
-                  ⋯
-                </button>
-              </div>
-            </div>
-          </article>
-          {showOptions && (
-            <div
-              className="fixed bg-white border rounded shadow-lg p-2 w-32 z-50 options-menu"
-              style={{ top: `${menuPosition.top}px`, left: `${menuPosition.left}px` }}
-            >
-              {isOwn ? (
-                <>
-                  <button onClick={() => { onEdit(data); closeMenu(); }} className="block w-full text-left hover:bg-gray-100 p-1">Редактировать</button>
-                  <button onClick={() => { onDelete(data.id); closeMenu(); }} className="block w-full text-left hover:bg-gray-100 p-1">Удалить</button>
-                  <button onClick={handleShare} className="block w-full text-left hover:bg-gray-100 p-1">Поделиться</button>
-                </>
-              ) : isFavorite ? (
-                <>
-                  <button onClick={handleShare} className="block w-full text-left hover:bg-gray-100 p-1">Поделиться</button>
-                  <button onClick={() => { onRemoveFromFavorites(data.id); closeMenu(); }} className="block w-full text-left hover:bg-gray-100 p-1">Убрать из избранного</button>
-                </>
-              ) : isHidden ? (
-                <>
-                  <button onClick={handleShare} className="block w-full text-left hover:bg-gray-100 p-1">Поделиться</button>
-                  <button onClick={() => { onShowAgain(data.id); closeMenu(); }} className="block w-full text-left hover:bg-gray-100 p-1">Показывать заново</button>
-                </>
-              ) : (
-                <>
-                  <button onClick={handleShare} className="block w-full text-left hover:bg-gray-100 p-1">Поделиться</button>
-                  <button onClick={() => { onAddToFavorites(data.id); closeMenu(); }} className="block w-full text-left hover:bg-gray-100 p-1">В избранное</button>
-                  <button onClick={() => { onHide(data.id); closeMenu(); }} className="block w-full text-left hover:bg-gray-100 p-1">Не показывать</button>
-                  <button onClick={() => { onReport(data.id); closeMenu(); }} className="block w-full text-left hover:bg-gray-100 p-1">Пожаловаться</button>
-                </>
-              )}
-            </div>
-          )}
-        </>
-      );
-    }
-
-    // Report Modal
-    function ReportModal({ onClose, onSubmit }) {
-      const [reportText, setReportText] = useState('');
-      const maxLength = 200;
-
-      const handleSubmit = () => {
-        console.log('Жалоба отправлена:', reportText);
-        onSubmit(reportText);
-        onClose();
-      };
-
-      return (
-        <Modal onClose={onClose}>
-          <h2 className="text-xl font-bold mb-4">Пожаловаться</h2>
-          <div className="relative mb-4">
-            <textarea
-              placeholder="Опишите причину жалобы"
-              value={reportText}
-              onChange={(e) => setReportText(e.target.value)}
-              maxLength={maxLength}
-              className="p-2 rounded-lg border w-full"
-              aria-label="Текст жалобы"
-            />
-            <span className="absolute right-2 bottom-2 text-sm text-gray-500">
-              {maxLength - reportText.length}
-            </span>
-          </div>
-          <div className="flex gap-4">
-            <button onClick={onClose} className="bg-gray-300 px-4 py-2 rounded-lg">Закрыть</button>
-            <button onClick={handleSubmit} className="bg-blue-500 text-white px-4 py-2 rounded-lg">Отправить</button>
-          </div>
-        </Modal>
-      );
-    }
-
-    // Send Contacts Modal
-    function SendContactsModal({ onClose, onSubmit, announcementTitle }) {
-      const [phone, setPhone] = useState('');
-      const [telegram, setTelegram] = useState('');
-
-      const handleSubmit = () => {
-        if (!phone || !telegram) {
-          alert('Пожалуйста, заполните все поля');
-          return;
-        }
-        onSubmit({ phone, telegram });
-        onClose();
-      };
-
-      return (
-        <Modal onClose={onClose}>
-          <h2 className="text-xl font-bold mb-4">Отправить контакты для: {announcementTitle}</h2>
-          <div className="flex flex-col gap-4">
-            <input
-              type="tel"
-              placeholder="Номер телефона"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              className="p-2 rounded-lg border"
-              aria-label="Номер телефона"
-            />
-            <input
-              type="text"
-              placeholder="Ник в Telegram (@username)"
-              value={telegram}
-              onChange={(e) => setTelegram(e.target.value)}
-              className="p-2 rounded-lg border"
-              aria-label="Ник в Telegram"
-            />
-            <div className="flex gap-4">
-              <button onClick={onClose} className="bg-gray-300 px-4 py-2 rounded-lg">Отмена</button>
-              <button onClick={handleSubmit} className="bg-blue-500 text-white px-4 py-2 rounded-lg">Отправить</button>
-            </div>
-          </div>
-        </Modal>
-      );
-    }
-
-    // Invite Modal (New)
-    function InviteModal({ ownAnnouncements, recipientId, recipientName, onSendContacts, onCreateAnnouncement, onClose }) {
-      return (
-        <Modal onClose={onClose}>
-          <h2 className="text-xl font-bold mb-4">Пригласить: {recipientName}</h2>
-          <div className="max-h-64 overflow-y-auto space-y-2">
-            {ownAnnouncements.length > 0 ? (
-              ownAnnouncements.map(ann => (
-                <div key={ann.id} className="flex justify-between items-center p-2 border-b">
-                  <span>{ann.title}</span>
-                  <button
-                    onClick={() => onSendContacts(ann.id, ann.title, [recipientId])}
-                    className="bg-blue-500 text-white px-2 py-1 rounded"
-                  >
-                    Отправить контакты
-                  </button>
-                </div>
-              ))
-            ) : (
-              <div className="text-gray-500 text-center">
-                <p>Нет созданных объявлений</p>
-                <button
-                  onClick={onCreateAnnouncement}
-                  className="bg-blue-500 text-white px-4 py-2 rounded-lg mt-2"
-                >
-                  Создать объявление
-                </button>
-              </div>
-            )}
-          </div>
-        </Modal>
-      );
-    }
-
-    // Profile Modal
-    function ProfileModal({ user, currentUser, announcements, onClose, onLike, onDislike, onShowParticipants, onAddToFavorites, onRemoveFromFavorites, onHide, onShowAgain, onReport, onViewProfile, userActions, activeMenuId, openMenu, closeMenu }) {
-      const [isAnnouncementsOpen, setIsAnnouncementsOpen] = useState(false);
-      const userAnnouncements = announcements.filter(a => a.creatorId === user.id);
-
-      const handleShareProfile = async () => {
-        const shareData = {
-          title: `Профиль ${user.name}`,
-          text: user.about,
-          url: `https://app.example.com/profile/${user.id}`
-        };
-        try {
-          if (navigator.share) {
-            await navigator.share(shareData);
-          } else {
-            await navigator.clipboard.writeText(shareData.url);
-            alert('Ссылка на профиль скопирована в буфер обмена');
-          }
-        } catch (err) {
-          console.error('Ошибка при попытке поделиться:', err);
-        }
-      };
-
-      return (
-        <Modal onClose={onClose}>
-          <h2 className="text-xl font-bold mb-4">Профиль: {user.name}</h2>
-          <div className="flex flex-col gap-4">
-            <img src={user.avatar} alt="Аватар" className="w-16 h-16 rounded-full" loading="lazy" />
-            <p><strong>Имя:</strong> {user.name}</p>
-            {user.birthdate && <p><strong>Дата рождения:</strong> {user.birthdate}</p>}
-            <p><strong>Пол:</strong> {user.gender}</p>
-            <p><strong>О себе:</strong> {user.about}</p>
-            <button onClick={handleShareProfile} className="bg-blue-500 text-white px-4 py-2 rounded-lg">Поделиться профилем</button>
-            <h3
-              className="font-bold cursor-pointer flex items-center"
-              onClick={() => setIsAnnouncementsOpen(!isAnnouncementsOpen)}
-            >
-              Объявления {isAnnouncementsOpen ? '↑' : '↓'}
-            </h3>
-            <div
-              className="accordion-content"
-              style={{ maxHeight: isAnnouncementsOpen ? '400px' : '0' }}
-            >
-              <div className="space-y-4 max-h-64 overflow-y-auto">
-                {userAnnouncements.length > 0 ? (
-                  userAnnouncements.map(a => (
-                    <Announcement
-                      key={a.id}
-                      data={a}
-                      isOwn={a.creatorId === currentUser.id}
-                      isFavorite={false}
-                      isHidden={false}
-                      onLike={onLike}
-                      onDislike={onDislike}
-                      onShowParticipants={onShowParticipants}
-                      onEdit={() => {}}
-                      onDelete={() => {}}
-                      activeMenuId={activeMenuId}
-                      openMenu={openMenu}
-                      closeMenu={closeMenu}
-                      userActions={userActions}
-                      onViewProfile={onViewProfile}
-                      onAddToFavorites={onAddToFavorites}
-                      onRemoveFromFavorites={onRemoveFromFavorites}
-                      onHide={onHide}
-                      onShowAgain={onShowAgain}
-                      onReport={onReport}
-                    />
-                  ))
-                ) : (
-                  <p className="text-gray-500">Нет объявлений</p>
-                )}
-              </div>
-            </div>
-          </div>
-        </Modal>
-      );
-    }
-
-    // Participants Modal (Updated)
-    function ParticipantsModal({ announcementId, announcementTitle, participants, isOwn, onClose }) {
-      return (
-        <Modal onClose={onClose}>
-          <h2 className="text-xl font-bold mb-4">Участники: {announcementTitle}</h2>
-          <div className="max-h-64 overflow-y-auto space-y-2">
-            {participants.length > 0 ? (
-              participants.map(p => (
-                <div key={p.id} className="flex items-center gap-2 p-2 border-b">
-                  <img src={p.avatar} alt="Участник" className="w-8 h-8 rounded-full" loading="lazy" />
-                  <span>{p.name}</span>
-                </div>
-              ))
-            ) : (
-              <p className="text-gray-500">Нет участников</p>
-            )}
-          </div>
-        </Modal>
-      );
-    }
-
-    // Account Modal (Updated)
-    function AccountModal({ user, announcements, applications, favorites, hiddenAnnouncements, invitations, onClose, onLike, onDislike, onShowParticipants, onAddToFavorites, onRemoveFromFavorites, onHide, onShowAgain, onReport, onViewProfile, userActions, activeMenuId, openMenu, closeMenu, onEditProfile }) {
-      const [isFavoritesOpen, setIsFavoritesOpen] = useState(false);
-      const [isApplicationsOpen, setIsApplicationsOpen] = useState(false);
-      const [isHiddenOpen, setIsHiddenOpen] = useState(false);
-      const [isInvitationsOpen, setIsInvitationsOpen] = useState(false);
-      const ownAnnouncements = announcements.filter(a => a.creatorId === user.id);
-      const favoriteAnnouncements = announcements.filter(a => favorites.includes(a.id));
-      const hiddenAnnouncementsList = announcements.filter(a => hiddenAnnouncements.includes(a.id));
-      const userInvitations = invitations.filter(i => i.recipientId === user.id);
-
-      return (
-        <Modal onClose={onClose}>
-          <h2 className="text-xl font-bold mb-4">Аккаунт</h2>
-          <div className="flex flex-col gap-4">
-            <img src={user.avatar} alt="Аватар" className="w-16 h-16 rounded-full" loading="lazy" />
-            <p><strong>Имя:</strong> {user.name}</p>
-            {user.birthdate && <p><strong>Дата рождения:</strong> {user.birthdate}</p>}
-            <p><strong>Пол:</strong> {user.gender}</p>
-            <p><strong>О себе:</strong> {user.about}</p>
-            <button onClick={onEditProfile} className="bg-blue-500 text-white px-4 py-2 rounded-lg">Изменить</button>
-            <h3
-              className="font-bold cursor-pointer flex items-center"
-              onClick={() => setIsFavoritesOpen(!isFavoritesOpen)}
-            >
-              Избранное {isFavoritesOpen ? '↑' : '↓'}
-            </h3>
-            <div
-              className="accordion-content"
-              style={{ maxHeight: isFavoritesOpen ? '400px' : '0' }}
-            >
-              <div className="space-y-4 max-h-64 overflow-y-auto">
-                {favoriteAnnouncements.length > 0 ? (
-                  favoriteAnnouncements.map(a => (
-                    <Announcement
-                      key={a.id}
-                      data={a}
-                      isOwn={a.creatorId === user.id}
-                      isFavorite={true}
-                      isHidden={false}
-                      onLike={onLike}
-                      onDislike={onDislike}
-                      onShowParticipants={onShowParticipants}
-                      onEdit={() => {}}
-                      onDelete={() => {}}
-                      activeMenuId={activeMenuId}
-                      openMenu={openMenu}
-                      closeMenu={closeMenu}
-                      userActions={userActions}
-                      onViewProfile={onViewProfile}
-                      onAddToFavorites={onAddToFavorites}
-                      onRemoveFromFavorites={onRemoveFromFavorites}
-                      onHide={onHide}
-                      onShowAgain={onShowAgain}
-                      onReport={onReport}
-                    />
-                  ))
-                ) : (
-                  <p className="text-gray-500">Нет избранных объявлений</p>
-                )}
-              </div>
-            </div>
-            <h3
-              className="font-bold cursor-pointer flex items-center"
-              onClick={() => setIsApplicationsOpen(!isApplicationsOpen)}
-            >
-              Заявки {isApplicationsOpen ? '↑' : '↓'}
-            </h3>
-            <div
-              className="accordion-content"
-              style={{ maxHeight: isApplicationsOpen ? '400px' : '0' }}
-            >
-              <div className="space-y-4 max-h-64 overflow-y-auto">
-                {ownAnnouncements.length > 0 ? (
-                  ownAnnouncements.map(a => (
-                    <Announcement
-                      key={a.id}
-                      data={a}
-                      isOwn={true}
-                      isFavorite={false}
-                      isHidden={false}
-                      onLike={onLike}
-                      onDislike={onDislike}
-                      onShowParticipants={onShowParticipants}
-                      onEdit={() => {}}
-                      onDelete={() => {}}
-                      activeMenuId={activeMenuId}
-                      openMenu={openMenu}
-                      closeMenu={closeMenu}
-                      userActions={userActions}
-                      onViewProfile={onViewProfile}
-                      onAddToFavorites={onAddToFavorites}
-                      onRemoveFromFavorites={onRemoveFromFavorites}
-                      onHide={onHide}
-                      onShowAgain={onShowAgain}
-                      onReport={onReport}
-                    />
-                  ))
-                ) : (
-                  <p className="text-gray-500">Нет созданных объявлений</p>
-                )}
-              </div>
-            </div>
-            <h3
-              className="font-bold cursor-pointer flex items-center"
-              onClick={() => setIsHiddenOpen(!isHiddenOpen)}
-            >
-              Скрытые объявления {isHiddenOpen ? '↑' : '↓'}
-            </h3>
-            <div
-              className="accordion-content"
-              style={{ maxHeight: isHiddenOpen ? '400px' : '0' }}
-            >
-              <div className="space-y-4 max-h-64 overflow-y-auto">
-                {hiddenAnnouncementsList.length > 0 ? (
-                  hiddenAnnouncementsList.map(a => (
-                    <Announcement
-                      key={a.id}
-                      data={a}
-                      isOwn={a.creatorId === user.id}
-                      isFavorite={false}
-                      isHidden={true}
-                      onLike={onLike}
-                      onDislike={onDislike}
-                      onShowParticipants={onShowParticipants}
-                      onEdit={() => {}}
-                      onDelete={() => {}}
-                      activeMenuId={activeMenuId}
-                      openMenu={openMenu}
-                      closeMenu={closeMenu}
-                      userActions={userActions}
-                      onViewProfile={onViewProfile}
-                      onAddToFavorites={onAddToFavorites}
-                      onRemoveFromFavorites={onRemoveFromFavorites}
-                      onHide={onHide}
-                      onShowAgain={onShowAgain}
-                      onReport={onReport}
-                    />
-                  ))
-                ) : (
-                  <p className="text-gray-500">Нет скрытых объявлений</p>
-                )}
-              </div>
-            </div>
-            <h3
-              className="font-bold cursor-pointer flex items-center"
-              onClick={() => setIsInvitationsOpen(!isInvitationsOpen)}
-            >
-              Приглашения {isInvitationsOpen ? '↑' : '↓'}
-            </h3>
-            <div
-              className="accordion-content"
-              style={{ maxHeight: isInvitationsOpen ? '400px' : '0' }}
-            >
-              <div className="space-y-4 max-h-64 overflow-y-auto">
-                {userInvitations.length > 0 ? (
-                  userInvitations.map((inv, index) => (
-                    <div key={index} className="p-4 rounded-[22px] border border-gray-300 bg-white">
-                      <p><strong>От:</strong> {inv.senderName}</p>
-                      <p><strong>Событие:</strong> {inv.isPersonal ? 'Личное приглашение' : inv.announcementTitle}</p>
-                      <p><strong>Телефон:</strong> {inv.phone}</p>
-                      <p><strong>Telegram:</strong> {inv.telegram}</p>
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-gray-500">Нет приглашений</p>
-                )}
-              </div>
-            </div>
-          </div>
-        </Modal>
-      );
-    }
-
-    // Create Announcement Modal
-    function CreateAnnouncementModal({ onCreate, onClose }) {
-      const [title, setTitle] = useState('');
-      const [description, setDescription] = useState('');
-      const [filters, setFilters] = useState({ city: 'Москва', type: 'Прогулка', date: 'Сегодня', gender: 'Не важно' });
-      const titleMaxLength = 64;
-      const descriptionMaxLength = 400;
-
-      return (
-        <Modal onClose={onClose}>
-          <h2 className="text-xl font-bold mb-4">Создать объявление</h2>
-          <div className="relative mb-4">
-            <input
-              type="text"
-              placeholder="Заголовок"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              maxLength={titleMaxLength}
-              className="p-2 rounded-lg border w-full"
-              aria-label="Заголовок"
-            />
-            <span className="absolute right-2 top-2 text-sm text-gray-500">
-              {titleMaxLength - title.length}
-            </span>
-          </div>
-          <div className="relative mb-4">
-            <textarea
-              placeholder="Описание"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              maxLength={descriptionMaxLength}
-              className="p-2 rounded-lg border w-full"
-              aria-label="Описание"
-            />
-            <span className="absolute right-2 bottom-2 text-sm text-gray-500">
-              {descriptionMaxLength - description.length}
-            </span>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <select name="city" onChange={(e) => setFilters(f => ({ ...f, city: e.target.value }))} className="p-2 rounded-lg border" aria-label="Город">
-              <option value="Москва">Москва</option>
-              <option value="Казань">Казань</option>
-              <option value="Санкт-Петербург">Санкт-Петербург</option>
-            </select>
-            <select name="type" onChange={(e) => setFilters(f => ({ ...f, type: e.target.value }))} className="p-2 rounded-lg border" aria-label="Вид">
-              <option value="Прогулка">Прогулка</option>
-              <option value="Общение">Общение</option>
-              <option value="Игры">Игры</option>
-            </select>
-            <select name="date" onChange={(e) => setFilters(f => ({ ...f, date: e.target.value }))} className="p-2 rounded-lg border" aria-label="Дата">
-              <option value="Сегодня">Сегодня</option>
-              <option value="Завтра">Завтра</option>
-              <option value="На неделе">На неделе</option>
-            </select>
-            <select name="gender" onChange={(e) => setFilters(f => ({ ...f, gender: e.target.value }))} className="p-2 rounded-lg border" aria-label="Пол">
-              <option value="Мужской">Мужской</option>
-              <option value="Женский">Женский</option>
-              <option value="Не важно">Не важно</option>
-            </select>
-          </div>
-          <div className="flex gap-4 mt-4">
-            <button onClick={onClose} className="bg-gray-300 px-4 py-2 rounded-lg">Отмена</button>
-            <button onClick={() => { onCreate({ title, description, metatags: Object.values(filters) }); onClose(); }} className="bg-blue-500 text-white px-4 py-2 rounded-lg">Отправить</button>
-          </div>
-        </Modal>
-      );
-    }
-
-    // Profile Card Component (Updated)
-    function ProfileCard({ user, onViewProfile, onLike, onDislike, userActions, activeMenuId, openMenu, closeMenu, onReport, onInvite }) {
-      const [expanded, setExpanded] = useState(false);
-      const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0, direction: 'below' });
-      const buttonRef = useRef(null);
-      const showOptions = activeMenuId === `profile-${user.id}`;
-
-      const age = user.birthdate ? (() => {
-        const today = new Date('2025-05-19');
-        const birth = new Date(user.birthdate);
-        let age = today.getFullYear() - birth.getFullYear();
-        const monthDiff = today.getMonth() - birth.getMonth();
-        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
-          age--;
-        }
-        return age >= 6 ? age : null;
-      })() : null;
-
-      const updateMenuPosition = () => {
-        if (buttonRef.current && showOptions) {
-          const rect = buttonRef.current.getBoundingClientRect();
-          const menuHeight = 80;
-          const viewportHeight = window.innerHeight;
-          const spaceBelow = viewportHeight - rect.bottom;
-          const direction = spaceBelow < menuHeight ? 'above' : 'below';
-
-          setMenuPosition({
-            top: direction === 'below' ? rect.bottom + window.scrollY + 4 : rect.top + window.scrollY - menuHeight - 4,
-            left: rect.right + window.scrollX - 120,
-            direction
-          });
-        }
-      };
-
-      useEffect(() => {
-        updateMenuPosition();
-        if (showOptions) {
-          const interval = setInterval(updateMenuPosition, 50);
-          return () => clearInterval(interval);
-        }
-      }, [expanded, showOptions]);
-
-      useEffect(() => {
-        const handleOutsideClick = (e) => {
-          if (buttonRef.current && !buttonRef.current.contains(e.target) && !e.target.closest('.options-menu')) {
-            closeMenu();
-          }
-        };
-        document.addEventListener('click', handleOutsideClick);
-        return () => document.removeEventListener('click', handleOutsideClick);
-      }, [closeMenu]);
-
-      const handleOptionsClick = (e) => {
-        e.stopPropagation();
-        if (showOptions) {
-          closeMenu();
-        } else {
-          openMenu(`profile-${user.id}`);
-          updateMenuPosition();
-        }
-      };
-
-      const handleShare = async () => {
-        const shareData = {
-          title: `Профиль ${user.name}`,
-          text: user.about,
-          url: `https://app.example.com/profile/${user.id}`
-        };
-        try {
-          if (navigator.share) {
-            await navigator.share(shareData);
-          } else {
-            await navigator.clipboard.writeText(shareData.url);
-            alert('Ссылка на профиль скопирована в буфер обмена');
-          }
-        } catch (err) {
-          console.error('Ошибка при попытке поделиться:', err);
-        }
-        closeMenu();
-      };
-
-      return (
-        <>
-          <article
-            onClick={(e) => {
-              if (!e.target.closest('button') && !e.target.closest('a')) setExpanded(!expanded);
-            }}
-            className="p-4 rounded-[22px] border border-gray-300 bg-white cursor-pointer profile-expanded w-full"
-            style={{ maxHeight: expanded ? '300px' : '120px', overflow: 'hidden' }}
-          >
-            <div className="flex justify-between items-center">
-              <div className="flex items-center gap-2">
-                <button onClick={() => onViewProfile(user.id)} className="focus:outline-none">
-                  <img src={user.avatar} alt="Аватар" className="w-8 h-8 rounded-full" loading="lazy" />
-                </button>
-                <button onClick={() => onViewProfile(user.id)} className="text-blue-500 focus:outline-none">{user.name}</button>
-                {age && <span className="ml-1">{age} лет</span>}
-              </div>
-              <div className="flex gap-2 items-center">
-                <button onClick={() => onLike(user.id)} className="p-1" aria-label="Лайк">
-                  <img src="https://raw.githubusercontent.com/Uno5512/FrendsHub/main/2.png" alt="Лайк" className="like-dislike-img" />
-                </button>
-                <button onClick={() => onDislike(user.id)} className="p-1" aria-label="Дизлайк">
-                  <img src="https://raw.githubusercontent.com/Uno5512/FrendsHub/main/1.png" alt="Дизлайк" className="like-dislike-img" />
-                </button>
-                <button
-                  ref={buttonRef}
-                  onClick={handleOptionsClick}
-                  className="text-gray-500"
-                  aria-label="Опции"
-                >
-                  ⋯
-                </button>
-                <button
-                  onClick={() => onInvite(user.id, user.name)}
-                  className="bg-blue-500 text-white px-2 py-1 rounded"
-                  aria-label="Пригласить"
-                >
-                  Пригласить
-                </button>
-              </div>
-            </div>
-            <p className="mt-2 profile-description">{user.about}</p>
-            {expanded && (
-              <div className="text-sm text-gray-500 mt-1">{user.gender}, {user.city || 'Город не указан'}</div>
-            )}
-          </article>
-          {showOptions && (
-            <div
-              className="fixed bg-white border rounded shadow-lg p-2 w-32 z-50 options-menu"
-              style={{ top: `${menuPosition.top}px`, left: `${menuPosition.left}px` }}
-            >
-              <button onClick={handleShare} className="block w-full text-left hover:bg-gray-100 p-1">Поделиться</button>
-              <button onClick={() => { onReport(user.id); closeMenu(); }} className="block w-full text-left hover:bg-gray-100 p-1">Пожаловаться</button>
-            </div>
-          )}
-        </>
-      );
-    }
-
-    // Main App Component (Updated)
-    function App() {
-      const [user, setUser] = useState(null);
-      const [isSynced, setIsSynced] = useState(null);
-      const [users, setUsers] = useState([]);
-      const [announcements, setAnnouncements] = useState([]);
-      const [filteredAnnouncements, setFilteredAnnouncements] = useState([]);
-      const [filteredUsers, setFilteredUsers] = useState([]);
-      const [showAccount, setShowAccount] = useState(false);
-      const [showCreate, setShowCreate] = useState(false);
-      const [showProfile, setShowProfile] = useState(null);
-      const [showReportModal, setShowReportModal] = useState(null);
-      const [showParticipantsModal, setShowParticipantsModal] = useState(null);
-      const [showSendContactsModal, setShowSendContactsModal] = useState(null);
-      const [showEditProfile, setShowEditProfile] = useState(false);
-      const [showInviteModal, setShowInviteModal] = useState(null);
-      const [applications, setApplications] = useState([]);
-      const [favorites, setFavorites] = useState([]);
-      const [hiddenAnnouncements, setHiddenAnnouncements] = useState([]);
-      const [invitations, setInvitations] = useState([]);
-      const [currentFilters, setCurrentFilters] = useState({ query: '', filters: { city: '', type: '', date: '', gender: '', sort: 'По рейтингу' } });
-      const [activeMenuId, setActiveMenuId] = useState(null);
-      const [userActions, setUserActions] = useState({});
-      const [mode, setMode] = useState('events');
-
-      // Load data from localStorage
-      useEffect(() => {
-        const savedUser = localStorage.getItem('user');
-        const savedUsers = localStorage.getItem('users');
-        const savedAnnouncements = localStorage.getItem('announcements');
-        const savedApplications = localStorage.getItem('applications');
-        const savedFavorites = localStorage.getItem('favorites');
-        const savedHiddenAnnouncements = localStorage.getItem('hiddenAnnouncements');
-        const savedUserActions = localStorage.getItem('userActions');
-        const savedInvitations = localStorage.getItem('invitations');
-
-        if (savedUser) setUser(JSON.parse(savedUser));
-        if (savedUsers) setUsers(JSON.parse(savedUsers));
-        if (savedAnnouncements) setAnnouncements(JSON.parse(savedAnnouncements));
-        if (savedApplications) setApplications(JSON.parse(savedApplications));
-        if (savedFavorites) setFavorites(JSON.parse(savedFavorites));
-        if (savedHiddenAnnouncements) setHiddenAnnouncements(JSON.parse(savedHiddenAnnouncements));
-        if (savedUserActions) setUserActions(JSON.parse(savedUserActions));
-        if (savedInvitations) setInvitations(JSON.parse(savedInvitations));
-
-        // Initialize with default data if no user is saved
-        if (!savedUser && !savedUsers) {
-          const defaultUsers = [
-            {
-              id: 1,
-              name: 'Алексей',
-              birthdate: '1998-03-15',
-              gender: 'Мужской',
-              about: 'Люблю прогулки и настольные игры.',
-              avatar: 'https://mir-s3-cdn-cf.behance.net/project_modules/fs_webp/cf5343120913219.60bb24ccb2f89.jpg',
-              city: 'Москва',
-              likes: 0,
-              dislikes: 0
-            }
-          ];
-          const defaultAnnouncements = [
-            {
-              id: 1,
-              title: 'Прогулка в парке',
-              description: 'Присоединяйтесь к прогулке!',
-              metatags: ['Москва', 'Прогулка', 'Сегодня', 'Не важно'],
-              creatorId: 1,
-              creatorName: 'Алексей',
-              creatorAvatar: 'https://mir-s3-cdn-cf.behance.net/project_modules/fs_webp/cf5343120913219.60bb24ccb2f89.jpg',
-              age: 27,
-              participants: 3,
-              likes: 5,
-              dislikes: 2,
-              createdAt: '01.11.2023'
-            }
-          ];
-          setUsers(defaultUsers);
-          setAnnouncements(defaultAnnouncements);
-          setFilteredUsers(defaultUsers);
-          setFilteredAnnouncements(defaultAnnouncements);
-        } else {
-          setFilteredUsers(JSON.parse(savedUsers || '[]'));
-          setFilteredAnnouncements(JSON.parse(savedAnnouncements || '[]').filter(a => !JSON.parse(savedHiddenAnnouncements || '[]').includes(a.id)));
-        }
-
-        if (window.Telegram && window.Telegram.WebApp) {
-          window.Telegram.WebApp.ready();
-          setIsSynced(window.Telegram.WebApp.isVersionAtLeast('6.0'));
-        } else {
-          setTimeout(() => setIsSynced(savedUser ? true : false), 1000);
-        }
-      }, []);
-
-      // Save data to localStorage
-      useEffect(() => {
-        if (user) localStorage.setItem('user', JSON.stringify(user));
-        localStorage.setItem('users', JSON.stringify(users));
-        localStorage.setItem('announcements', JSON.stringify(announcements));
-        localStorage.setItem('applications', JSON.stringify(applications));
-        localStorage.setItem('favorites', JSON.stringify(favorites));
-        localStorage.setItem('hiddenAnnouncements', JSON.stringify(hiddenAnnouncements));
-        localStorage.setItem('userActions', JSON.stringify(userActions));
-        localStorage.setItem('invitations', JSON.stringify(invitations));
-      }, [user, users, announcements, applications, favorites, hiddenAnnouncements, userActions, invitations]);
-
-      const openMenu = (id) => {
-        setActiveMenuId(id);
-      };
-
-      const closeMenu = () => {
-        setActiveMenuId(null);
-      };
-
-      const calculateAge = (birthdate) => {
-        if (!birthdate) return null;
-        const today = new Date('2025-05-19');
-        const birth = new Date(birthdate);
-        let age = today.getFullYear() - birth.getFullYear();
-        const monthDiff = today.getMonth() - birth.getMonth();
-        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
-          age--;
-        }
-        return age >= 6 ? age : null;
-      };
-
-      const handleRegister = (userData) => {
-        const newUser = {
-          ...userData,
-          id: Date.now(),
-          city: 'Москва',
-          likes: 0,
-          dislikes: 0
-        };
-        setUser(newUser);
-        setUsers(prev => [...prev, newUser]);
-        setFilteredUsers(prev => [...prev, newUser]);
-        setIsSynced(true);
-      };
-
-      const handleEditProfile = (updatedUser) => {
-        setUser(updatedUser);
-        setUsers(prev => prev.map(u => u.id === updatedUser.id ? updatedUser : u));
-        setFilteredUsers(prev => prev.map(u => u.id === updatedUser.id ? updatedUser : u));
-      };
-
-      const handleSearch = (query, filters, searchMode, newAnnouncements = announcements, newUsers = users) => {
-        setCurrentFilters({ query, filters });
-        if (searchMode === 'events') {
-          let result = [...newAnnouncements].filter(a => !hiddenAnnouncements.includes(a.id));
-
-          if (query.trim()) {
-            const lowerQuery = query.toLowerCase();
-            result = result.filter(a =>
-              a.title.toLowerCase().includes(lowerQuery) ||
-              a.description.toLowerCase().includes(lowerQuery) ||
-              a.metatags.some(tag => tag.toLowerCase().includes(lowerQuery))
-            );
-          }
-
-          if (filters.city) {
-            result = result.filter(a => a.metatags.includes(filters.city));
-          }
-          if (filters.type) {
-            result = result.filter(a => a.metatags.includes(filters.type));
-          }
-          if (filters.date) {
-            result = result.filter(a => a.metatags.includes(filters.date));
-          }
-          if (filters.gender) {
-            result = result.filter(a => a.metatags.includes(filters.gender));
-          }
-
-          if (filters.sort === 'По рейтингу') {
-            result.sort((a, b) => (b.likes - b.dislikes) - (a.likes - a.dislikes));
-          } else if (filters.sort === 'Новые') {
-            result.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-          } else if (filters.sort === 'Старые') {
-            result.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
-          } else if (filters.sort === 'Верифицированные') {
-            result.sort((a, b) => (b.likes - b.dislikes) - (a.likes - a.dislikes));
-          }
-
-          setFilteredAnnouncements(result);
-        } else {
-          let result = [...newUsers];
-
-          if (query.trim()) {
-            const lowerQuery = query.toLowerCase();
-            result = result.filter(u =>
-              u.name.toLowerCase().includes(lowerQuery) ||
-              u.about.toLowerCase().includes(lowerQuery) ||
-              (u.city && u.city.toLowerCase().includes(lowerQuery))
-            );
-          }
-
-          if (filters.city) {
-            result = result.filter(u => u.city === filters.city);
-          }
-          if (filters.gender) {
-            result = result.filter(u => u.gender === filters.gender);
-          }
-
-          if (filters.sort === 'По рейтингу') {
-            result.sort((a, b) => (b.likes - b.dislikes) - (a.likes - a.dislikes));
-          } else if (filters.sort === 'Новые') {
-            result.sort((a, b) => b.id - a.id);
-          } else if (filters.sort === 'Старые') {
-            result.sort((a, b) => a.id - b.id);
-          }
-
-          setFilteredUsers(result);
-        }
-      };
-
-      const handleLike = (id, isProfile = false) => {
-        if (isProfile) {
-          setUsers(prev => {
-            const currentAction = userActions[`profile-${id}`];
-            let updatedUsers = [...prev];
-
-            if (currentAction === 'like') {
-              return prev;
-            }
-
-            if (currentAction === 'dislike') {
-              updatedUsers = prev.map(u =>
-                u.id === id ? { ...u, dislikes: u.dislikes - 1, likes: u.likes + 1 } : u
-              );
-            } else {
-              updatedUsers = prev.map(u =>
-                u.id === id ? { ...u, likes: u.likes + 1 } : u
-              );
-            }
-
-            setUserActions(prev => ({ ...prev, [`profile-${id}`]: 'like' }));
-            setFilteredUsers(updatedUsers);
-            if (user.id === id) setUser(updatedUsers.find(u => u.id === id));
-            return updatedUsers;
-          });
-        } else {
-          setAnnouncements(prev => {
-            const currentAction = userActions[id];
-            let updatedAnnouncements = [...prev];
-
-            if (currentAction === 'like') {
-              return prev;
-            }
-
-            if (currentAction === 'dislike') {
-              updatedAnnouncements = prev.map(a =>
-                a.id === id ? { ...a, dislikes: a.dislikes - 1, likes: a.likes + 1 } : a
-              );
-            } else {
-              updatedAnnouncements = prev.map(a =>
-                a.id === id ? { ...a, likes: a.likes + 1 } : a
-              );
-            }
-
-            setUserActions(prev => ({ ...prev, [id]: 'like' }));
-            handleSearch(currentFilters.query, currentFilters.filters, mode, updatedAnnouncements);
-            return updatedAnnouncements;
-          });
-        }
-      };
-
-      const handleDislike = (id, isProfile = false) => {
-        if (isProfile) {
-          setUsers(prev => {
-            const currentAction = userActions[`profile-${id}`];
-            let updatedUsers = [...prev];
-
-            if (currentAction === 'dislike') {
-              return prev;
-            }
-
-            if (currentAction === 'like') {
-              updatedUsers = prev.map(u =>
-                u.id === id ? { ...u, likes: u.likes - 1, dislikes: u.dislikes + 1 } : u
-              );
-            } else {
-              updatedUsers = prev.map(u =>
-                u.id === id ? { ...u, dislikes: u.dislikes + 1 } : u
-              );
-            }
-
-            setUserActions(prev => ({ ...prev, [`profile-${id}`]: 'dislike' }));
-            setFilteredUsers(updatedUsers);
-            if (user.id === id) setUser(updatedUsers.find(u => u.id === id));
-            return updatedUsers;
-          });
-        } else {
-          setAnnouncements(prev => {
-            const currentAction = userActions[id];
-            let updatedAnnouncements = [...prev];
-
-            if (currentAction === 'dislike') {
-              return prev;
-            }
-
-            if (currentAction === 'like') {
-              updatedAnnouncements = prev.map(a =>
-                a.id === id ? { ...a, likes: a.likes - 1, dislikes: a.dislikes + 1 } : a
-              );
-            } else {
-              updatedAnnouncements = prev.map(a =>
-                a.id === id ? { ...a, dislikes: a.dislikes + 1 } : a
-              );
-            }
-
-            setUserActions(prev => ({ ...prev, [id]: 'dislike' }));
-            handleSearch(currentFilters.query, currentFilters.filters, mode, updatedAnnouncements);
-            return updatedAnnouncements;
-          });
-        }
-      };
-
-      const handleParticipate = (id) => {
-        setAnnouncements(prev => {
-          const updated = prev.map(a =>
-            a.id === id ? { ...a, participants: a.participants + 1 } : a
-          );
-          setFilteredAnnouncements(prevFiltered =>
-            prevFiltered.map(a =>
-              a.id === id ? { ...a, participants: a.participants + 1 } : a
-            )
-          );
-          setApplications(prev => {
-            const existingApp = prev.find(app => app.announcementId === id);
-            if (existingApp) {
-              return prev.map(app =>
-                app.announcementId === id
-                  ? {
-                      ...app,
-                      participants: [
-                        ...app.participants,
-                        { id: user.id, name: user.name, avatar: user.avatar }
-                      ]
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>P2P Social - Децентрализованная лента</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'rubik': ['Rubik', 'sans-serif'],
+                    },
+                    backgroundImage: {
+                        'dot-grid': 'radial-gradient(circle, #e5e7eb 1px, transparent 1px)',
+                    },
+                    backgroundSize: {
+                        '12px': '12px 12px',
+                    },
+                    backdropBlur: {
+                        xs: '2px',
                     }
-                  : app
-              );
+                }
             }
-            return [
-              ...prev,
-              {
-                id: Date.now(),
-                announcementId: id,
-                announcementTitle: updated.find(a => a.id === id).title,
-                participants: [{ id: user.id, name: user.name, avatar: user.avatar }]
-              }
-            ];
-          });
-          handleSearch(currentFilters.query, currentFilters.filters, mode, updated);
-          return updated;
-        });
-      };
-
-      const handleShowParticipants = (id, title) => {
-        setShowParticipantsModal({ id, title });
-      };
-
-      const handleSendContacts = (announcementId, announcementTitle, selectedParticipantIds, isPersonal = false) => {
-        setShowSendContactsModal({ announcementId, announcementTitle, selectedParticipantIds, isPersonal });
-      };
-
-      const handleSubmitContacts = ({ phone, telegram }, { announcementId, announcementTitle, selectedParticipantIds, isPersonal }) => {
-        const newInvitations = selectedParticipantIds.map(recipientId => ({
-          id: Date.now() + recipientId,
-          senderId: user.id,
-          senderName: user.name,
-          phone,
-          telegram,
-          announcementId,
-          announcementTitle,
-          recipientId,
-          isPersonal
-        }));
-        setInvitations(prev => [...prev, ...newInvitations]);
-      };
-
-      const handleInvite = (recipientId, recipientName) => {
-        setShowInviteModal({ recipientId, recipientName });
-      };
-
-      const handleCreate = (data) => {
-        const newAnnouncement = {
-          ...data,
-          id: Date.now(),
-          creatorId: user.id,
-          creatorName: user.name,
-          creatorAvatar: user.avatar,
-          age: calculateAge(user.birthdate),
-          participants: 0,
-          likes: 0,
-          dislikes: 0,
-          createdAt: new Date().toLocaleDateString()
-        };
-        setAnnouncements(prev => {
-          const updated = [...prev, newAnnouncement];
-          if (mode === 'events') {
-            setFilteredAnnouncements(prevFiltered => {
-              let result = [...prevFiltered, newAnnouncement].filter(a => !hiddenAnnouncements.includes(a.id));
-              if (currentFilters.query.trim()) {
-                const lowerQuery = currentFilters.query.toLowerCase();
-                result = result.filter(a =>
-                  a.title.toLowerCase().includes(lowerQuery) ||
-                  a.description.toLowerCase().includes(lowerQuery) ||
-                  a.metatags.some(tag => tag.toLowerCase().includes(lowerQuery))
-                );
-              }
-              if (currentFilters.filters.city) {
-                result = result.filter(a => a.metatags.includes(currentFilters.filters.city));
-              }
-              if (currentFilters.filters.type) {
-                result = result.filter(a => a.metatags.includes(currentFilters.filters.type));
-              }
-              if (currentFilters.filters.date) {
-                result = result.filter(a => a.metatags.includes(currentFilters.filters.date));
-              }
-              if (currentFilters.filters.gender) {
-                result = result.filter(a => a.metatags.includes(currentFilters.filters.gender));
-              }
-              if (currentFilters.filters.sort === 'По рейтингу') {
-                result.sort((a, b) => (b.likes - b.dislikes) - (a.likes - a.dislikes));
-              } else if (currentFilters.filters.sort === 'Новые') {
-                result.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-              } else if (currentFilters.filters.sort === 'Старые') {
-                result.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
-              }
-              return result;
-            });
-          }
-          return updated;
-        });
-      };
-
-      const handleDelete = (id) => {
-        setAnnouncements(prev => {
-          const updated = prev.filter(a => a.id !== id);
-          handleSearch(currentFilters.query, currentFilters.filters, mode, updated);
-          return updated;
-        });
-        setUserActions(prev => {
-          const updated = { ...prev };
-          delete updated[id];
-          return updated;
-        });
-        setFavorites(prev => prev.filter(favId => favId !== id));
-        setHiddenAnnouncements(prev => prev.filter(hidId => hidId !== id));
-        setApplications(prev => prev.filter(app => app.announcementId !== id));
-        setInvitations(prev => prev.filter(inv => inv.announcementId !== id));
-      };
-
-      const handleAddToFavorites = (id) => {
-        setFavorites(prev => prev.includes(id) ? prev : [...prev, id]);
-      };
-
-      const handleRemoveFromFavorites = (id) => {
-        setFavorites(prev => prev.filter(favId => favId !== id));
-      };
-
-      const handleHide = (id) => {
-        setHiddenAnnouncements(prev => [...prev, id]);
-        handleSearch(currentFilters.query, currentFilters.filters, mode);
-      };
-
-      const handleShowAgain = (id) => {
-        setHiddenAnnouncements(prev => prev.filter(hidId => hidId !== id));
-        handleSearch(currentFilters.query, currentFilters.filters, mode);
-      };
-
-      const handleReport = (id, isProfile = false) => {
-        setShowReportModal({ id, isProfile });
-      };
-
-      const handleSubmitReport = (text) => {
-        // Placeholder for report submission
-      };
-
-      const handleViewProfile = (userId) => {
-        if (userId === user?.id) {
-          setShowAccount(true);
-        } else {
-          setShowProfile(userId);
         }
-      };
-
-      const handleModeChange = (newMode) => {
-        setMode(newMode);
-        handleSearch(currentFilters.query, currentFilters.filters, newMode);
-      };
-
-      if (!isSynced) {
-        return <RegistrationModal onRegister={handleRegister} />;
-      }
-
-      return (
-        <div className="min-h-screen bg-gray-100">
-          {showEditProfileModal && (
-            <EditProfileModal
-              user={user}
-              onSave={handleEditProfile}
-              onClose={() => setShowEditProfileModal(false)}
-            />
-          )}
-          {showProfile && (
-            <ProfileModal
-              user={users.find(u => u.id === showProfile)}
-              currentUser={user}
-              announcements={announcements}
-              onClose={() => setShowProfile(null)}
-              onLike={handleLike}
-              onDislike={handleDislike}
-              onShowParticipants={handleShowParticipants}
-              onAddToFavorites={handleAddToFavorites}
-              onRemoveFromFavorites={handleRemoveFromFavorites}
-              onHide={handleHide}
-              onShowAgain={handleShowAgain}
-              onReport={handleReport}
-              onViewProfile={handleViewProfile}
-              userActions={userActions}
-              activeMenuId={activeMenuId}
-              openMenu={openMenu}
-              closeMenu={closeMenu}
-            />
-          )}
-          {showParticipantsModal && (
-            <ParticipantsModal
-              announcementId={showParticipantsModal.id}
-              announcementTitle={showParticipantsModal.title}
-              participants={
-                applications
-                  .find(app => app.announcementId === showParticipantsModal.id)
-                  ?.participants || []
-              }
-              isOwn={announcements.find(a => a.id === showParticipantsModal.id)?.creatorId === user.id}
-              currentUser={user}
-              onClose={() => setShowParticipantsModal(null)}
-            />
-          )}
-          {showAccount && (
-            <AccountModal
-              user={user}
-              announcements={announcements}
-              applications={applications}
-              favorites={favorites}
-              hiddenAnnouncements={hiddenAnnouncements}
-              invitations={invitations}
-              favoriteProfiles={favoriteProfiles}
-              hiddenProfiles={hiddenProfiles}
-              onClose={() => setShowAccount(false)}
-              onLike={handleLike}
-              onDislike={handleDislike}
-              onShowParticipants={handleShowParticipants}
-              onAddToFavorites={handleAddToFavorites}
-              onRemoveFromFavorites={handleRemoveFromFavorites}
-              onHide={handleHide}
-              onShowAgain={handleShowAgain}
-              onReport={handleReport}
-              onViewProfile={handleViewProfile}
-              userActions={userActions}
-              activeMenuId={activeMenuId}
-              openMenu={openMenu}
-              closeMenu={closeMenu}
-              onEditProfile={() => setShowEditProfileModal(true)}
-            />
-          )}
-          {showCreate && (
-            <CreateAnnouncementModal
-              onCreate={handleCreate}
-              onClose={() => setShowCreate(false)}
-            />
-          )}
-          {showReportModal && (
-            <ReportModal
-              onClose={() => setShowReportModal(null)}
-              onSubmit={handleSubmitReport}
-            />
-          )}
-          {showSendContactsModal && (
-            <SendContactsModal
-              onClose={() => setShowSendContactsModal(null)}
-              onSubmit={(contacts) => handleSubmitContacts(contacts, showSendContactsModal)}
-              announcementTitle={showSendContactsModal.announcementTitle}
-            />
-          )}
-          {showInviteModal && (
-            <InviteModal
-              ownAnnouncements={announcements.filter(a => a.creatorId === user.id)}
-              onSelectAnnouncement={(id, title) =>
-                handleSelectAnnouncement(id, title, showInviteModal.recipientId, showInviteModal.recipientName)
-              }
-              onCreateAnnouncement={() => {
-                setShowInviteModal(null);
-                setShowCreate(true);
-              }}
-              onClose={() => setShowInviteModal(null)}
-            />
-          )}
-          <header className="flex justify-between items-center p-4 bg-white shadow">
-            <h1 className="text-xl font-bold">Fibonacci Poetry</h1>
-            <button
-              onClick={() => setShowAccount(true)}
-              className="bg-blue-500 text-white px-4 py-2 rounded-lg"
-            >
-              Аккаунт
-            </button>
-          </header>
-          <SearchBar
-            onSearch={handleSearch}
-            mode={mode}
-            onModeChange={handleModeChange}
-          />
-          <main className="p-4 space-y-4">
-            {mode === 'events' ? (
-              <>
-                <button
-                  onClick={() => setShowCreate(true)}
-                  className="bg-blue-500 text-white px-4 py-2 rounded-lg mb-4"
-                >
-                  Создать объявление
-                </button>
-                {filteredAnnouncements.length > 0 ? (
-                  filteredAnnouncements.map(a => (
-                    <Announcement
-                      key={a.id}
-                      data={a}
-                      isOwn={a.creatorId === user.id}
-                      isFavorite={favorites.includes(a.id)}
-                      isHidden={hiddenAnnouncements.includes(a.id)}
-                      onLike={handleLike}
-                      onDislike={handleDislike}
-                      onShowParticipants={handleShowParticipants}
-                      onEdit={() => {}}
-                      onDelete={() => {}}
-                      activeMenuId={activeMenuId}
-                      openMenu={openMenu}
-                      closeMenu={closeMenu}
-                      userActions={userActions}
-                      onViewProfile={handleViewProfile}
-                      onAddToFavorites={handleAddToFavorites}
-                      onRemoveFromFavorites={handleRemoveFromFavorites}
-                      onHide={handleHide}
-                      onShowAgain={handleShowAgain}
-                      onReport={handleReport}
-                    />
-                  ))
-                ) : (
-                  <p className="text-gray-500">Нет объявлений</p>
-                )}
-              </>
-            ) : (
-              filteredUsers.length > 0 ? (
-                filteredUsers.map(u => (
-                  <ProfileCard
-                    key={u.id}
-                    user={u}
-                    isOwn={u.id === user.id}
-                    isFavorite={favoriteProfiles.includes(u.id)}
-                    isHidden={hiddenProfiles.includes(u.id)}
-                    onLike={() => handleLike(u.id, true)}
-                    onDislike={() => handleDislike(u.id, true)}
-                    onViewProfile={handleViewProfile}
-                    onAddToFavorites={() => handleAddToFavorites(u.id, true)}
-                    onRemoveFromFavorites={() => handleRemoveFromFavorites(u.id, true)}
-                    onHide={() => handleHide(u.id, true)}
-                    onShowAgain={() => handleShowAgain(u.id, true)}
-                    onReport={() => handleReport(u.id, true)}
-                    activeMenuId={activeMenuId}
-                    openMenu={openMenu}
-                    closeMenu={closeMenu}
-                    userActions={userActions}
-                    onInvite={handleInvite}
-                  />
-                ))
-              ) : (
-                <p className="text-gray-500">Нет профилей</p>
-              )
-            )}
-          </main>
+    </script>
+    <style>
+        body {
+            background-image: radial-gradient(circle, #e5e7eb 1px, transparent 1px);
+            background-size: 12px 12px;
+            background-color: #f8fafc;
+        }
+        
+        .glass {
+            background: rgba(255, 255, 255, 0.25);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .status-dot {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+    </style>
+</head>
+<body class="font-rubik min-h-screen">
+    <div class="container mx-auto px-4 py-6 max-w-4xl">
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-gray-800 mb-2">🌐 P2P Social</h1>
+            <p class="text-gray-600 mb-4">Децентрализованная лента без серверов</p>
+            <div class="flex items-center justify-center gap-3 text-sm text-gray-700">
+                <div class="flex items-center gap-2">
+                    <div class="w-2 h-2 rounded-full bg-red-500 status-dot" id="statusDot"></div>
+                    <span id="statusText">Подключение к сети...</span>
+                </div>
+                <span class="text-gray-500">|</span>
+                <span id="peerCount">Пиров: 0</span>
+                <span class="text-gray-500">|</span>
+                <span id="postCount">Постов: 0</span>
+            </div>
         </div>
-      );
-    }
 
-    ReactDOM.render(<App />, document.getElementById('root'));
-  </script>
+        <!-- Create Post Form -->
+        <div class="glass rounded-2xl p-6 mb-6">
+            <h2 class="text-xl font-semibold text-gray-800 mb-4">Создать событие</h2>
+            <div class="space-y-4">
+                <input type="text" id="postTitle" 
+                       placeholder="Заголовок события..." 
+                       class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-400 focus:outline-none bg-white/70">
+                
+                <textarea id="postDescription" 
+                          placeholder="Описание события..." 
+                          rows="3"
+                          class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-400 focus:outline-none bg-white/70 resize-none"></textarea>
+                
+                <input type="text" id="postTags" 
+                       placeholder="Теги через запятую (концерт, музыка, рок)" 
+                       class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-400 focus:outline-none bg-white/70">
+                
+                <textarea id="postContacts" 
+                          placeholder="Ваши контакты и ссылки..." 
+                          rows="2"
+                          class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-400 focus:outline-none bg-white/70 resize-none"></textarea>
+                
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <select id="postCity" class="px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-400 focus:outline-none bg-white/70">
+                        <option value="">Город</option>
+                        <option value="moscow">Москва</option>
+                        <option value="spb">СПб</option>
+                        <option value="ekb">Екатеринбург</option>
+                        <option value="nsk">Новосибирск</option>
+                        <option value="other">Другой</option>
+                    </select>
+                    
+                    <select id="postType" class="px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-400 focus:outline-none bg-white/70">
+                        <option value="event">Событие</option>
+                        <option value="meet">Встреча</option>
+                        <option value="help">Помощь</option>
+                        <option value="sale">Продажа</option>
+                        <option value="other">Другое</option>
+                    </select>
+                    
+                    <select id="postGender" class="px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-400 focus:outline-none bg-white/70">
+                        <option value="">Пол</option>
+                        <option value="male">Мужской</option>
+                        <option value="female">Женский</option>
+                        <option value="any">Любой</option>
+                    </select>
+                    
+                    <select id="postAge" class="px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-400 focus:outline-none bg-white/70">
+                        <option value="">Возраст</option>
+                        <option value="18-25">18-25</option>
+                        <option value="26-35">26-35</option>
+                        <option value="36-45">36-45</option>
+                        <option value="46+">46+</option>
+                    </select>
+                </div>
+                
+                <button onclick="createPost()" 
+                        class="w-full bg-gray-600 hover:bg-gray-700 text-white font-medium py-3 px-6 rounded-xl transition-colors">
+                    Создать событие
+                </button>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="glass rounded-2xl p-6 mb-6">
+            <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+                <input type="text" id="searchBox" 
+                       placeholder="🔍 Поиск..." 
+                       oninput="filterPosts()"
+                       class="md:col-span-2 px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-400 focus:outline-none bg-white/70">
+                
+                <select id="filterCity" onchange="filterPosts()" class="px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-400 focus:outline-none bg-white/70">
+                    <option value="">Все города</option>
+                    <option value="moscow">Москва</option>
+                    <option value="spb">СПб</option>
+                    <option value="ekb">Екатеринбург</option>
+                    <option value="nsk">Новосибирск</option>
+                    <option value="other">Другой</option>
+                </select>
+                
+                <select id="filterType" onchange="filterPosts()" class="px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-400 focus:outline-none bg-white/70">
+                    <option value="">Все типы</option>
+                    <option value="event">События</option>
+                    <option value="meet">Встречи</option>
+                    <option value="help">Помощь</option>
+                    <option value="sale">Продажа</option>
+                    <option value="other">Другое</option>
+                </select>
+                
+                <select id="filterSort" onchange="filterPosts()" class="px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-400 focus:outline-none bg-white/70">
+                    <option value="new">Новые</option>
+                    <option value="old">Старые</option>
+                    <option value="liked">По лайкам</option>
+                    <option value="my">Мои</option>
+                    <option value="favorites">Избранное</option>
+                    <option value="hidden">Скрытые</option>
+                </select>
+            </div>
+            
+            <button onclick="resetFilters()" 
+                    class="mt-4 bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-lg transition-colors">
+                Сбросить фильтры
+            </button>
+        </div>
+
+        <!-- Posts Feed -->
+        <div id="postsFeed">
+            <div class="glass rounded-2xl p-8 text-center">
+                <div class="text-6xl mb-4">🚀</div>
+                <p class="text-gray-600">Создайте первый пост или дождитесь подключения к сети!</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // CRDT для синхронизации данных
+        class CRDT {
+            constructor() {
+                this.state = new Map();
+                this.vectorClock = new Map();
+                this.nodeId = this.generateNodeId();
+            }
+
+            generateNodeId() {
+                return 'node_' + Math.random().toString(36).substr(2, 9) + Date.now().toString(36);
+            }
+
+            update(key, value, timestamp = Date.now()) {
+                const currentClock = this.vectorClock.get(this.nodeId) || 0;
+                this.vectorClock.set(this.nodeId, Math.max(currentClock, timestamp));
+                
+                const entry = {
+                    value,
+                    timestamp,
+                    nodeId: this.nodeId,
+                    vectorClock: new Map(this.vectorClock)
+                };
+
+                if (!this.state.has(key) || this.shouldUpdate(this.state.get(key), entry)) {
+                    this.state.set(key, entry);
+                    return true;
+                }
+                return false;
+            }
+
+            shouldUpdate(existing, incoming) {
+                if (incoming.timestamp > existing.timestamp) return true;
+                if (incoming.timestamp === existing.timestamp) {
+                    return incoming.nodeId > existing.nodeId; // Детерминированное разрешение конфликтов
+                }
+                return false;
+            }
+
+            merge(otherState) {
+                let updated = false;
+                for (const [key, entry] of otherState) {
+                    if (!this.state.has(key) || this.shouldUpdate(this.state.get(key), entry)) {
+                        this.state.set(key, entry);
+                        updated = true;
+                    }
+                    
+                    // Обновляем vector clock
+                    const incomingClock = entry.vectorClock.get(entry.nodeId) || 0;
+                    const currentClock = this.vectorClock.get(entry.nodeId) || 0;
+                    this.vectorClock.set(entry.nodeId, Math.max(currentClock, incomingClock));
+                }
+                return updated;
+            }
+
+            get(key) {
+                const entry = this.state.get(key);
+                return entry ? entry.value : undefined;
+            }
+
+            getAll() {
+                const result = new Map();
+                for (const [key, entry] of this.state) {
+                    result.set(key, entry.value);
+                }
+                return result;
+            }
+
+            serialize() {
+                return JSON.stringify([...this.state], (key, value) => {
+                    if (value instanceof Map) {
+                        return [...value];
+                    }
+                    return value;
+                });
+            }
+
+            deserialize(data) {
+                const parsed = JSON.parse(data, (key, value) => {
+                    if (Array.isArray(value) && value.length === 2 && typeof value[0] === 'string') {
+                        return new Map(value);
+                    }
+                    return value;
+                });
+                return new Map(parsed);
+            }
+        }
+
+        // WebRTC P2P Network
+        class P2PNetwork {
+            constructor() {
+                this.peers = new Map();
+                this.connections = new Map();
+                this.rtcConnections = new Map(); // Для WebRTC соединений
+                this.myId = this.generateId();
+                this.crdt = new CRDT();
+                this.userActions = new Map();
+                this.isConnected = false;
+                this.isOnline = navigator.onLine;
+                this.signalingSocket = null;
+                this.reconnectAttempts = 0;
+                this.maxReconnectAttempts = 5;
+                this.iceServers = [
+                    { urls: 'stun:stun.l.google.com:19302' },
+                    { urls: 'stun:stun1.l.google.com:19302' },
+                    { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' }
+                ];
+                
+                this.initNetwork();
+                this.loadFromStorage();
+                this.startCleanupTimer();
+                this.registerServiceWorker();
+                this.setupNetworkEventListeners();
+            }
+
+            generateId() {
+                return 'peer_' + Math.random().toString(36).substr(2, 9) + Date.now().toString(36);
+            }
+
+            async registerServiceWorker() {
+                if ('serviceWorker' in navigator) {
+                    try {
+                        const registration = await navigator.serviceWorker.register('./sw.js');
+                        console.log('Service Worker зарегистрирован:', registration.scope);
+                        
+                        // Слушаем сообщения от Service Worker
+                        navigator.serviceWorker.addEventListener('message', event => {
+                            if (event.data.type === 'SYNC_COMPLETE') {
+                                console.log('Синхронизировано постов:', event.data.posts);
+                                this.updateStatus('Синхронизация завершена');
+                                renderPosts();
+                            }
+                        });
+                        
+                        // Запрашиваем фоновую синхронизацию при создании поста
+                        if ('sync' in window.ServiceWorkerRegistration.prototype) {
+                            registration.sync.register('sync-posts');
+                        }
+                        
+                    } catch (error) {
+                        console.error('Ошибка Service Worker:', error);
+                        // Fallback: создаем Service Worker через blob
+                        await this.registerFallbackServiceWorker();
+                    }
+                } else {
+                    console.log('Service Worker не поддерживается');
+                }
+            }
+
+            async registerFallbackServiceWorker() {
+                const swCode = `
+                    const CACHE_NAME = 'p2p-social-fallback-v1';
+                    const urlsToCache = ['/'];
+
+                    self.addEventListener('install', event => {
+                        event.waitUntil(
+                            caches.open(CACHE_NAME)
+                                .then(cache => cache.addAll(urlsToCache))
+                        );
+                    });
+
+                    self.addEventListener('fetch', event => {
+                        event.respondWith(
+                            caches.match(event.request)
+                                .then(response => response || fetch(event.request))
+                        );
+                    });
+                `;
+                const blob = new Blob([swCode], { type: 'application/javascript' });
+                const registration = await navigator.serviceWorker.register(URL.createObjectURL(blob));
+                console.log('Fallback Service Worker зарегистрирован');
+            }
+
+            async initNetwork() {
+                try {
+                    this.updateStatus('Подключение к signaling серверу...');
+                    
+                    // Пытаемся подключиться к реальному signaling серверу
+                    await this.connectToSignalingServer();
+                    
+                } catch (error) {
+                    console.error('Network error:', error);
+                    this.updateStatus('Работаем локально');
+                    this.isConnected = false;
+                    this.startLocalMode();
+                }
+            }
+
+            async connectToSignalingServer() {
+                return new Promise((resolve, reject) => {
+                    try {
+                        // Подключаемся к вашему bootstrap signaling серверу
+                        // Замените на реальный URL после деплоя
+                        const signalingUrl = 'ws://localhost:8080'; // Для локальной разработки
+                        // const signalingUrl = 'wss://your-signaling-server.herokuapp.com'; // Для production
+                        
+                        this.signalingSocket = new WebSocket(signalingUrl);
+                        
+                        this.signalingSocket.onopen = () => {
+                            console.log('🔗 Bootstrap signaling подключен');
+                            this.isConnected = true;
+                            this.updateStatus('Подключен к сети');
+                            this.reconnectAttempts = 0;
+                            
+                            // Анонсируем себя в сети
+                            this.announcePresence();
+                            resolve();
+                        };
+
+                        this.signalingSocket.onmessage = async (event) => {
+                            try {
+                                const message = JSON.parse(event.data);
+                                
+                                // Игнорируем собственные сообщения
+                                if (message.from === this.myId) {
+                                    return;
+                                }
+                                
+                                // Обрабатываем только сообщения адресованные нам или broadcast
+                                if (!message.target || message.target === this.myId || message.target === 'all') {
+                                    await this.handleSignalingMessage(message);
+                                }
+                            } catch (error) {
+                                console.error('⚠️ Ошибка обработки signaling сообщения:', error);
+                            }
+                        };
+
+                        this.signalingSocket.onclose = () => {
+                            console.log('❌ Signaling соединение закрыто');
+                            this.isConnected = false;
+                            this.updateStatus('Соединение потеряно');
+                            
+                            // Переподключение с экспоненциальной задержкой
+                            if (this.reconnectAttempts < this.maxReconnectAttempts && this.isOnline) {
+                                const delay = Math.min(1000 * Math.pow(2, this.reconnectAttempts), 30000);
+                                this.reconnectAttempts++;
+                                
+                                console.log(`🔄 Переподключение через ${delay}ms (попытка ${this.reconnectAttempts})`);
+                                setTimeout(() => this.connectToSignalingServer(), delay);
+                            } else {
+                                this.updateStatus('Переподключение не удалось');
+                                this.startLocalMode();
+                            }
+                        };
+
+                        this.signalingSocket.onerror = (error) => {
+                            console.error('⚠️ Signaling ошибка:', error);
+                            reject(error);
+                        };
+
+                        // Таймаут подключения
+                        setTimeout(() => {
+                            if (this.signalingSocket.readyState !== WebSocket.OPEN) {
+                                console.log('⏰ Timeout подключения к signaling серверу');
+                                this.signalingSocket.close();
+                                reject(new Error('Connection timeout'));
+                            }
+                        }, 10000);
+
+                    } catch (error) {
+                        reject(error);
+                    }
+                });
+            }
+
+            startLocalMode() {
+                // Режим работы без сети - только локальные данные
+                setTimeout(() => {
+                    this.updateStatus('Локальный режим');
+                    this.broadcastMyData();
+                    // Имитируем несколько локальных "пиров" для демо
+                    this.simulateLocalPeers();
+                }, 1000);
+            }
+
+            simulateLocalPeers() {
+                // Создаем виртуальных пиров для демонстрации
+                const demoUsers = [
+                    { name: 'Алексей', city: 'moscow' },
+                    { name: 'Мария', city: 'spb' },
+                    { name: 'Дмитрий', city: 'ekb' }
+                ];
+
+                demoUsers.forEach((user, index) => {
+                    const peerId = `demo_${user.name}_${index}`;
+                    this.peers.set(peerId, {
+                        id: peerId,
+                        name: user.name,
+                        connected: true,
+                        lastSeen: Date.now()
+                    });
+
+                    // Создаем демо-посты от виртуальных пользователей
+                    if (Math.random() > 0.5) {
+                        const demoPost = {
+                            id: this.generateId(),
+                            author: peerId,
+                            authorName: user.name,
+                            timestamp: Date.now() - Math.random() * 86400000, // Последние 24 часа
+                            expiresAt: Date.now() + (7 * 24 * 60 * 60 * 1000),
+                            title: this.generateDemoTitle(),
+                            description: this.generateDemoDescription(),
+                            city: user.city,
+                            type: ['event', 'meet', 'help'][Math.floor(Math.random() * 3)],
+                            tags: this.generateDemoTags(),
+                            likes: Math.floor(Math.random() * 10),
+                            likedBy: [],
+                            reports: { illegal: 0, provocation: 0, advertisement: 0 }
+                        };
+                        
+                        this.crdt.update(demoPost.id, demoPost, demoPost.timestamp);
+                    }
+                });
+
+                this.updatePeerCount();
+                renderPosts();
+            }
+
+            generateDemoTitle() {
+                const titles = [
+                    'Встреча любителей кофе',
+                    'Концерт на крыше',
+                    'Изучаем JavaScript вместе',
+                    'Фотосессия в парке',
+                    'Волонтерство в приюте',
+                    'Настольные игры по выходным',
+                    'Велопрогулка по городу',
+                    'Мастер-класс по готовке'
+                ];
+                return titles[Math.floor(Math.random() * titles.length)];
+            }
+
+            generateDemoDescription() {
+                const descriptions = [
+                    'Приглашаю всех желающих присоединиться к нашему мероприятию!',
+                    'Будет интересно и весело, приходите!',
+                    'Давайте вместе проведем время с пользой.',
+                    'Ищу единомышленников для совместного времяпрепровождения.',
+                    'Отличная возможность познакомиться с новыми людьми.',
+                    'Все уровни подготовки приветствуются!'
+                ];
+                return descriptions[Math.floor(Math.random() * descriptions.length)];
+            }
+
+            generateDemoTags() {
+                const allTags = ['музыка', 'спорт', 'IT', 'фото', 'природа', 'дружба', 'учеба', 'развлечения'];
+                const count = Math.floor(Math.random() * 3) + 1;
+                return allTags.sort(() => 0.5 - Math.random()).slice(0, count);
+            }
+
+            announcePresence() {
+                if (this.signalingSocket && this.signalingSocket.readyState === WebSocket.OPEN) {
+                    const announcement = {
+                        type: 'announce',
+                        peerId: this.myId,
+                        timestamp: Date.now()
+                    };
+                    this.signalingSocket.send(JSON.stringify(announcement));
+                }
+            }
+
+            async handleSignalingMessage(message) {
+                console.log(`📨 Получено signaling сообщение: ${message.type} от ${message.from}`);
+                
+                switch (message.type) {
+                    case 'announce':
+                        if (message.peerId !== this.myId) {
+                            console.log(`👋 Новый пир в сети: ${message.peerId}`);
+                            // Инициируем соединение только если наш ID больше (избегаем дублирования)
+                            if (this.myId > message.peerId) {
+                                setTimeout(() => {
+                                    this.connectToPeer(message.peerId);
+                                }, Math.random() * 2000); // Случайная задержка
+                            }
+                        }
+                        break;
+                    case 'offer':
+                        await this.handleOffer(message);
+                        break;
+                    case 'answer':
+                        await this.handleAnswer(message);
+                        break;
+                    case 'ice-candidate':
+                        await this.handleIceCandidate(message);
+                        break;
+                    default:
+                        console.log(`❓ Неизвестный тип signaling сообщения: ${message.type}`);
+                }
+            }
+
+            async connectToPeer(peerId) {
+                if (this.connections.has(peerId) || this.rtcConnections.has(peerId)) {
+                    console.log(`🔄 Соединение с ${peerId} уже существует`);
+                    return;
+                }
+
+                try {
+                    console.log(`🤝 Инициируем соединение с пиром: ${peerId}`);
+                    const connection = await this.createRTCConnection(peerId);
+                    
+                    // Создаем offer
+                    const offer = await connection.createOffer({
+                        offerToReceiveAudio: false,
+                        offerToReceiveVideo: false
+                    });
+                    await connection.setLocalDescription(offer);
+
+                    // Отправляем offer через signaling сервер
+                    this.sendSignalingMessage({
+                        type: 'offer',
+                        target: peerId,
+                        offer: offer
+                    });
+
+                    console.log(`📤 Offer отправлен пиру: ${peerId}`);
+
+                } catch (error) {
+                    console.error(`❌ Ошибка подключения к пиру ${peerId}:`, error);
+                    this.handlePeerDisconnection(peerId);
+                }
+            }
+
+            async handleOffer(message) {
+                try {
+                    console.log(`📥 Получен offer от ${message.from}`);
+                    const connection = await this.createRTCConnection(message.from);
+                    
+                    await connection.setRemoteDescription(new RTCSessionDescription(message.offer));
+                    const answer = await connection.createAnswer();
+                    await connection.setLocalDescription(answer);
+
+                    this.sendSignalingMessage({
+                        type: 'answer',
+                        target: message.from,
+                        answer: answer
+                    });
+
+                    console.log(`📤 Answer отправлен пиру: ${message.from}`);
+
+                } catch (error) {
+                    console.error(`❌ Ошибка обработки offer от ${message.from}:`, error);
+                }
+            }
+
+            async handleAnswer(message) {
+                try {
+                    console.log(`📥 Получен answer от ${message.from}`);
+                    const connection = this.rtcConnections.get(message.from);
+                    if (connection) {
+                        await connection.setRemoteDescription(new RTCSessionDescription(message.answer));
+                        console.log(`✅ Answer обработан от ${message.from}`);
+                    } else {
+                        console.warn(`⚠️ RTC соединение не найдено для ${message.from}`);
+                    }
+                } catch (error) {
+                    console.error(`❌ Ошибка обработки answer от ${message.from}:`, error);
+                }
+            }
+
+            async handleIceCandidate(message) {
+                try {
+                    const connection = this.rtcConnections.get(message.from);
+                    if (connection && message.candidate) {
+                        await connection.addIceCandidate(new RTCIceCandidate(message.candidate));
+                        console.log(`🧊 ICE candidate добавлен от ${message.from}`);
+                    }
+                } catch (error) {
+                    console.error(`❌ Ошибка ICE candidate от ${message.from}:`, error);
+                }
+            }
+
+            sendSignalingMessage(message) {
+                if (this.signalingSocket && this.signalingSocket.readyState === WebSocket.OPEN) {
+                    this.signalingSocket.send(JSON.stringify(message));
+                }
+            }
+
+            setupNetworkEventListeners() {
+                // Отслеживаем состояние сети
+                window.addEventListener('online', () => {
+                    this.isOnline = true;
+                    this.updateStatus('Сеть восстановлена');
+                    this.reconnectAttempts = 0;
+                    this.initNetwork();
+                });
+
+                window.addEventListener('offline', () => {
+                    this.isOnline = false;
+                    this.isConnected = false;
+                    this.updateStatus('Работаем офлайн');
+                    this.closeAllConnections();
+                });
+
+                // Обработка закрытия страницы
+                window.addEventListener('beforeunload', () => {
+                    this.disconnect();
+                });
+
+                // Обработка фокуса/потери фокуса страницы
+                document.addEventListener('visibilitychange', () => {
+                    if (document.hidden) {
+                        console.log('Приложение скрыто');
+                    } else {
+                        console.log('Приложение активно');
+                        if (this.isOnline && !this.isConnected) {
+                            this.initNetwork();
+                        }
+                    }
+                });
+            }
+
+            closeAllConnections() {
+                // Закрываем все WebRTC соединения
+                for (const [peerId, connection] of this.rtcConnections) {
+                    connection.close();
+                }
+                this.rtcConnections.clear();
+                
+                // Закрываем data channels
+                for (const [peerId, channel] of this.connections) {
+                    channel.close();
+                }
+                this.connections.clear();
+                
+                // Закрываем signaling соединение
+                if (this.signalingSocket) {
+                    this.signalingSocket.close();
+                    this.signalingSocket = null;
+                }
+                
+                this.peers.clear();
+                this.updatePeerCount();
+            }
+
+            disconnect() {
+                this.closeAllConnections();
+                this.isConnected = false;
+                this.updateStatus('Отключен');
+            }
+
+            async createRTCConnection(peerId) {
+                if (this.rtcConnections.has(peerId)) {
+                    return this.rtcConnections.get(peerId);
+                }
+
+                const connection = new RTCPeerConnection({ iceServers: this.iceServers });
+                this.rtcConnections.set(peerId, connection);
+                
+                // Создаем data channel для постов
+                const dataChannel = connection.createDataChannel('posts', {
+                    ordered: true,
+                    maxRetransmits: 3
+                });
+
+                this.setupDataChannel(dataChannel, peerId);
+                
+                // Обработка incoming data channels
+                connection.ondatachannel = (event) => {
+                    this.setupDataChannel(event.channel, peerId);
+                };
+
+                // ICE candidate handling
+                connection.onicecandidate = (event) => {
+                    if (event.candidate) {
+                        this.sendSignalingMessage({
+                            type: 'ice-candidate',
+                            target: peerId,
+                            from: this.myId,
+                            candidate: event.candidate
+                        });
+                    }
+                };
+
+                // Connection state monitoring
+                connection.onconnectionstatechange = () => {
+                    console.log(`RTC Connection state with ${peerId}: ${connection.connectionState}`);
+                    
+                    if (connection.connectionState === 'connected') {
+                        this.peers.set(peerId, {
+                            id: peerId,
+                            connected: true,
+                            lastSeen: Date.now()
+                        });
+                        this.updatePeerCount();
+                    } else if (connection.connectionState === 'failed' || connection.connectionState === 'disconnected') {
+                        this.handlePeerDisconnection(peerId);
+                    }
+                };
+
+                connection.oniceconnectionstatechange = () => {
+                    console.log(`ICE Connection state with ${peerId}: ${connection.iceConnectionState}`);
+                };
+
+                return connection;
+            }
+
+            setupDataChannel(dataChannel, peerId) {
+                dataChannel.onopen = () => {
+                    console.log(`Data channel открыт с ${peerId}`);
+                    this.connections.set(peerId, dataChannel);
+                    
+                    // Сразу отправляем синхронизацию
+                    this.sendToPeer(peerId, {
+                        type: 'sync',
+                        data: this.crdt.serialize()
+                    });
+                };
+
+                dataChannel.onmessage = (event) => {
+                    try {
+                        const message = JSON.parse(event.data);
+                        this.handlePeerMessage(peerId, message);
+                    } catch (error) {
+                        console.error('Ошибка парсинга сообщения от пира:', error);
+                    }
+                };
+
+                dataChannel.onclose = () => {
+                    console.log(`Data channel закрыт с ${peerId}`);
+                    this.handlePeerDisconnection(peerId);
+                };
+
+                dataChannel.onerror = (error) => {
+                    console.error(`Ошибка data channel с ${peerId}:`, error);
+                };
+            }
+
+            handlePeerDisconnection(peerId) {
+                this.connections.delete(peerId);
+                this.peers.delete(peerId);
+                
+                const rtcConnection = this.rtcConnections.get(peerId);
+                if (rtcConnection) {
+                    rtcConnection.close();
+                    this.rtcConnections.delete(peerId);
+                }
+                
+                this.updatePeerCount();
+                console.log(`Пир ${peerId} отключен`);
+            }
+
+            sendToPeer(peerId, message) {
+                const dataChannel = this.connections.get(peerId);
+                if (dataChannel && dataChannel.readyState === 'open') {
+                    try {
+                        dataChannel.send(JSON.stringify(message));
+                        return true;
+                    } catch (error) {
+                        console.error(`Ошибка отправки сообщения пиру ${peerId}:`, error);
+                        return false;
+                    }
+                }
+                return false;
+            }
+
+            handlePeerMessage(peerId, message) {
+                switch (message.type) {
+                    case 'sync':
+                        this.handleSync(peerId, message.data);
+                        break;
+                    case 'post':
+                        this.handleNewPost(peerId, message.data);
+                        break;
+                    case 'like':
+                        this.handleLike(peerId, message.data);
+                        break;
+                    case 'report':
+                        this.handleReport(peerId, message.data);
+                        break;
+                    default:
+                        console.log('Неизвестный тип сообщения:', message.type);
+                }
+            }
+
+            handleSync(fromPeerId, syncData) {
+                try {
+                    const remoteState = this.crdt.deserialize(syncData);
+                    const updated = this.crdt.merge(remoteState);
+                    
+                    if (updated) {
+                        console.log(`Получена синхронизация от ${fromPeerId}, обновлено записей`);
+                        this.saveToStorage();
+                        renderPosts();
+                        this.updatePeerCount();
+                        
+                        // Отправляем обратную синхронизацию если есть новые данные
+                        this.sendToPeer(fromPeerId, {
+                            type: 'sync-response',
+                            data: this.crdt.serialize()
+                        });
+                    }
+                } catch (error) {
+                    console.error('Ошибка обработки синхронизации:', error);
+                }
+            }
+
+            handleNewPost(fromPeerId, postData) {
+                try {
+                    if (this.crdt.update(postData.id, postData, postData.timestamp)) {
+                        console.log(`Новый пост от ${fromPeerId}: ${postData.title}`);
+                        this.saveToStorage();
+                        renderPosts();
+                        this.updatePeerCount();
+                        
+                        // Транслируем новый пост другим пирам (исключая отправителя)
+                        this.relayMessage(fromPeerId, {
+                            type: 'post',
+                            data: postData
+                        });
+                    }
+                } catch (error) {
+                    console.error('Ошибка обработки нового поста:', error);
+                }
+            }
+
+            handleLike(fromPeerId, likeData) {
+                try {
+                    const post = this.crdt.get(likeData.postId);
+                    if (post) {
+                        let updated = false;
+                        
+                        if (likeData.action === 'like') {
+                            if (!post.likedBy.includes(likeData.userId)) {
+                                post.likes = (post.likes || 0) + 1;
+                                post.likedBy = post.likedBy || [];
+                                post.likedBy.push(likeData.userId);
+                                updated = true;
+                            }
+                        } else if (likeData.action === 'unlike') {
+                            if (post.likedBy.includes(likeData.userId)) {
+                                post.likes = Math.max(0, (post.likes || 0) - 1);
+                                post.likedBy = post.likedBy.filter(id => id !== likeData.userId);
+                                updated = true;
+                            }
+                        }
+                        
+                        if (updated) {
+                            this.crdt.update(post.id, post);
+                            this.saveToStorage();
+                            renderPosts();
+                            
+                            // Транслируем изменение другим пирам
+                            this.relayMessage(fromPeerId, {
+                                type: 'like',
+                                data: likeData
+                            });
+                        }
+                    }
+                } catch (error) {
+                    console.error('Ошибка обработки лайка:', error);
+                }
+            }
+
+            handleReport(fromPeerId, reportData) {
+                try {
+                    const post = this.crdt.get(reportData.postId);
+                    if (post) {
+                        post.reports = post.reports || { illegal: 0, provocation: 0, advertisement: 0 };
+                        post.reports[reportData.reportType] = (post.reports[reportData.reportType] || 0) + 1;
+                        
+                        if (post.reports[reportData.reportType] >= 10) {
+                            post.flagged = reportData.reportType;
+                        }
+
+                        this.crdt.update(post.id, post);
+                        this.saveToStorage();
+                        renderPosts();
+                        
+                        // Транслируем жалобу другим пирам
+                        this.relayMessage(fromPeerId, {
+                            type: 'report',
+                            data: reportData
+                        });
+                    }
+                } catch (error) {
+                    console.error('Ошибка обработки жалобы:', error);
+                }
+            }
+
+            relayMessage(excludePeerId, message) {
+                // Отправляем сообщение всем пирам кроме отправителя
+                for (const [peerId, channel] of this.connections) {
+                    if (peerId !== excludePeerId && channel.readyState === 'open') {
+                        this.sendToPeer(peerId, message);
+                    }
+                }
+            }
+
+            broadcast(message) {
+                let successCount = 0;
+                let totalPeers = this.connections.size;
+                
+                for (const [peerId, channel] of this.connections) {
+                    if (this.sendToPeer(peerId, message)) {
+                        successCount++;
+                    }
+                }
+                
+                console.log(`Сообщение отправлено ${successCount}/${totalPeers} пирам`);
+                return successCount;
+            }
+
+            broadcastMyData() {
+                if (this.connections.size > 0) {
+                    const syncMessage = {
+                        type: 'sync',
+                        data: this.crdt.serialize()
+                    };
+                    this.broadcast(syncMessage);
+                } else {
+                    console.log('Нет активных соединений для синхронизации');
+                }
+            }
+
+            async createPost(postData) {
+                const post = {
+                    id: this.generateId(),
+                    author: this.myId,
+                    timestamp: Date.now(),
+                    expiresAt: Date.now() + (7 * 24 * 60 * 60 * 1000),
+                    ...postData,
+                    likes: 0,
+                    likedBy: [],
+                    reports: { illegal: 0, provocation: 0, advertisement: 0 }
+                };
+
+                post.signature = await this.signPost(post);
+                
+                this.crdt.update(post.id, post);
+                this.saveToStorage();
+                
+                // Уведомляем пиров
+                this.broadcast({
+                    type: 'post',
+                    data: post
+                });
+                
+                return post;
+            }
+
+            async signPost(post) {
+                if (window.crypto && window.crypto.subtle) {
+                    try {
+                        const encoder = new TextEncoder();
+                        const data = encoder.encode(JSON.stringify({
+                            author: post.author,
+                            title: post.title,
+                            description: post.description,
+                            timestamp: post.timestamp
+                        }));
+                        
+                        const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+                        const hashArray = Array.from(new Uint8Array(hashBuffer));
+                        return hashArray.map(b => b.toString(16).padStart(2, '0')).join('').slice(0, 16);
+                    } catch (error) {
+                        console.error('Crypto signing error:', error);
+                    }
+                }
+                
+                // Fallback для старых браузеров
+                return btoa(JSON.stringify({
+                    author: post.author,
+                    title: post.title,
+                    timestamp: post.timestamp
+                })).slice(0, 16);
+            }
+
+            likePost(postId) {
+                const post = this.crdt.get(postId);
+                if (!post) return;
+
+                const userActions = this.getUserActions(postId);
+                const action = userActions.liked ? 'unlike' : 'like';
+                
+                if (action === 'like') {
+                    post.likes = (post.likes || 0) + 1;
+                    post.likedBy = post.likedBy || [];
+                    if (!post.likedBy.includes(this.myId)) {
+                        post.likedBy.push(this.myId);
+                    }
+                    userActions.liked = true;
+                } else {
+                    post.likes = Math.max(0, (post.likes || 0) - 1);
+                    post.likedBy = (post.likedBy || []).filter(id => id !== this.myId);
+                    userActions.liked = false;
+                }
+
+                this.crdt.update(postId, post);
+                this.saveUserAction(postId, userActions);
+                this.saveToStorage();
+
+                // Уведомляем пиров
+                this.broadcast({
+                    type: 'like',
+                    data: {
+                        postId,
+                        userId: this.myId,
+                        action
+                    }
+                });
+            }
+
+            reportPost(postId, type) {
+                const post = this.crdt.get(postId);
+                if (!post) return;
+
+                post.reports[type] = (post.reports[type] || 0) + 1;
+                
+                if (post.reports[type] >= 10) {
+                    post.flagged = type;
+                }
+
+                this.crdt.update(postId, post);
+                this.saveToStorage();
+                
+                this.broadcast({
+                    type: 'report',
+                    data: {
+                        postId,
+                        reportType: type,
+                        userId: this.myId
+                    }
+                });
+            }
+
+            getUserActions(postId) {
+                if (!this.userActions.has(postId)) {
+                    this.userActions.set(postId, {
+                        liked: false,
+                        hidden: false,
+                        favorite: false
+                    });
+                }
+                return this.userActions.get(postId);
+            }
+
+            saveUserAction(postId, actions) {
+                this.userActions.set(postId, actions);
+                localStorage.setItem('p2p_user_actions', JSON.stringify([...this.userActions]));
+            }
+
+            hidePost(postId) {
+                const userActions = this.getUserActions(postId);
+                userActions.hidden = !userActions.hidden;
+                this.saveUserAction(postId, userActions);
+            }
+
+            favoritePost(postId) {
+                const userActions = this.getUserActions(postId);
+                userActions.favorite = !userActions.favorite;
+                this.saveUserAction(postId, userActions);
+            }
+
+            getAllPosts() {
+                const posts = [];
+                for (const [id, post] of this.crdt.getAll()) {
+                    if (post.expiresAt > Date.now()) {
+                        posts.push(post);
+                    }
+                }
+                return posts;
+            }
+
+            getMyPosts() {
+                return this.getAllPosts().filter(post => post.author === this.myId);
+            }
+
+            updateStatus(text) {
+                document.getElementById('statusText').textContent = text;
+                const statusDot = document.getElementById('statusDot');
+                statusDot.className = `w-2 h-2 rounded-full status-dot ${this.isConnected ? 'bg-green-500' : 'bg-red-500'}`;
+                this.updatePeerCount();
+            }
+
+            updatePeerCount() {
+                document.getElementById('peerCount').textContent = `Пиров: ${this.peers.size}`;
+                document.getElementById('postCount').textContent = `Постов: ${this.getAllPosts().length}`;
+            }
+
+            saveToStorage() {
+                localStorage.setItem('p2p_crdt_state', this.crdt.serialize());
+                localStorage.setItem('p2p_my_id', this.myId);
+            }
+
+            loadFromStorage() {
+                const savedState = localStorage.getItem('p2p_crdt_state');
+                if (savedState) {
+                    const state = this.crdt.deserialize(savedState);
+                    this.crdt.merge(state);
+                }
+
+                const savedId = localStorage.getItem('p2p_my_id');
+                if (savedId) {
+                    this.myId = savedId;
+                }
+
+                const savedActions = localStorage.getItem('p2p_user_actions');
+                if (savedActions) {
+                    this.userActions = new Map(JSON.parse(savedActions));
+                }
+            }
+
+            startCleanupTimer() {
+                setInterval(() => {
+                    const now = Date.now();
+                    let cleaned = false;
+                    
+                    for (const [id, post] of this.crdt.getAll()) {
+                        if (post.expiresAt <= now) {
+                            if (post.author === this.myId) {
+                                post.status = 'draft';
+                                post.note = 'Пост истек (7 дней)';
+                                this.crdt.update(id, post);
+                            }
+                            cleaned = true;
+                        }
+                    }
+                    
+                    if (cleaned) {
+                        this.saveToStorage();
+                        renderPosts();
+                        this.updatePeerCount();
+                    }
+                }, 10 * 60 * 1000);
+            }
+        }
+
+        // Глобальная сеть
+        const network = new P2PNetwork();
+
+        // UI функции
+        async function createPost() {
+            const title = document.getElementById('postTitle').value.trim();
+            const description = document.getElementById('postDescription').value.trim();
+            
+            if (!title || !description) {
+                alert('Заполните заголовок и описание');
+                return;
+            }
+
+            const postData = {
+                title,
+                description,
+                tags: document.getElementById('postTags').value.split(',').map(t => t.trim()).filter(t => t),
+                contacts: document.getElementById('postContacts').value.trim(),
+                city: document.getElementById('postCity').value,
+                type: document.getElementById('postType').value,
+                gender: document.getElementById('postGender').value,
+                age: document.getElementById('postAge').value
+            };
+
+            await network.createPost(postData);
+            
+            // Очищаем форму
+            document.getElementById('postTitle').value = '';
+            document.getElementById('postDescription').value = '';
+            document.getElementById('postTags').value = '';
+            document.getElementById('postContacts').value = '';
+            
+            renderPosts();
+            network.updatePeerCount();
+        }
+
+        function renderPosts() {
+            const container = document.getElementById('postsFeed');
+            let posts = getFilteredPosts();
+            
+            if (posts.length === 0) {
+                container.innerHTML = `
+                    <div class="glass rounded-2xl p-8 text-center">
+                        <div class="text-6xl mb-4">📭</div>
+                        <p class="text-gray-600">Постов не найдено</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = posts.map(post => {
+                const userActions = network.getUserActions(post.id);
+                const isMyPost = post.author === network.myId;
+                const timeLeft = Math.max(0, post.expiresAt - Date.now());
+                const daysLeft = Math.ceil(timeLeft / (24 * 60 * 60 * 1000));
+                
+                return `
+                    <div class="glass rounded-2xl p-6 mb-4">
+                        ${post.flagged ? `
+                            <div class="bg-yellow-100 border border-yellow-400 text-yellow-800 px-4 py-2 rounded-lg mb-4">
+                                ⚠️ Пост помечен: ${getReportTypeName(post.flagged)}
+                            </div>
+                        ` : ''}
+                        
+                        <div class="flex justify-between items-start mb-3">
+                            <div class="text-sm text-gray-600">
+                                ${isMyPost ? '👤 Ваш пост' : '👥 Участник сети'} • 
+                                ${new Date(post.timestamp).toLocaleDateString()} • 
+                                ⏱️ ${daysLeft}д
+                                ${post.city ? ` • 📍 ${getCityName(post.city)}` : ''}
+                                ${post.type ? ` • 🏷️ ${getTypeName(post.type)}` : ''}
+                            </div>
+                        </div>
+                        
+                        <h3 class="text-xl font-semibold text-gray-800 mb-2">${escapeHtml(post.title)}</h3>
+                        <p class="text-gray-700 mb-4 leading-relaxed">${escapeHtml(post.description)}</p>
+                        
+                        ${post.tags && post.tags.length > 0 ? `
+                            <div class="flex flex-wrap gap-2 mb-4">
+                                ${post.tags.map(tag => `
+                                    <span class="px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full">#${escapeHtml(tag)}</span>
+                                `).join('')}
+                            </div>
+                        ` : ''}
+                        
+                        ${post.contacts ? `
+                            <div class="bg-gray-50 rounded-lg p-3 mb-4">
+                                <div class="text-sm text-gray-600 mb-1">Контакты:</div>
+                                <div class="text-gray-800">${escapeHtml(post.contacts)}</div>
+                            </div>
+                        ` : ''}
+                        
+                        <div class="flex flex-wrap gap-2 items-center">
+                            <button onclick="likePost('${post.id}')" 
+                                    class="flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${userActions.liked ? 'bg-red-100 text-red-700' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'}">
+                                ${userActions.liked ? '❤️' : '🤍'} ${post.likes || 0}
+                            </button>
+                            
+                            <button onclick="favoritePost('${post.id}')" 
+                                    class="px-3 py-2 rounded-lg transition-colors ${userActions.favorite ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'}">
+                                ${userActions.favorite ? '⭐' : '☆'}
+                            </button>
+                            
+                            <button onclick="hidePost('${post.id}')" 
+                                    class="px-3 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 transition-colors">
+                                ${userActions.hidden ? '👁️' : '🙈'}
+                            </button>
+                            
+                            ${!isMyPost ? `
+                                <div class="relative">
+                                    <button onclick="toggleReportMenu('${post.id}')" 
+                                            class="px-3 py-2 rounded-lg bg-red-100 hover:bg-red-200 text-red-700 transition-colors">
+                                        🚩
+                                    </button>
+                                    <div class="absolute right-0 top-full mt-1 bg-white rounded-lg shadow-lg border hidden z-10" id="reportMenu_${post.id}">
+                                        <button onclick="reportPost('${post.id}', 'illegal')" 
+                                                class="block w-full text-left px-4 py-2 hover:bg-gray-50 text-sm">Незаконно</button>
+                                        <button onclick="reportPost('${post.id}', 'provocation')" 
+                                                class="block w-full text-left px-4 py-2 hover:bg-gray-50 text-sm">Провокация</button>
+                                        <button onclick="reportPost('${post.id}', 'advertisement')" 
+                                                class="block w-full text-left px-4 py-2 hover:bg-gray-50 text-sm">Реклама</button>
+                                    </div>
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function getFilteredPosts() {
+            let posts = network.getAllPosts();
+            const search = document.getElementById('searchBox').value.toLowerCase();
+            const cityFilter = document.getElementById('filterCity').value;
+            const typeFilter = document.getElementById('filterType').value;
+            const sortFilter = document.getElementById('filterSort').value;
+
+            // Поиск
+            if (search) {
+                posts = posts.filter(post => 
+                    post.title.toLowerCase().includes(search) ||
+                    post.description.toLowerCase().includes(search) ||
+                    (post.tags && post.tags.some(tag => tag.toLowerCase().includes(search)))
+                );
+            }
+
+            // Фильтры
+            if (cityFilter) {
+                posts = posts.filter(post => post.city === cityFilter);
+            }
+            
+            if (typeFilter) {
+                posts = posts.filter(post => post.type === typeFilter);
+            }
+
+            // Сортировка и специальные фильтры
+            switch (sortFilter) {
+                case 'my':
+                    posts = posts.filter(post => post.author === network.myId);
+                    break;
+                case 'favorites':
+                    posts = posts.filter(post => network.getUserActions(post.id).favorite);
+                    break;
+                case 'hidden':
+                    posts = posts.filter(post => network.getUserActions(post.id).hidden);
+                    break;
+                case 'liked':
+                    posts.sort((a, b) => (b.likes || 0) - (a.likes || 0));
+                    break;
+                case 'old':
+                    posts.sort((a, b) => a.timestamp - b.timestamp);
+                    break;
+                default: // 'new'
+                    posts.sort((a, b) => b.timestamp - a.timestamp);
+            }
+
+            return posts;
+        }
+
+        function filterPosts() {
+            renderPosts();
+        }
+
+        function resetFilters() {
+            document.getElementById('searchBox').value = '';
+            document.getElementById('filterCity').value = '';
+            document.getElementById('filterType').value = '';
+            document.getElementById('filterSort').value = 'new';
+            renderPosts();
+        }
+
+        function likePost(postId) {
+            network.likePost(postId);
+            renderPosts();
+        }
+
+        function hidePost(postId) {
+            network.hidePost(postId);
+            renderPosts();
+        }
+
+        function favoritePost(postId) {
+            network.favoritePost(postId);
+            renderPosts();
+        }
+
+        function reportPost(postId, type) {
+            network.reportPost(postId, type);
+            document.getElementById(`reportMenu_${postId}`).classList.add('hidden');
+            alert('Жалоба отправлена');
+            renderPosts();
+        }
+
+        function toggleReportMenu(postId) {
+            const menu = document.getElementById(`reportMenu_${postId}`);
+            menu.classList.toggle('hidden');
+            
+            // Закрываем другие меню
+            document.querySelectorAll('[id^="reportMenu_"]').forEach(dropdown => {
+                if (dropdown.id !== `reportMenu_${postId}`) {
+                    dropdown.classList.add('hidden');
+                }
+            });
+        }
+
+        function getCityName(city) {
+            const cities = {
+                'moscow': 'Москва',
+                'spb': 'СПб',
+                'ekb': 'Екатеринбург',
+                'nsk': 'Новосибирск',
+                'other': 'Другой'
+            };
+            return cities[city] || city;
+        }
+
+        function getTypeName(type) {
+            const types = {
+                'event': 'Событие',
+                'meet': 'Встреча',
+                'help': 'Помощь',
+                'sale': 'Продажа',
+                'other': 'Другое'
+            };
+            return types[type] || type;
+        }
+
+        function getReportTypeName(type) {
+            const reportTypes = {
+                'illegal': 'Незаконный контент',
+                'provocation': 'Провокация',
+                'advertisement': 'Реклама'
+            };
+            return reportTypes[type] || type;
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Закрытие меню по клику вне
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('[id^="reportMenu_"]') && !e.target.closest('button')) {
+                document.querySelectorAll('[id^="reportMenu_"]').forEach(dropdown => {
+                    dropdown.classList.add('hidden');
+                });
+            }
+        });
+
+        // Инициализация
+        renderPosts();
+        
+        // Периодическое обновление
+        setInterval(() => {
+            renderPosts();
+            network.updatePeerCount();
+        }, 30000);
+
+        // Синхронизация с пирами каждые 10 секунд
+        setInterval(() => {
+            if (network.isConnected) {
+                network.broadcastMyData();
+            }
+        }, 10000);
+    </script>
 </body>
 </html>
